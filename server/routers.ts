@@ -1,10 +1,23 @@
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, router } from "./_core/trpc";
+import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
+import { z } from "zod";
+import { TRPCError } from "@trpc/server";
+import * as db from "./db";
+import { InsertOrder, InsertOrderItem } from "../drizzle/schema";
+import { storagePut } from "./storage";
+import { notifyOwner } from "./_core/notification";
+
+// Middleware para verificar se o usuário é admin
+const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
+  if (ctx.user.role !== 'admin') {
+    throw new TRPCError({ code: 'FORBIDDEN', message: 'Acesso negado. Apenas administradores.' });
+  }
+  return next({ ctx });
+});
 
 export const appRouter = router({
-    // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
   system: systemRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
@@ -17,12 +30,194 @@ export const appRouter = router({
     }),
   }),
 
-  // TODO: add feature routers here, e.g.
-  // todo: router({
-  //   list: protectedProcedure.query(({ ctx }) =>
-  //     db.getUserTodos(ctx.user.id)
-  //   ),
-  // }),
+  // ========== Categories (Admin only) ==========
+  categories: router({
+    list: publicProcedure.query(async () => {
+      return await db.getAllCategories();
+    }),
+    create: adminProcedure
+      .input(z.object({
+        name: z.string().min(1),
+        description: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        await db.createCategory(input);
+        return { success: true };
+      }),
+    update: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().min(1).optional(),
+        description: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        await db.updateCategory(id, data);
+        return { success: true };
+      }),
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteCategory(input.id);
+        return { success: true };
+      }),
+  }),
+
+  // ========== Products ==========
+  products: router({
+    list: publicProcedure.query(async () => {
+      return await db.getAllProducts();
+    }),
+    available: publicProcedure.query(async () => {
+      return await db.getAvailableProducts();
+    }),
+    getById: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getProductById(input.id);
+      }),
+    create: adminProcedure
+      .input(z.object({
+        name: z.string().min(1),
+        description: z.string().optional(),
+        categoryId: z.number().optional(),
+        pricePerKg: z.number().min(0), // Em centavos
+        imageUrl: z.string().optional(),
+        imageKey: z.string().optional(),
+        available: z.boolean().default(true),
+        stockKg: z.number().default(0), // Em gramas
+      }))
+      .mutation(async ({ input }) => {
+        await db.createProduct(input);
+        return { success: true };
+      }),
+    update: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().min(1).optional(),
+        description: z.string().optional(),
+        categoryId: z.number().optional(),
+        pricePerKg: z.number().min(0).optional(),
+        imageUrl: z.string().optional(),
+        imageKey: z.string().optional(),
+        available: z.boolean().optional(),
+        stockKg: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        await db.updateProduct(id, data);
+        return { success: true };
+      }),
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteProduct(input.id);
+        return { success: true };
+      }),
+    uploadImage: adminProcedure
+      .input(z.object({
+        fileName: z.string(),
+        fileData: z.string(), // Base64
+        mimeType: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        const buffer = Buffer.from(input.fileData, 'base64');
+        const randomSuffix = Math.random().toString(36).substring(2, 15);
+        const fileKey = `products/${input.fileName}-${randomSuffix}`;
+        
+        const { url } = await storagePut(fileKey, buffer, input.mimeType);
+        
+        return { url, key: fileKey };
+      }),
+  }),
+
+  // ========== Orders ==========
+  orders: router({
+    listAll: adminProcedure.query(async () => {
+      return await db.getAllOrders();
+    }),
+    myOrders: protectedProcedure.query(async ({ ctx }) => {
+      return await db.getOrdersByUserId(ctx.user.id);
+    }),
+    getById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input, ctx }) => {
+        const order = await db.getOrderById(input.id);
+        if (!order) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Pedido não encontrado' });
+        }
+        
+        // Verificar permissão: admin ou dono do pedido
+        if (ctx.user.role !== 'admin' && order.userId !== ctx.user.id) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Acesso negado' });
+        }
+        
+        const items = await db.getOrderItems(input.id);
+        return { order, items };
+      }),
+    create: protectedProcedure
+      .input(z.object({
+        items: z.array(z.object({
+          productId: z.number(),
+          quantityGrams: z.number().min(1), // Em gramas
+        })),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        // Validar e calcular totais
+        let totalAmount = 0;
+        const orderItemsData: InsertOrderItem[] = [];
+        
+        for (const item of input.items) {
+          const product = await db.getProductById(item.productId);
+          if (!product) {
+            throw new TRPCError({ code: 'NOT_FOUND', message: `Produto ${item.productId} não encontrado` });
+          }
+          if (!product.available) {
+            throw new TRPCError({ code: 'BAD_REQUEST', message: `Produto ${product.name} não está disponível` });
+          }
+          
+          // Calcular subtotal: (preço por kg em centavos × quantidade em gramas) / 1000
+          const subtotal = Math.round((product.pricePerKg * item.quantityGrams) / 1000);
+          totalAmount += subtotal;
+          
+          orderItemsData.push({
+            orderId: 0, // Será preenchido após criar o pedido
+            productId: product.id,
+            productName: product.name,
+            pricePerKg: product.pricePerKg,
+            quantityGrams: item.quantityGrams,
+            subtotal,
+          });
+        }
+        
+        const orderData: InsertOrder = {
+          userId: ctx.user.id,
+          totalAmount,
+          notes: input.notes,
+          status: 'pending',
+        };
+        
+        const orderId = await db.createOrderWithItems(orderData, orderItemsData);
+        
+        // Notificar o proprietário sobre novo pedido
+        await notifyOwner({
+          title: 'Novo Pedido Recebido',
+          content: `Pedido #${orderId} de ${ctx.user.name || ctx.user.email} - Total: R$ ${(totalAmount / 100).toFixed(2)}`,
+        });
+        
+        return { success: true, orderId };
+      }),
+    updateStatus: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        status: z.enum(['pending', 'confirmed', 'preparing', 'ready', 'delivered', 'cancelled']),
+      }))
+      .mutation(async ({ input }) => {
+        await db.updateOrderStatus(input.id, input.status);
+        return { success: true };
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;
