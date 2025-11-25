@@ -1,0 +1,24 @@
+{
+  "query": "SELECT id, openId, email, name, role FROM users WHERE openId IN ('user-2', 'user-3')",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2Ct94FQQX2tqCCM.root --database jtWWBUdj7qZKX8P4ihhs3o --execute SELECT id, openId, email, name, role FROM users WHERE openId IN ('user-2', 'user-3')",
+  "rows": [
+    {
+      "id": "12",
+      "openId": "user-2",
+      "email": "user2@example.com",
+      "name": "User 2",
+      "role": "user"
+    },
+    {
+      "id": "13",
+      "openId": "user-3",
+      "email": "user3@example.com",
+      "name": "User 3",
+      "role": "user"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\topenId\temail\tname\trole\n12\tuser-2\tuser2@example.com\tUser 2\tuser\n13\tuser-3\tuser3@example.com\tUser 3\tuser\n",
+  "stderr": "",
+  "execution_time_ms": 468
+}

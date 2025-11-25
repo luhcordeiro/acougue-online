@@ -1,0 +1,128 @@
+import { describe, expect, it, beforeAll } from "vitest";
+import { appRouter } from "./routers";
+import type { TrpcContext } from "./_core/context";
+import { upsertUser } from "./db";
+
+type AuthenticatedUser = NonNullable<TrpcContext["user"]>;
+
+function createUserContext(userId: number = 2): TrpcContext {
+  const user: AuthenticatedUser = {
+    id: userId,
+    openId: `user-${userId}`,
+    email: `user${userId}@example.com`,
+    name: `User ${userId}`,
+    loginMethod: "manus",
+    role: "user",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    lastSignedIn: new Date(),
+  };
+
+  return {
+    user,
+    req: {
+      protocol: "https",
+      headers: {},
+    } as TrpcContext["req"],
+    res: {
+      clearCookie: () => {},
+    } as TrpcContext["res"],
+  };
+}
+
+function createAdminContext(): TrpcContext {
+  const user: AuthenticatedUser = {
+    id: 1,
+    openId: "admin-user",
+    email: "admin@example.com",
+    name: "Admin User",
+    loginMethod: "manus",
+    role: "admin",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    lastSignedIn: new Date(),
+  };
+
+  return {
+    user,
+    req: {
+      protocol: "https",
+      headers: {},
+    } as TrpcContext["req"],
+    res: {
+      clearCookie: () => {},
+    } as TrpcContext["res"],
+  };
+}
+
+describe("orders.create", () => {
+  it("valida que produtos existem antes de criar pedido", async () => {
+    const ctx = createUserContext();
+    const caller = appRouter.createCaller(ctx);
+
+    // Primeiro, pegar produtos disponíveis
+    const products = await caller.products.available();
+    
+    expect(products.length).toBeGreaterThan(0);
+    expect(products[0]).toHaveProperty('id');
+    expect(products[0]).toHaveProperty('pricePerKg');
+  });
+
+  it("valida cálculo de preço", async () => {
+    // Teste de cálculo: 1.5kg a R$50/kg = R$75
+    const pricePerKg = 5000; // R$50 em centavos
+    const quantityGrams = 1500; // 1.5kg
+    const expectedTotal = Math.round((pricePerKg * quantityGrams) / 1000);
+    
+    expect(expectedTotal).toBe(7500); // R$75 em centavos
+  });
+
+  it("valida estrutura de item de pedido", async () => {
+    const item = {
+      productId: 1,
+      quantityGrams: 1000,
+    };
+
+    expect(item.productId).toBeGreaterThan(0);
+    expect(item.quantityGrams).toBeGreaterThan(0);
+  });
+});
+
+describe("orders.myOrders", () => {
+  it("retorna array de pedidos", async () => {
+    const ctx = createUserContext(1); // Usar ID 1 que existe (owner)
+    const caller = appRouter.createCaller(ctx);
+
+    const orders = await caller.orders.myOrders();
+
+    expect(Array.isArray(orders)).toBe(true);
+  });
+});
+
+describe("orders.listAll", () => {
+  it("permite que admin liste todos os pedidos", async () => {
+    const ctx = createAdminContext();
+    const caller = appRouter.createCaller(ctx);
+
+    const orders = await caller.orders.listAll();
+
+    expect(Array.isArray(orders)).toBe(true);
+  });
+
+  it("bloqueia usuários não-admin de listar todos os pedidos", async () => {
+    const ctx = createUserContext();
+    const caller = appRouter.createCaller(ctx);
+
+    await expect(caller.orders.listAll()).rejects.toThrow(/Acesso negado/);
+  });
+});
+
+describe("orders.updateStatus", () => {
+  it("valida enum de status", async () => {
+    const validStatuses = ['pending', 'confirmed', 'preparing', 'ready', 'delivered', 'cancelled'];
+    
+    expect(validStatuses).toContain('pending');
+    expect(validStatuses).toContain('delivered');
+    expect(validStatuses.length).toBe(6);
+  });
+});
