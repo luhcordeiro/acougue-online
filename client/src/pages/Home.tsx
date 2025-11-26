@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { APP_LOGO, APP_TITLE, getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
-import { ShoppingCart, User, LogOut } from "lucide-react";
+import { ShoppingCart, User, LogOut, MapPin } from "lucide-react";
 import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
 
@@ -44,6 +44,12 @@ export default function Home() {
                     <Button variant="secondary" size="sm">
                       <User className="mr-2 h-4 w-4" />
                       Meus Pedidos
+                    </Button>
+                  </Link>
+                  <Link href="/my-addresses">
+                    <Button variant="secondary" size="sm">
+                      <MapPin className="mr-2 h-4 w-4" />
+                      Endereços
                     </Button>
                   </Link>
                   <Link href="/cart">

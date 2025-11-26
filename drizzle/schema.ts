@@ -63,6 +63,12 @@ export const orders = mysqlTable("orders", {
   status: mysqlEnum("status", ["pending", "confirmed", "preparing", "ready", "delivered", "cancelled"]).default("pending").notNull(),
   totalAmount: int("totalAmount").notNull(), // Total em centavos
   notes: text("notes"), // Observações do cliente
+  
+  // Informações de entrega
+  addressId: int("addressId").references(() => addresses.id),
+  deliveryDate: timestamp("deliveryDate"), // Data e hora agendada para entrega
+  deliveryAddress: text("deliveryAddress"), // Snapshot do endereço completo
+  
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -87,3 +93,25 @@ export const orderItems = mysqlTable("orderItems", {
 
 export type OrderItem = typeof orderItems.$inferSelect;
 export type InsertOrderItem = typeof orderItems.$inferInsert;
+
+/**
+ * Endereços de entrega dos clientes
+ */
+export const addresses = mysqlTable("addresses", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id),
+  label: varchar("label", { length: 100 }), // Ex: "Casa", "Trabalho"
+  street: varchar("street", { length: 255 }).notNull(),
+  number: varchar("number", { length: 20 }).notNull(),
+  complement: varchar("complement", { length: 100 }),
+  neighborhood: varchar("neighborhood", { length: 100 }).notNull(),
+  city: varchar("city", { length: 100 }).notNull(),
+  state: varchar("state", { length: 2 }).notNull(), // UF
+  zipCode: varchar("zipCode", { length: 10 }).notNull(), // CEP
+  isDefault: boolean("isDefault").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Address = typeof addresses.$inferSelect;
+export type InsertAddress = typeof addresses.$inferInsert;

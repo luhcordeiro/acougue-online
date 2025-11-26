@@ -159,11 +159,13 @@ export const appRouter = router({
       .input(z.object({
         items: z.array(z.object({
           productId: z.number(),
-          quantityGrams: z.number().min(1), // Em gramas
+          quantityGrams: z.number().positive(),
         })),
         notes: z.string().optional(),
+        addressId: z.number(),
+        deliveryDate: z.string(), // ISO string
       }))
-      .mutation(async ({ input, ctx }) => {
+      .mutation(async ({ ctx, input }) => {
         // Validar e calcular totais
         let totalAmount = 0;
         const orderItemsData: InsertOrderItem[] = [];
@@ -191,11 +193,25 @@ export const appRouter = router({
           });
         }
         
+        // Buscar endereço e criar snapshot
+        const address = await db.getAddressById(input.addressId);
+        if (!address) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Endereço não encontrado' });
+        }
+        
+        if (address.userId !== ctx.user.id) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Endereço não pertence ao usuário' });
+        }
+        
+        const deliveryAddressSnapshot = `${address.street}, ${address.number}${address.complement ? ' - ' + address.complement : ''}, ${address.neighborhood}, ${address.city}/${address.state}, CEP: ${address.zipCode}`;
+        
         const orderData: InsertOrder = {
           userId: ctx.user.id,
           totalAmount,
           notes: input.notes,
-          status: 'pending',
+          addressId: input.addressId,
+          deliveryDate: new Date(input.deliveryDate),
+          deliveryAddress: deliveryAddressSnapshot,
         };
         
         const orderId = await db.createOrderWithItems(orderData, orderItemsData);
@@ -203,7 +219,7 @@ export const appRouter = router({
         // Notificar o proprietário sobre novo pedido
         await notifyOwner({
           title: 'Novo Pedido Recebido',
-          content: `Pedido #${orderId} de ${ctx.user.name || ctx.user.email} - Total: R$ ${(totalAmount / 100).toFixed(2)}`,
+          content: `Pedido #${orderId} de ${ctx.user.name || ctx.user.email} - Total: R$ ${(totalAmount / 100).toFixed(2)} - Entrega: ${new Date(input.deliveryDate).toLocaleString('pt-BR')}`,
         });
         
         return { success: true, orderId };
@@ -216,6 +232,53 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         await db.updateOrderStatus(input.id, input.status);
         return { success: true };
+      }),
+  }),
+
+  // ========== Addresses (Protected) ==========
+  addresses: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      return await db.getUserAddresses(ctx.user.id);
+    }),
+    create: protectedProcedure
+      .input(z.object({
+        label: z.string().optional(),
+        street: z.string().min(1),
+        number: z.string().min(1),
+        complement: z.string().optional(),
+        neighborhood: z.string().min(1),
+        city: z.string().min(1),
+        state: z.string().length(2),
+        zipCode: z.string().min(8),
+        isDefault: z.boolean().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        return await db.createAddress({
+          ...input,
+          userId: ctx.user.id,
+        });
+      }),
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        label: z.string().optional(),
+        street: z.string().optional(),
+        number: z.string().optional(),
+        complement: z.string().optional(),
+        neighborhood: z.string().optional(),
+        city: z.string().optional(),
+        state: z.string().optional(),
+        zipCode: z.string().optional(),
+        isDefault: z.boolean().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { id, ...data } = input;
+        return await db.updateAddress(id, ctx.user.id, data);
+      }),
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        return await db.deleteAddress(input.id, ctx.user.id);
       }),
   }),
 });

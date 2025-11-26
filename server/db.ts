@@ -1,6 +1,6 @@
 import { eq, desc, and } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, categories, InsertCategory, products, InsertProduct, orders, InsertOrder, orderItems, InsertOrderItem } from "../drizzle/schema";
+import { InsertUser, users, categories, InsertCategory, products, InsertProduct, orders, InsertOrder, orderItems, InsertOrderItem, addresses, InsertAddress } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -223,4 +223,79 @@ export async function createOrderWithItems(orderData: InsertOrder, items: Insert
   }
   
   return orderId;
+}
+
+// ============================================
+// ADDRESS MANAGEMENT
+// ============================================
+
+export async function getUserAddresses(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return await db
+    .select()
+    .from(addresses)
+    .where(eq(addresses.userId, userId))
+    .orderBy(desc(addresses.isDefault), desc(addresses.createdAt));
+}
+
+export async function getAddressById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db
+    .select()
+    .from(addresses)
+    .where(eq(addresses.id, id))
+    .limit(1);
+  
+  return result[0] || null;
+}
+
+export async function createAddress(data: InsertAddress) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Se este endereço for marcado como padrão, desmarcar outros
+  if (data.isDefault) {
+    await db
+      .update(addresses)
+      .set({ isDefault: false })
+      .where(eq(addresses.userId, data.userId));
+  }
+  
+  const result = await db.insert(addresses).values(data);
+  return { success: true, addressId: Number(result[0].insertId) };
+}
+
+export async function updateAddress(id: number, userId: number, data: Partial<InsertAddress>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Se este endereço for marcado como padrão, desmarcar outros
+  if (data.isDefault) {
+    await db
+      .update(addresses)
+      .set({ isDefault: false })
+      .where(eq(addresses.userId, userId));
+  }
+  
+  await db
+    .update(addresses)
+    .set(data)
+    .where(and(eq(addresses.id, id), eq(addresses.userId, userId)));
+  
+  return { success: true };
+}
+
+export async function deleteAddress(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db
+    .delete(addresses)
+    .where(and(eq(addresses.id, id), eq(addresses.userId, userId)));
+  
+  return { success: true };
 }

@@ -36,3 +36,15 @@
 - [x] Criar docker-compose.yml
 - [x] Documentação de instalação e uso
 - [x] Checkpoint final
+
+## Sistema de Agendamento e Entrega
+- [x] Criar tabela de endereços de entrega
+- [x] Adicionar campos de agendamento na tabela de pedidos (data/hora de entrega)
+- [x] Criar interface de cadastro de endereços para o cliente
+- [x] Permitir múltiplos endereços por cliente
+- [x] Adicionar seleção de endereço no checkout
+- [x] Adicionar seleção de data e hora de entrega no checkout
+- [x] Validar horários de entrega disponíveis
+- [x] Exibir informações de entrega no painel admin
+- [x] Exibir endereço e agendamento nos detalhes do pedido
+- [x] Atualizar testes unitários para cobrir novas funcionalidades

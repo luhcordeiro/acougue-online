@@ -6,8 +6,9 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft, Trash2, ShoppingCart } from "lucide-react";
+import { ArrowLeft, Trash2, ShoppingCart, MapPin, Calendar, Plus } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
 import { getLoginUrl } from "@/const";
@@ -25,13 +26,34 @@ export default function Cart() {
   const { isAuthenticated } = useAuth();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [notes, setNotes] = useState("");
+  const [selectedAddressId, setSelectedAddressId] = useState<string>("");
+  const [deliveryDate, setDeliveryDate] = useState("");
+  const [deliveryTime, setDeliveryTime] = useState("");
+
+  const { data: addresses = [] } = trpc.addresses.list.useQuery(undefined, {
+    enabled: isAuthenticated,
+  });
 
   useEffect(() => {
     const savedCart = localStorage.getItem("cart");
     if (savedCart) {
       setCart(JSON.parse(savedCart));
     }
+    
+    // Definir data mínima como amanhã
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    setDeliveryDate(tomorrow.toISOString().split('T')[0]);
+    setDeliveryTime("09:00");
   }, []);
+
+  useEffect(() => {
+    // Selecionar endereço padrão automaticamente
+    const defaultAddress = addresses.find(addr => addr.isDefault);
+    if (defaultAddress && !selectedAddressId) {
+      setSelectedAddressId(defaultAddress.id.toString());
+    }
+  }, [addresses, selectedAddressId]);
 
   const utils = trpc.useUtils();
   const createOrderMutation = trpc.orders.create.useMutation({
@@ -89,14 +111,28 @@ export default function Cart() {
       return;
     }
 
+    if (!selectedAddressId) {
+      toast.error("Selecione um endereço de entrega");
+      return;
+    }
+
+    if (!deliveryDate || !deliveryTime) {
+      toast.error("Selecione a data e hora de entrega");
+      return;
+    }
+
     const items = cart.map(item => ({
       productId: item.productId,
-      quantityGrams: Math.round(item.quantityKg * 1000), // Converter kg para gramas
+      quantityGrams: Math.round(item.quantityKg * 1000),
     }));
+
+    const deliveryDateTime = new Date(`${deliveryDate}T${deliveryTime}:00`);
 
     createOrderMutation.mutate({
       items,
       notes: notes || undefined,
+      addressId: parseInt(selectedAddressId),
+      deliveryDate: deliveryDateTime.toISOString(),
     });
   };
 
@@ -139,7 +175,7 @@ export default function Cart() {
         ) : (
           <div className="grid lg:grid-cols-3 gap-6">
             {/* Lista de Itens */}
-            <div className="lg:col-span-2">
+            <div className="lg:col-span-2 space-y-6">
               <Card>
                 <CardHeader>
                   <CardTitle>Itens do Carrinho</CardTitle>
@@ -206,7 +242,96 @@ export default function Cart() {
             </div>
 
             {/* Resumo e Checkout */}
-            <div>
+            <div className="space-y-6">
+              {/* Endereço de Entrega */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <MapPin className="h-5 w-5" />
+                    Endereço de Entrega
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {addresses.length === 0 ? (
+                    <div className="text-center py-4">
+                      <p className="text-sm text-muted-foreground mb-3">
+                        Você ainda não tem endereços cadastrados
+                      </p>
+                      <Link href="/my-addresses">
+                        <Button variant="outline" size="sm">
+                          <Plus className="mr-2 h-4 w-4" />
+                          Cadastrar Endereço
+                        </Button>
+                      </Link>
+                    </div>
+                  ) : (
+                    <>
+                      <div>
+                        <Label htmlFor="address">Selecione o endereço</Label>
+                        <Select value={selectedAddressId} onValueChange={setSelectedAddressId}>
+                          <SelectTrigger id="address">
+                            <SelectValue placeholder="Escolha um endereço" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {addresses.map((addr) => (
+                              <SelectItem key={addr.id} value={addr.id.toString()}>
+                                {addr.label || "Endereço"} - {addr.street}, {addr.number}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <Link href="/my-addresses">
+                        <Button variant="outline" size="sm" className="w-full">
+                          Gerenciar Endereços
+                        </Button>
+                      </Link>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Agendamento */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Calendar className="h-5 w-5" />
+                    Agendar Entrega
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label htmlFor="deliveryDate">Data de Entrega</Label>
+                    <Input
+                      id="deliveryDate"
+                      type="date"
+                      value={deliveryDate}
+                      onChange={(e) => setDeliveryDate(e.target.value)}
+                      min={new Date(Date.now() + 86400000).toISOString().split('T')[0]}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="deliveryTime">Horário</Label>
+                    <Select value={deliveryTime} onValueChange={setDeliveryTime}>
+                      <SelectTrigger id="deliveryTime">
+                        <SelectValue placeholder="Escolha o horário" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="09:00">09:00</SelectItem>
+                        <SelectItem value="10:00">10:00</SelectItem>
+                        <SelectItem value="11:00">11:00</SelectItem>
+                        <SelectItem value="14:00">14:00</SelectItem>
+                        <SelectItem value="15:00">15:00</SelectItem>
+                        <SelectItem value="16:00">16:00</SelectItem>
+                        <SelectItem value="17:00">17:00</SelectItem>
+                        <SelectItem value="18:00">18:00</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Resumo do Pedido */}
               <Card>
                 <CardHeader>
                   <CardTitle>Resumo do Pedido</CardTitle>
@@ -239,7 +364,7 @@ export default function Cart() {
                     className="w-full" 
                     size="lg"
                     onClick={handleCheckout}
-                    disabled={createOrderMutation.isPending}
+                    disabled={createOrderMutation.isPending || !selectedAddressId || !deliveryDate || !deliveryTime}
                   >
                     {createOrderMutation.isPending ? "Processando..." : "Finalizar Pedido"}
                   </Button>

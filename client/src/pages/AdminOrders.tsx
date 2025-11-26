@@ -167,6 +167,20 @@ export default function AdminOrders() {
                 </div>
               </div>
 
+              {orderDetails.order.deliveryAddress && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Endereço de Entrega</p>
+                  <p className="font-medium">{orderDetails.order.deliveryAddress}</p>
+                </div>
+              )}
+
+              {orderDetails.order.deliveryDate && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Data/Hora de Entrega Agendada</p>
+                  <p className="font-medium">{new Date(orderDetails.order.deliveryDate).toLocaleString('pt-BR')}</p>
+                </div>
+              )}
+
               {orderDetails.order.notes && (
                 <div>
                   <p className="text-sm text-muted-foreground">Observações</p>
