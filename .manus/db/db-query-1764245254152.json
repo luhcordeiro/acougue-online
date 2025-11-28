@@ -1,0 +1,30 @@
+{
+  "query": "SHOW CREATE TABLE orders",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2Ct94FQQX2tqCCM.root --database jtWWBUdj7qZKX8P4ihhs3o --execute SHOW CREATE TABLE orders",
+  "rows": [
+    {
+      "Table": "orders",
+      "Create Table": "CREATE TABLE `orders` ("
+    }
+  ],
+  "messages": [
+    "  `id` int(11) NOT NULL AUTO_INCREMENT,",
+    "  `userId` int(11) NOT NULL,",
+    "  `status` enum('pending','confirmed','preparing','ready','delivered','cancelled') NOT NULL DEFAULT 'pending',",
+    "  `totalAmount` int(11) NOT NULL,",
+    "  `notes` text DEFAULT NULL,",
+    "  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,",
+    "  `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,",
+    "  `addressId` int(11) DEFAULT NULL,",
+    "  `deliveryDate` timestamp NULL DEFAULT NULL,",
+    "  `deliveryAddress` text DEFAULT NULL,",
+    "  PRIMARY KEY (`id`) /*T![clustered_index] CLUSTERED */,",
+    "  KEY `orders_userId_users_id_fk` (`userId`),",
+    "  KEY `orders_addressId_addresses_id_fk` (`addressId`),",
+    "  CONSTRAINT `orders_userId_users_id_fk` FOREIGN KEY (`userId`) REFERENCES `jtWWBUdj7qZKX8P4ihhs3o`.`users` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION",
+    ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin AUTO_INCREMENT=60001"
+  ],
+  "stdout": "Table\tCreate Table\norders\tCREATE TABLE `orders` (\n  `id` int(11) NOT NULL AUTO_INCREMENT,\n  `userId` int(11) NOT NULL,\n  `status` enum('pending','confirmed','preparing','ready','delivered','cancelled') NOT NULL DEFAULT 'pending',\n  `totalAmount` int(11) NOT NULL,\n  `notes` text DEFAULT NULL,\n  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  `addressId` int(11) DEFAULT NULL,\n  `deliveryDate` timestamp NULL DEFAULT NULL,\n  `deliveryAddress` text DEFAULT NULL,\n  PRIMARY KEY (`id`) /*T![clustered_index] CLUSTERED */,\n  KEY `orders_userId_users_id_fk` (`userId`),\n  KEY `orders_addressId_addresses_id_fk` (`addressId`),\n  CONSTRAINT `orders_userId_users_id_fk` FOREIGN KEY (`userId`) REFERENCES `jtWWBUdj7qZKX8P4ihhs3o`.`users` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin AUTO_INCREMENT=60001\n",
+  "stderr": "",
+  "execution_time_ms": 59
+}

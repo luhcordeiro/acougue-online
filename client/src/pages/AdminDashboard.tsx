@@ -9,6 +9,9 @@ import { getLoginUrl } from "@/const";
 export default function AdminDashboard() {
   const [, setLocation] = useLocation();
   const { user, isAuthenticated, loading } = useAuth();
+  
+  // Verificar autenticação com senha
+  const isAdminAuthenticated = sessionStorage.getItem("adminAuthenticated") === "true";
   const { data: products = [] } = trpc.products.list.useQuery();
   const { data: orders = [] } = trpc.orders.listAll.useQuery(undefined, {
     enabled: isAuthenticated && user?.role === 'admin',
@@ -23,6 +26,12 @@ export default function AdminDashboard() {
     );
   }
 
+  // Redirecionar para login do admin se não estiver autenticado com senha
+  if (!isAdminAuthenticated) {
+    setLocation("/admin/login");
+    return null;
+  }
+  
   if (!isAuthenticated || user?.role !== 'admin') {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-background">

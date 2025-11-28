@@ -65,9 +65,8 @@ export const orders = mysqlTable("orders", {
   notes: text("notes"), // Observações do cliente
   
   // Informações de entrega
-  addressId: int("addressId").references(() => addresses.id),
   deliveryDate: timestamp("deliveryDate"), // Data e hora agendada para entrega
-  deliveryAddress: text("deliveryAddress"), // Snapshot do endereço completo
+  deliveryAddress: text("deliveryAddress").notNull(), // Endereço completo informado pelo cliente
   
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

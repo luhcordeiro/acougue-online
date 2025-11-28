@@ -48,3 +48,11 @@
 - [x] Exibir informações de entrega no painel admin
 - [x] Exibir endereço e agendamento nos detalhes do pedido
 - [x] Atualizar testes unitários para cobrir novas funcionalidades
+
+## Alterações Solicitadas
+- [x] Simplificar checkout - remover sistema de cadastro de endereços
+- [x] Permitir informar endereço diretamente no checkout (sem salvar)
+- [x] Adicionar autenticação com senha para acesso ao painel admin
+- [x] Criar filtro de pedidos por categoria no painel admin
+- [x] Atualizar testes para refletir as mudanças
+- [x] Remover rotas e componentes de endereços não utilizados

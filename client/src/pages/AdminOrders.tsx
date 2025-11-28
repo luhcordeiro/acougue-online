@@ -29,9 +29,18 @@ const statusColors = {
 export default function AdminOrders() {
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
   const utils = trpc.useUtils();
-  const { data: orders = [], isLoading } = trpc.orders.listAll.useQuery();
+  const { data: allOrders = [], isLoading: isLoadingAll } = trpc.orders.listAll.useQuery();
+  const { data: filteredOrdersByCategory = [], isLoading: isLoadingFiltered } = trpc.orders.listByCategory.useQuery(
+    { categoryId: parseInt(selectedCategory) },
+    { enabled: selectedCategory !== "all" }
+  );
+  const { data: categories = [] } = trpc.categories.list.useQuery();
+  
+  const orders = selectedCategory === "all" ? allOrders : filteredOrdersByCategory;
+  const isLoading = selectedCategory === "all" ? isLoadingAll : isLoadingFiltered;
   const { data: orderDetails } = trpc.orders.getById.useQuery(
     { id: selectedOrderId! },
     { enabled: !!selectedOrderId }
@@ -62,12 +71,39 @@ export default function AdminOrders() {
     });
   };
 
+
+
   return (
     <div className="container py-8">
       <div className="mb-6">
         <h1 className="text-3xl font-bold">Gerenciar Pedidos</h1>
         <p className="text-muted-foreground">Visualize e atualize o status dos pedidos</p>
       </div>
+
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Filtros</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-4 items-center">
+            <div className="flex-1">
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Filtrar por categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas as Categorias</SelectItem>
+                  {categories.map((category) => (
+                    <SelectItem key={category.id} value={category.id.toString()}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

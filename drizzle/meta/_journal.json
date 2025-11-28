@@ -22,6 +22,13 @@
       "when": 1764099189472,
       "tag": "0002_curvy_human_torch",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1764245245172,
+      "tag": "0003_hard_lyja",
+      "breakpoints": true
     }
   ]
 }

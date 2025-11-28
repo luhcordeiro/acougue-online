@@ -136,6 +136,11 @@ export const appRouter = router({
     listAll: adminProcedure.query(async () => {
       return await db.getAllOrders();
     }),
+    listByCategory: adminProcedure
+      .input(z.object({ categoryId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getOrdersByCategory(input.categoryId);
+      }),
     myOrders: protectedProcedure.query(async ({ ctx }) => {
       return await db.getOrdersByUserId(ctx.user.id);
     }),
@@ -162,7 +167,7 @@ export const appRouter = router({
           quantityGrams: z.number().positive(),
         })),
         notes: z.string().optional(),
-        addressId: z.number(),
+        deliveryAddress: z.string().min(10, 'Endereço deve ter pelo menos 10 caracteres'),
         deliveryDate: z.string(), // ISO string
       }))
       .mutation(async ({ ctx, input }) => {
@@ -193,25 +198,12 @@ export const appRouter = router({
           });
         }
         
-        // Buscar endereço e criar snapshot
-        const address = await db.getAddressById(input.addressId);
-        if (!address) {
-          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Endereço não encontrado' });
-        }
-        
-        if (address.userId !== ctx.user.id) {
-          throw new TRPCError({ code: 'FORBIDDEN', message: 'Endereço não pertence ao usuário' });
-        }
-        
-        const deliveryAddressSnapshot = `${address.street}, ${address.number}${address.complement ? ' - ' + address.complement : ''}, ${address.neighborhood}, ${address.city}/${address.state}, CEP: ${address.zipCode}`;
-        
         const orderData: InsertOrder = {
           userId: ctx.user.id,
           totalAmount,
           notes: input.notes,
-          addressId: input.addressId,
           deliveryDate: new Date(input.deliveryDate),
-          deliveryAddress: deliveryAddressSnapshot,
+          deliveryAddress: input.deliveryAddress,
         };
         
         const orderId = await db.createOrderWithItems(orderData, orderItemsData);

@@ -169,6 +169,32 @@ export async function getOrdersByUserId(userId: number) {
   return await db.select().from(orders).where(eq(orders.userId, userId)).orderBy(desc(orders.createdAt));
 }
 
+export async function getOrdersByCategory(categoryId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  // Buscar pedidos que contenham produtos da categoria especificada
+  const ordersWithCategory = await db
+    .selectDistinct({ 
+      id: orders.id,
+      userId: orders.userId,
+      status: orders.status,
+      totalAmount: orders.totalAmount,
+      notes: orders.notes,
+      deliveryDate: orders.deliveryDate,
+      deliveryAddress: orders.deliveryAddress,
+      createdAt: orders.createdAt,
+      updatedAt: orders.updatedAt,
+    })
+    .from(orders)
+    .innerJoin(orderItems, eq(orders.id, orderItems.orderId))
+    .innerJoin(products, eq(orderItems.productId, products.id))
+    .where(eq(products.categoryId, categoryId))
+    .orderBy(desc(orders.createdAt));
+  
+  return ordersWithCategory;
+}
+
 export async function getOrderById(id: number) {
   const db = await getDb();
   if (!db) return undefined;
