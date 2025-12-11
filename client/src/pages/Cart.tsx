@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+
 import { ArrowLeft, Trash2, ShoppingCart, User, Phone, MapPin, Calendar } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
@@ -167,58 +167,64 @@ export default function Cart() {
                 <CardDescription>{cart.length} item(ns) no carrinho</CardDescription>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Produto</TableHead>
-                      <TableHead className="text-center">Quantidade</TableHead>
-                      <TableHead className="text-right">Preço/kg</TableHead>
-                      <TableHead className="text-right">Subtotal</TableHead>
-                      <TableHead className="w-[50px]"></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {cart.map((item) => {
-                      const subtotal = Math.round((item.pricePerKg * item.quantityGrams) / 1000);
-                      return (
-                        <TableRow key={item.productId}>
-                          <TableCell className="font-medium">{item.productName}</TableCell>
-                          <TableCell className="text-center">
-                            <Input
-                              type="number"
-                              min="0.1"
-                              step="0.1"
-                              value={(item.quantityGrams / 1000).toFixed(1)}
-                              onChange={(e) => {
-                                const kg = parseFloat(e.target.value);
-                                if (!isNaN(kg) && kg > 0) {
-                                  updateQuantity(item.productId, Math.round(kg * 1000));
-                                }
-                              }}
-                              className="w-20 mx-auto text-center"
-                            />
-                            <span className="text-xs text-muted-foreground ml-1">kg</span>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            R$ {(item.pricePerKg / 100).toFixed(2)}
-                          </TableCell>
-                          <TableCell className="text-right font-medium">
-                            R$ {(subtotal / 100).toFixed(2)}
-                          </TableCell>
-                          <TableCell>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => removeFromCart(item.productId)}
-                            >
-                              <Trash2 className="h-4 w-4 text-red-600" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
+                {/* Layout de Cards para Mobile */}
+                <div className="space-y-4">
+                  {cart.map((item) => {
+                    const subtotal = Math.round((item.pricePerKg * item.quantityGrams) / 1000);
+                    return (
+                      <div key={item.productId} className="border rounded-lg p-4 space-y-3">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-base">{item.productName}</h3>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              R$ {(item.pricePerKg / 100).toFixed(2)}/kg
+                            </p>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => removeFromCart(item.productId)}
+                            className="-mt-2 -mr-2"
+                          >
+                            <Trash2 className="h-4 w-4 text-red-600" />
+                          </Button>
+                        </div>
+                        
+                        <div className="flex items-center justify-between gap-4">
+                          <div className="flex items-center gap-2">
+                            <Label htmlFor={`qty-${item.productId}`} className="text-sm whitespace-nowrap">
+                              Quantidade:
+                            </Label>
+                            <div className="flex items-center gap-1">
+                              <Input
+                                id={`qty-${item.productId}`}
+                                type="number"
+                                min="0.1"
+                                step="0.1"
+                                value={(item.quantityGrams / 1000).toFixed(1)}
+                                onChange={(e) => {
+                                  const kg = parseFloat(e.target.value);
+                                  if (!isNaN(kg) && kg > 0) {
+                                    updateQuantity(item.productId, Math.round(kg * 1000));
+                                  }
+                                }}
+                                className="w-20 text-center"
+                              />
+                              <span className="text-sm text-muted-foreground">kg</span>
+                            </div>
+                          </div>
+                          
+                          <div className="text-right">
+                            <p className="text-xs text-muted-foreground">Subtotal</p>
+                            <p className="text-lg font-bold text-red-600">
+                              R$ {(subtotal / 100).toFixed(2)}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
 
                 <div className="mt-6 flex justify-between items-center text-lg font-bold border-t pt-4">
                   <span>Total:</span>

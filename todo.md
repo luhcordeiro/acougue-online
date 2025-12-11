@@ -81,3 +81,9 @@
 - [x] Remover botão "Fazer Login" da página AdminDashboard que redireciona para OAuth
 - [x] Usar apenas a senha simples do AdminLogin para acesso ao painel
 - [x] Garantir que AdminDashboard aceite acesso direto após login com senha
+
+## Otimizar Checkout para Mobile
+- [x] Tornar tabela do carrinho totalmente responsiva (não cortar na horizontal)
+- [x] Usar layout de cards ao invés de tabela em telas pequenas
+- [x] Melhorar espaçamento e tamanhos de fonte para mobile
+- [x] Garantir que todos os campos do formulário sejam visíveis e acessíveis
