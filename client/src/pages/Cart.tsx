@@ -15,6 +15,7 @@ type CartItem = {
   productName: string;
   pricePerKg: number;
   quantityGrams: number;
+  cutTypeName?: string;
 };
 
 export default function Cart() {
@@ -43,21 +44,25 @@ export default function Cart() {
     },
   });
 
-  const removeFromCart = (productId: number) => {
-    const newCart = cart.filter((item) => item.productId !== productId);
+  const removeFromCart = (productId: number, cutTypeName?: string) => {
+    const newCart = cart.filter((item) => 
+      !(item.productId === productId && item.cutTypeName === cutTypeName)
+    );
     setCart(newCart);
     localStorage.setItem("cart", JSON.stringify(newCart));
     toast.success("Item removido do carrinho");
   };
 
-  const updateQuantity = (productId: number, newQuantityGrams: number) => {
+  const updateQuantity = (productId: number, newQuantityGrams: number, cutTypeName?: string) => {
     if (newQuantityGrams <= 0) {
-      removeFromCart(productId);
+      removeFromCart(productId, cutTypeName);
       return;
     }
 
     const newCart = cart.map((item) =>
-      item.productId === productId ? { ...item, quantityGrams: newQuantityGrams } : item
+      item.productId === productId && item.cutTypeName === cutTypeName 
+        ? { ...item, quantityGrams: newQuantityGrams } 
+        : item
     );
     setCart(newCart);
     localStorage.setItem("cart", JSON.stringify(newCart));
@@ -101,6 +106,7 @@ export default function Cart() {
       items: cart.map((item) => ({
         productId: item.productId,
         quantityGrams: item.quantityGrams,
+        cutTypeName: item.cutTypeName || "Não especificado",
       })),
       customerName: customerName.trim(),
       customerPhone: customerPhone.trim(),
@@ -169,13 +175,18 @@ export default function Cart() {
               <CardContent>
                 {/* Layout de Cards para Mobile */}
                 <div className="space-y-4">
-                  {cart.map((item) => {
+                  {cart.map((item, index) => {
                     const subtotal = Math.round((item.pricePerKg * item.quantityGrams) / 1000);
                     return (
-                      <div key={item.productId} className="border rounded-lg p-4 space-y-3">
+                      <div key={`${item.productId}-${item.cutTypeName}-${index}`} className="border rounded-lg p-4 space-y-3">
                         <div className="flex justify-between items-start">
                           <div className="flex-1">
                             <h3 className="font-semibold text-base">{item.productName}</h3>
+                            {item.cutTypeName && (
+                              <p className="text-sm font-medium text-primary mt-1">
+                                Corte: {item.cutTypeName}
+                              </p>
+                            )}
                             <p className="text-sm text-muted-foreground mt-1">
                               R$ {(item.pricePerKg / 100).toFixed(2)}/kg
                             </p>
@@ -183,7 +194,7 @@ export default function Cart() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => removeFromCart(item.productId)}
+                            onClick={() => removeFromCart(item.productId, item.cutTypeName)}
                             className="-mt-2 -mr-2"
                           >
                             <Trash2 className="h-4 w-4 text-red-600" />
@@ -205,7 +216,7 @@ export default function Cart() {
                                 onChange={(e) => {
                                   const kg = parseFloat(e.target.value);
                                   if (!isNaN(kg) && kg > 0) {
-                                    updateQuantity(item.productId, Math.round(kg * 1000));
+                                    updateQuantity(item.productId, Math.round(kg * 1000), item.cutTypeName);
                                   }
                                 }}
                                 className="w-20 text-center"

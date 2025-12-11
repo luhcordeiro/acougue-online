@@ -1,6 +1,6 @@
 import { eq, desc, and } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, categories, InsertCategory, products, InsertProduct, orders, InsertOrder, orderItems, InsertOrderItem, addresses, InsertAddress } from "../drizzle/schema";
+import { InsertUser, users, categories, InsertCategory, products, InsertProduct, orders, InsertOrder, orderItems, InsertOrderItem, addresses, InsertAddress, cutTypes, InsertCutType, productCutTypes, InsertProductCutType } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -322,6 +322,110 @@ export async function deleteAddress(id: number, userId: number) {
   await db
     .delete(addresses)
     .where(and(eq(addresses.id, id), eq(addresses.userId, userId)));
+  
+  return { success: true };
+}
+
+// ========================================
+// CUT TYPES (Tipos de Corte)
+// ========================================
+
+export async function getAllCutTypes() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db.select().from(cutTypes).orderBy(cutTypes.name);
+}
+
+export async function getCutTypeById(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.select().from(cutTypes).where(eq(cutTypes.id, id)).limit(1);
+  return result[0] || null;
+}
+
+export async function createCutType(data: InsertCutType) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.insert(cutTypes).values(data);
+  return { success: true, cutTypeId: Number(result[0].insertId) };
+}
+
+export async function updateCutType(id: number, data: Partial<InsertCutType>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(cutTypes).set(data).where(eq(cutTypes.id, id));
+  return { success: true };
+}
+
+export async function deleteCutType(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Primeiro, remover associações com produtos
+  await db.delete(productCutTypes).where(eq(productCutTypes.cutTypeId, id));
+  
+  // Depois, deletar o tipo de corte
+  await db.delete(cutTypes).where(eq(cutTypes.id, id));
+  return { success: true };
+}
+
+// ========================================
+// PRODUCT CUT TYPES (Relação Produto-Corte)
+// ========================================
+
+export async function getProductCutTypes(productId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db
+    .select({
+      id: cutTypes.id,
+      name: cutTypes.name,
+      description: cutTypes.description,
+    })
+    .from(productCutTypes)
+    .innerJoin(cutTypes, eq(productCutTypes.cutTypeId, cutTypes.id))
+    .where(eq(productCutTypes.productId, productId));
+  
+  return result;
+}
+
+export async function addCutTypeToProduct(productId: number, cutTypeId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Verificar se já existe
+  const existing = await db
+    .select()
+    .from(productCutTypes)
+    .where(and(
+      eq(productCutTypes.productId, productId),
+      eq(productCutTypes.cutTypeId, cutTypeId)
+    ))
+    .limit(1);
+  
+  if (existing.length > 0) {
+    return { success: true, message: "Corte já associado ao produto" };
+  }
+  
+  await db.insert(productCutTypes).values({ productId, cutTypeId });
+  return { success: true };
+}
+
+export async function removeCutTypeFromProduct(productId: number, cutTypeId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db
+    .delete(productCutTypes)
+    .where(and(
+      eq(productCutTypes.productId, productId),
+      eq(productCutTypes.cutTypeId, cutTypeId)
+    ));
   
   return { success: true };
 }

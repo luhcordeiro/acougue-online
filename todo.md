@@ -87,3 +87,15 @@
 - [x] Usar layout de cards ao invés de tabela em telas pequenas
 - [x] Melhorar espaçamento e tamanhos de fonte para mobile
 - [x] Garantir que todos os campos do formulário sejam visíveis e acessíveis
+
+## Sistema de Tipos de Corte e Quantidades Pré-definidas
+- [x] Criar tabela de tipos de corte no banco de dados
+- [x] Criar relação muitos-para-muitos entre produtos e tipos de corte
+- [x] Implementar CRUD de tipos de corte no painel admin
+- [x] Todos os cortes disponíveis para todos os produtos (simplificado)
+- [x] Adicionar seleção de tipo de corte na página de produto
+- [x] Implementar botões de quantidades pré-definidas (0,5kg, 1kg, 1,5kg, 2kg)
+- [x] Atualizar carrinho para exibir o tipo de corte selecionado
+- [x] Atualizar pedidos para armazenar o tipo de corte de cada item
+- [x] Exibir tipo de corte nos detalhes do pedido no painel admin
+- [x] Atualizar testes unitários (16 testes passando)

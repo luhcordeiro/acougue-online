@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { Package, ShoppingBag, Tag, ArrowLeft } from "lucide-react";
+import { Package, ShoppingBag, Tag, ArrowLeft, Scissors } from "lucide-react";
 import { Link, useLocation } from "wouter";
 
 export default function AdminDashboard() {
@@ -118,6 +118,21 @@ export default function AdminDashboard() {
                 <CardTitle>Gerenciar Categorias</CardTitle>
                 <CardDescription>
                   Organize produtos em categorias
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button className="w-full">Acessar</Button>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href="/admin/cut-types">
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+              <CardHeader>
+                <Scissors className="h-12 w-12 text-primary mb-2" />
+                <CardTitle>Tipos de Corte</CardTitle>
+                <CardDescription>
+                  Gerencie os tipos de corte disponíveis (Moído, Em Cubos, etc.)
                 </CardDescription>
               </CardHeader>
               <CardContent>

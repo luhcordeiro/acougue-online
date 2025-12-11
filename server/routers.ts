@@ -277,6 +277,60 @@ export const appRouter = router({
         return await db.deleteAddress(input.id, ctx.user.id);
       }),
   }),
+
+  // ========== Cut Types (Tipos de Corte) ==========
+  cutTypes: router({
+    list: publicProcedure.query(async () => {
+      return await db.getAllCutTypes();
+    }),
+    create: adminProcedure
+      .input(z.object({
+        name: z.string().min(1),
+        description: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        return await db.createCutType(input);
+      }),
+    update: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().min(1).optional(),
+        description: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        return await db.updateCutType(id, data);
+      }),
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        return await db.deleteCutType(input.id);
+      }),
+    // Obter cortes disponíveis para um produto
+    getByProduct: publicProcedure
+      .input(z.object({ productId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getProductCutTypes(input.productId);
+      }),
+    // Adicionar corte a um produto
+    addToProduct: adminProcedure
+      .input(z.object({
+        productId: z.number(),
+        cutTypeId: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        return await db.addCutTypeToProduct(input.productId, input.cutTypeId);
+      }),
+    // Remover corte de um produto
+    removeFromProduct: adminProcedure
+      .input(z.object({
+        productId: z.number(),
+        cutTypeId: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        return await db.removeCutTypeFromProduct(input.productId, input.cutTypeId);
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

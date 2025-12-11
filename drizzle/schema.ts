@@ -91,6 +91,7 @@ export const orderItems = mysqlTable("orderItems", {
   pricePerKg: int("pricePerKg").notNull(), // Snapshot do preço em centavos
   quantityGrams: int("quantityGrams").notNull(), // Quantidade em gramas
   subtotal: int("subtotal").notNull(), // Subtotal em centavos
+  cutTypeName: varchar("cutTypeName", { length: 100 }), // Tipo de corte selecionado
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
@@ -118,3 +119,31 @@ export const addresses = mysqlTable("addresses", {
 
 export type Address = typeof addresses.$inferSelect;
 export type InsertAddress = typeof addresses.$inferInsert;
+
+/**
+ * Tipos de corte disponíveis (ex: Moído, Em Cubos, Peça Inteira, Bifes, etc.)
+ */
+export const cutTypes = mysqlTable("cutTypes", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 100 }).notNull(),
+  description: text("description"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CutType = typeof cutTypes.$inferSelect;
+export type InsertCutType = typeof cutTypes.$inferInsert;
+
+/**
+ * Relação muitos-para-muitos entre produtos e tipos de corte
+ * Define quais cortes estão disponíveis para cada produto
+ */
+export const productCutTypes = mysqlTable("productCutTypes", {
+  id: int("id").autoincrement().primaryKey(),
+  productId: int("productId").notNull().references(() => products.id),
+  cutTypeId: int("cutTypeId").notNull().references(() => cutTypes.id),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ProductCutType = typeof productCutTypes.$inferSelect;
+export type InsertProductCutType = typeof productCutTypes.$inferInsert;

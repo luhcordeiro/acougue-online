@@ -11,6 +11,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminProducts from "./pages/AdminProducts";
 import AdminOrders from "./pages/AdminOrders";
 import AdminCategories from "./pages/AdminCategories";
+import AdminCutTypes from "./pages/AdminCutTypes";
 import AdminLogin from "./pages/AdminLogin";
 
 function Router() {
@@ -25,6 +26,7 @@ function Router() {
       <Route path="/admin/products" component={AdminProducts} />
       <Route path="/admin/orders" component={AdminOrders} />
       <Route path="/admin/categories" component={AdminCategories} />
+      <Route path="/admin/cut-types" component={AdminCutTypes} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>
