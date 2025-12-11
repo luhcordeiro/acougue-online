@@ -1,54 +1,24 @@
-import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
 import { Package, ShoppingBag, Tag, ArrowLeft } from "lucide-react";
 import { Link, useLocation } from "wouter";
-import { getLoginUrl } from "@/const";
 
 export default function AdminDashboard() {
   const [, setLocation] = useLocation();
-  const { user, isAuthenticated, loading } = useAuth();
   
   // Verificar autenticação com senha
   const isAdminAuthenticated = sessionStorage.getItem("adminAuthenticated") === "true";
-  const { data: products = [] } = trpc.products.list.useQuery();
-  const { data: orders = [] } = trpc.orders.listAll.useQuery(undefined, {
-    enabled: isAuthenticated && user?.role === 'admin',
-  });
-  const { data: categories = [] } = trpc.categories.list.useQuery();
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">Carregando...</p>
-      </div>
-    );
-  }
-
+  
   // Redirecionar para login do admin se não estiver autenticado com senha
   if (!isAdminAuthenticated) {
     setLocation("/admin/login");
     return null;
   }
   
-  if (!isAuthenticated || user?.role !== 'admin') {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-background">
-        <h2 className="text-2xl font-bold">Acesso Restrito</h2>
-        <p className="text-muted-foreground">Apenas administradores podem acessar esta área</p>
-        {!isAuthenticated ? (
-          <a href={getLoginUrl()}>
-            <Button size="lg">Fazer Login</Button>
-          </a>
-        ) : (
-          <Link href="/">
-            <Button variant="outline">Voltar para a Loja</Button>
-          </Link>
-        )}
-      </div>
-    );
-  }
+  const { data: products = [] } = trpc.products.list.useQuery();
+  const { data: orders = [] } = trpc.orders.listAll.useQuery();
+  const { data: categories = [] } = trpc.categories.list.useQuery();
 
   const pendingOrders = orders.filter(o => o.status === 'pending').length;
 

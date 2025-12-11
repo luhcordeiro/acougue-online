@@ -76,3 +76,8 @@
 ## Correção na Página de Produto
 - [x] Remover botão "Fazer Login para Comprar" da página ProductDetail
 - [x] Adicionar botão "Adicionar ao Carrinho" diretamente na página de produto
+
+## Simplificar Login Admin
+- [x] Remover botão "Fazer Login" da página AdminDashboard que redireciona para OAuth
+- [x] Usar apenas a senha simples do AdminLogin para acesso ao painel
+- [x] Garantir que AdminDashboard aceite acesso direto após login com senha
