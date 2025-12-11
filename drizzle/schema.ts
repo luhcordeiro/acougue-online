@@ -59,10 +59,14 @@ export type InsertProduct = typeof products.$inferInsert;
  */
 export const orders = mysqlTable("orders", {
   id: int("id").autoincrement().primaryKey(),
-  userId: int("userId").notNull().references(() => users.id),
+  userId: int("userId").references(() => users.id), // Opcional - null para pedidos anônimos
   status: mysqlEnum("status", ["pending", "confirmed", "preparing", "ready", "delivered", "cancelled"]).default("pending").notNull(),
   totalAmount: int("totalAmount").notNull(), // Total em centavos
   notes: text("notes"), // Observações do cliente
+  
+  // Informações do cliente (para pedidos anônimos)
+  customerName: varchar("customerName", { length: 200 }).notNull(),
+  customerPhone: varchar("customerPhone", { length: 20 }).notNull(),
   
   // Informações de entrega
   deliveryDate: timestamp("deliveryDate"), // Data e hora agendada para entrega

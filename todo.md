@@ -1,41 +1,30 @@
 # TODO - Sistema Açougue Online
 
-## Configuração Inicial
-- [x] Definir modelo de dados (produtos, pedidos, usuários, carrinho)
-- [x] Configurar schema do banco de dados
-- [x] Criar seeds iniciais para testes
+## Funcionalidades Principais
+- [x] Criar tabela de categorias de produtos
+- [x] Criar tabela de produtos
+- [x] Criar tabela de pedidos
+- [x] Criar tabela de itens de pedido
+- [x] Sistema de autenticação de usuários
+- [x] Controle de permissões (admin/cliente)
 
 ## Interface do Proprietário (Admin)
-- [x] Tela de login/autenticação
+- [x] Página de login do admin com senha
 - [x] Dashboard administrativo
-- [x] Cadastro de produtos (nome, descrição, preço por kg, imagem, estoque)
-- [x] Listagem de produtos com edição e exclusão
-- [x] Visualização de pedidos recebidos
-- [x] Atualização de status dos pedidos
-- [x] Gestão de categorias de produtos
+- [x] CRUD de categorias
+- [x] CRUD de produtos (nome, descrição, preço por kg, imagem, categoria)
+- [x] Visualização de todos os pedidos
+- [x] Filtro de pedidos por categoria
+- [x] Atualização de status do pedido
+- [x] Visualização de detalhes do pedido (itens, quantidades, total)
 
 ## Interface do Cliente
-- [x] Tela inicial com catálogo de produtos
+- [x] Catálogo de produtos com filtro por categoria
 - [x] Visualização de detalhes do produto
-- [x] Seleção de quantidade em kg (com input numérico)
+- [x] Adicionar produtos ao carrinho (seleção por kg)
 - [x] Carrinho de compras
-- [x] Cálculo automático de preço (preço/kg × quantidade)
-- [x] Finalização de pedido
+- [x] Checkout simplificado (sem cadastro)
 - [x] Histórico de pedidos do cliente
-- [x] Sistema de autenticação para clientes
-
-## Funcionalidades Adicionais
-- [x] Upload de imagens para produtos
-- [x] Sistema de notificações para novos pedidos
-- [x] Validação de estoque
-- [x] Testes unitários com Vitest
-
-## Infraestrutura
-- [x] Configurar repositório Git
-- [x] Criar Dockerfile para containerização
-- [x] Criar docker-compose.yml
-- [x] Documentação de instalação e uso
-- [x] Checkpoint final
 
 ## Sistema de Agendamento e Entrega
 - [x] Criar tabela de endereços de entrega
@@ -56,3 +45,24 @@
 - [x] Criar filtro de pedidos por categoria no painel admin
 - [x] Atualizar testes para refletir as mudanças
 - [x] Remover rotas e componentes de endereços não utilizados
+
+## Otimizações Mobile e Simplificação
+- [x] Remover necessidade de cadastro/login para clientes
+- [x] Adicionar campos de nome e telefone no checkout
+- [x] Atualizar schema do banco para permitir pedidos sem userId
+- [x] Tornar checkout totalmente anônimo (nome, telefone, endereço)
+- [x] Otimizar interface mobile com design responsivo
+- [x] Melhorar botões e campos para touch (tamanhos maiores)
+- [x] Otimizar catálogo de produtos para visualização mobile
+- [x] Melhorar navegação mobile (header sticky e responsivo)
+- [x] Testar fluxo completo de compra no mobile
+- [x] Atualizar testes unitários
+
+## Infraestrutura
+- [x] Configurar Git para versionamento
+- [x] Criar Dockerfile
+- [x] Criar docker-compose.yml
+- [x] Documentação de instalação (README.md)
+- [x] Script de seed para dados iniciais
+- [x] Testes unitários (13 testes)
+- [x] Subir projeto para GitHub

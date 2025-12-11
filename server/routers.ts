@@ -160,12 +160,14 @@ export const appRouter = router({
         const items = await db.getOrderItems(input.id);
         return { order, items };
       }),
-    create: protectedProcedure
+    create: publicProcedure
       .input(z.object({
         items: z.array(z.object({
           productId: z.number(),
           quantityGrams: z.number().positive(),
         })),
+        customerName: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
+        customerPhone: z.string().min(10, 'Telefone deve ter pelo menos 10 dígitos'),
         notes: z.string().optional(),
         deliveryAddress: z.string().min(10, 'Endereço deve ter pelo menos 10 caracteres'),
         deliveryDate: z.string(), // ISO string
@@ -199,7 +201,9 @@ export const appRouter = router({
         }
         
         const orderData: InsertOrder = {
-          userId: ctx.user.id,
+          userId: ctx.user?.id || null,
+          customerName: input.customerName,
+          customerPhone: input.customerPhone,
           totalAmount,
           notes: input.notes,
           deliveryDate: new Date(input.deliveryDate),
@@ -211,7 +215,7 @@ export const appRouter = router({
         // Notificar o proprietário sobre novo pedido
         await notifyOwner({
           title: 'Novo Pedido Recebido',
-          content: `Pedido #${orderId} de ${ctx.user.name || ctx.user.email} - Total: R$ ${(totalAmount / 100).toFixed(2)} - Entrega: ${new Date(input.deliveryDate).toLocaleString('pt-BR')}`,
+          content: `Pedido #${orderId} de ${input.customerName} (${input.customerPhone}) - Total: R$ ${(totalAmount / 100).toFixed(2)} - Entrega: ${new Date(input.deliveryDate).toLocaleString('pt-BR')}`,
         });
         
         return { success: true, orderId };
