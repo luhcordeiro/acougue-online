@@ -47,14 +47,14 @@ export default function ProductDetail() {
     
     if (existingItemIndex >= 0) {
       // Atualizar quantidade do item existente
-      cart[existingItemIndex].quantityKg = quantityNum;
+      cart[existingItemIndex].quantityGrams = Math.round(quantityNum * 1000);
     } else {
       // Adicionar novo item
       cart.push({
         productId,
         productName: product?.name,
         pricePerKg: product?.pricePerKg,
-        quantityKg: quantityNum,
+        quantityGrams: Math.round(quantityNum * 1000),
         imageUrl: product?.imageUrl,
         cutTypeName: selectedCutType,
       });

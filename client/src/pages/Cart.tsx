@@ -53,20 +53,7 @@ export default function Cart() {
     toast.success("Item removido do carrinho");
   };
 
-  const updateQuantity = (productId: number, newQuantityGrams: number, cutTypeName?: string) => {
-    if (newQuantityGrams <= 0) {
-      removeFromCart(productId, cutTypeName);
-      return;
-    }
 
-    const newCart = cart.map((item) =>
-      item.productId === productId && item.cutTypeName === cutTypeName 
-        ? { ...item, quantityGrams: newQuantityGrams } 
-        : item
-    );
-    setCart(newCart);
-    localStorage.setItem("cart", JSON.stringify(newCart));
-  };
 
   const calculateTotal = () => {
     return cart.reduce((total, item) => {
@@ -202,27 +189,11 @@ export default function Cart() {
                         </div>
                         
                         <div className="flex items-center justify-between gap-4">
-                          <div className="flex items-center gap-2">
-                            <Label htmlFor={`qty-${item.productId}`} className="text-sm whitespace-nowrap">
-                              Quantidade:
-                            </Label>
-                            <div className="flex items-center gap-1">
-                              <Input
-                                id={`qty-${item.productId}`}
-                                type="number"
-                                min="0.1"
-                                step="0.1"
-                                value={(item.quantityGrams / 1000).toFixed(1)}
-                                onChange={(e) => {
-                                  const kg = parseFloat(e.target.value);
-                                  if (!isNaN(kg) && kg > 0) {
-                                    updateQuantity(item.productId, Math.round(kg * 1000), item.cutTypeName);
-                                  }
-                                }}
-                                className="w-20 text-center"
-                              />
-                              <span className="text-sm text-muted-foreground">kg</span>
-                            </div>
+                          <div>
+                            <p className="text-sm text-muted-foreground">Quantidade</p>
+                            <p className="text-base font-semibold">
+                              {(item.quantityGrams / 1000).toFixed(1)} kg
+                            </p>
                           </div>
                           
                           <div className="text-right">

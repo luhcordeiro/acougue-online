@@ -99,3 +99,4 @@
 - [x] Atualizar pedidos para armazenar o tipo de corte de cada item
 - [x] Exibir tipo de corte nos detalhes do pedido no painel admin
 - [x] Atualizar testes unitários (16 testes passando)
+- [x] Remover campo de quantidade editável do checkout (apenas exibição)
