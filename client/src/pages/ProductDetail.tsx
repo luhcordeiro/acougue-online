@@ -7,25 +7,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
-import { useAuth } from "@/_core/hooks/useAuth";
-import { getLoginUrl } from "@/const";
+
 
 export default function ProductDetail() {
   const [, params] = useRoute("/product/:id");
   const productId = params?.id ? parseInt(params.id) : 0;
   const [quantity, setQuantity] = useState("1.0");
   
-  const { isAuthenticated } = useAuth();
+
   const { data: product, isLoading } = trpc.products.getById.useQuery({ id: productId });
 
   const subtotal = product ? (product.pricePerKg / 100) * parseFloat(quantity || "0") : 0;
 
   const handleAddToCart = () => {
-    if (!isAuthenticated) {
-      toast.error("Você precisa fazer login para adicionar produtos ao carrinho");
-      return;
-    }
-
     const quantityNum = parseFloat(quantity);
     if (isNaN(quantityNum) || quantityNum <= 0) {
       toast.error("Quantidade inválida");
@@ -142,22 +136,14 @@ export default function ProductDetail() {
                   </div>
                 </div>
 
-                {isAuthenticated ? (
-                  <Button 
-                    className="w-full" 
-                    size="lg"
-                    onClick={handleAddToCart}
-                  >
-                    <ShoppingCart className="mr-2 h-5 w-5" />
-                    Adicionar ao Carrinho
-                  </Button>
-                ) : (
-                  <a href={getLoginUrl()} className="block">
-                    <Button className="w-full" size="lg">
-                      Fazer Login para Comprar
-                    </Button>
-                  </a>
-                )}
+                <Button 
+                  className="w-full" 
+                  size="lg"
+                  onClick={handleAddToCart}
+                >
+                  <ShoppingCart className="mr-2 h-5 w-5" />
+                  Adicionar ao Carrinho
+                </Button>
               </CardContent>
             </Card>
           </div>

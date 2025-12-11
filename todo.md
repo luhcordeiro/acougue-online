@@ -72,3 +72,7 @@
 - [x] Remover rota /my-orders do App.tsx
 - [x] Verificar e remover qualquer referência a login/cadastro na interface
 - [x] Sistema totalmente anônimo - sem login/cadastro para clientes
+
+## Correção na Página de Produto
+- [x] Remover botão "Fazer Login para Comprar" da página ProductDetail
+- [x] Adicionar botão "Adicionar ao Carrinho" diretamente na página de produto
