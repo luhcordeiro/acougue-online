@@ -17,7 +17,7 @@ export default function Home() {
         <div className="container py-3 sm:py-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-2 sm:gap-3">
-              {APP_LOGO && <img src={APP_LOGO} alt="Logo" className="h-8 w-8 sm:h-10 sm:w-10" />}
+              {APP_LOGO && <img src={APP_LOGO} alt="Logo" className="h-8 w-8 sm:h-10 sm:w-10" style={{borderColor: '#151414'}} />}
               <h1 className="text-lg sm:text-2xl font-bold">{APP_TITLE}</h1>
             </div>
             <div className="flex items-center gap-2 sm:gap-4">
