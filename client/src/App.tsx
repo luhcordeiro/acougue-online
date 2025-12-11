@@ -7,12 +7,10 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 import ProductDetail from "./pages/ProductDetail";
 import Cart from "./pages/Cart";
-import MyOrders from "./pages/MyOrders";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminProducts from "./pages/AdminProducts";
 import AdminOrders from "./pages/AdminOrders";
 import AdminCategories from "./pages/AdminCategories";
-
 import AdminLogin from "./pages/AdminLogin";
 
 function Router() {
@@ -21,7 +19,6 @@ function Router() {
       <Route path={"/"} component={Home} />
       <Route path="/product/:id" component={ProductDetail} />
       <Route path="/cart" component={Cart} />
-      <Route path="/my-orders" component={MyOrders} />
 
       <Route path="/admin/login" component={AdminLogin} />
       <Route path="/admin" component={AdminDashboard} />

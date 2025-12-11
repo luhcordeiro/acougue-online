@@ -66,3 +66,9 @@
 - [x] Script de seed para dados iniciais
 - [x] Testes unitários (13 testes)
 - [x] Subir projeto para GitHub
+
+## Remover Opções de Login para Cliente
+- [x] Remover página MyOrders (histórico de pedidos do cliente)
+- [x] Remover rota /my-orders do App.tsx
+- [x] Verificar e remover qualquer referência a login/cadastro na interface
+- [x] Sistema totalmente anônimo - sem login/cadastro para clientes
