@@ -104,3 +104,5 @@
 ## Melhorias de UX
 - [ ] Atualizar título do sistema para "Texas Bife Açougue - Pedidos Online" (requer alteração via Management UI → Settings → General)
 - [x] Adicionar exibição de categoria na página de produtos (catálogo) para facilitar busca no mobile (já implementado com badges)
+- [x] Adicionar filtro por categoria na página inicial com botões acima da grade de produtos
+- [x] Implementar busca por nome de produto na página inicial

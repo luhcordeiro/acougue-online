@@ -1,14 +1,28 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { APP_LOGO, APP_TITLE } from "@/const";
 import { trpc } from "@/lib/trpc";
-import { ShoppingCart } from "lucide-react";
+import { ShoppingCart, Search } from "lucide-react";
 import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
 
 export default function Home() {
   const { data: products = [], isLoading } = trpc.products.available.useQuery();
   const { data: categories = [] } = trpc.categories.list.useQuery();
+  
+  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Filtrar produtos por categoria e busca
+  const filteredProducts = products.filter((product) => {
+    const matchesCategory = selectedCategory === null || product.categoryId === selectedCategory;
+    const matchesSearch = searchQuery === "" || 
+      product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      product.description?.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -46,11 +60,11 @@ export default function Home() {
               <p className="text-base sm:text-xl mb-4 sm:mb-6 text-red-50">
                 Escolha os melhores cortes, selecione a quantidade em kg e receba com qualidade garantida.
               </p>
-              <Link href="/cart">
+              <a href="#produtos">
                 <Button size="lg" variant="secondary" className="text-base sm:text-lg px-6 sm:px-8 py-5 sm:py-6 w-full sm:w-auto">
                   Começar a Comprar
                 </Button>
-              </Link>
+              </a>
             </div>
             <div className="hidden md:block">
               <img 
@@ -64,23 +78,60 @@ export default function Home() {
       </section>
 
       {/* Products Section */}
-      <section className="py-12 bg-background">
+      <section id="produtos" className="py-12 bg-background">
         <div className="container">
-          <h2 className="text-3xl font-bold mb-8 text-center">Nossos Produtos</h2>
+          <h2 className="text-3xl font-bold mb-6 text-center">Nossos Produtos</h2>
+          
+          {/* Busca */}
+          <div className="mb-6 max-w-md mx-auto">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Buscar produtos..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 text-base py-5"
+              />
+            </div>
+          </div>
+
+          {/* Filtro de Categorias */}
+          <div className="mb-8 flex flex-wrap gap-2 justify-center">
+            <Button
+              variant={selectedCategory === null ? "default" : "outline"}
+              onClick={() => setSelectedCategory(null)}
+              className="text-sm sm:text-base"
+            >
+              Todas
+            </Button>
+            {categories.map((category) => (
+              <Button
+                key={category.id}
+                variant={selectedCategory === category.id ? "default" : "outline"}
+                onClick={() => setSelectedCategory(category.id)}
+                className="text-sm sm:text-base"
+              >
+                {category.name}
+              </Button>
+            ))}
+          </div>
           
           {isLoading ? (
             <p className="text-center py-8 text-muted-foreground">Carregando produtos...</p>
-          ) : products.length === 0 ? (
+          ) : filteredProducts.length === 0 ? (
             <Card>
               <CardContent className="py-12">
                 <p className="text-center text-muted-foreground">
-                  Nenhum produto disponível no momento. Volte em breve!
+                  {searchQuery || selectedCategory !== null
+                    ? "Nenhum produto encontrado com os filtros selecionados."
+                    : "Nenhum produto disponível no momento. Volte em breve!"}
                 </p>
               </CardContent>
             </Card>
           ) : (
             <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {products.map((product) => {
+              {filteredProducts.map((product) => {
                 const category = categories.find(c => c.id === product.categoryId);
                 return (
                   <Card key={product.id} className="overflow-hidden hover:shadow-lg transition-shadow">
@@ -121,9 +172,9 @@ export default function Home() {
                       </p>
                     </CardContent>
                     <CardFooter>
-                      <Link href={`/product/${product.id}`}>
-                        <Button className="w-full text-base py-6">
-                          <ShoppingCart className="mr-2 h-5 w-5" />
+                      <Link href={`/product/${product.id}`} className="w-full">
+                        <Button className="w-full" size="lg">
+                          <ShoppingCart className="mr-2 h-4 w-4" />
                           Adicionar ao Carrinho
                         </Button>
                       </Link>
@@ -135,13 +186,6 @@ export default function Home() {
           )}
         </div>
       </section>
-
-      {/* Footer */}
-      <footer className="bg-muted mt-auto py-8">
-        <div className="container text-center text-muted-foreground">
-          <p>&copy; 2025 {APP_TITLE}. Todos os direitos reservados.</p>
-        </div>
-      </footer>
     </div>
   );
 }
