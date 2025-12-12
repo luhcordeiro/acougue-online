@@ -100,3 +100,7 @@
 - [x] Exibir tipo de corte nos detalhes do pedido no painel admin
 - [x] Atualizar testes unitários (16 testes passando)
 - [x] Remover campo de quantidade editável do checkout (apenas exibição)
+
+## Melhorias de UX
+- [ ] Atualizar título do sistema para "Texas Bife Açougue - Pedidos Online" (requer alteração via Management UI → Settings → General)
+- [x] Adicionar exibição de categoria na página de produtos (catálogo) para facilitar busca no mobile (já implementado com badges)
