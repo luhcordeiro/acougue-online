@@ -33,11 +33,11 @@ export default function Cart() {
   const [notes, setNotes] = useState("");
 
   const createOrderMutation = trpc.orders.create.useMutation({
-    onSuccess: () => {
-      toast.success("Pedido realizado com sucesso! Entraremos em contato em breve.");
+    onSuccess: (data) => {
+      toast.success("Pedido realizado com sucesso!");
       setCart([]);
       localStorage.removeItem("cart");
-      setLocation("/");
+      setLocation(`/order/confirmation/${data.orderId}`);
     },
     onError: (error) => {
       toast.error(`Erro ao criar pedido: ${error.message}`);
@@ -71,7 +71,7 @@ export default function Cart() {
       toast.error("Por favor, informe seu telefone");
       return;
     }
-
+    
     if (!deliveryAddress.trim()) {
       toast.error("Por favor, informe o endereço de entrega");
       return;

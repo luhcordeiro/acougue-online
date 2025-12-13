@@ -13,6 +13,7 @@ import AdminOrders from "./pages/AdminOrders";
 import AdminCategories from "./pages/AdminCategories";
 import AdminCutTypes from "./pages/AdminCutTypes";
 import AdminLogin from "./pages/AdminLogin";
+import OrderConfirmation from "./pages/OrderConfirmation";
 
 function Router() {
   return (
@@ -20,6 +21,7 @@ function Router() {
       <Route path={"/"} component={Home} />
       <Route path="/product/:id" component={ProductDetail} />
       <Route path="/cart" component={Cart} />
+      <Route path="/order/confirmation/:id" component={OrderConfirmation} />
 
       <Route path="/admin/login" component={AdminLogin} />
       <Route path="/admin" component={AdminDashboard} />

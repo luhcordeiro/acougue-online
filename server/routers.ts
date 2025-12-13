@@ -144,17 +144,12 @@ export const appRouter = router({
     myOrders: protectedProcedure.query(async ({ ctx }) => {
       return await db.getOrdersByUserId(ctx.user.id);
     }),
-    getById: protectedProcedure
+    getById: publicProcedure
       .input(z.object({ id: z.number() }))
-      .query(async ({ input, ctx }) => {
+      .query(async ({ input }) => {
         const order = await db.getOrderById(input.id);
         if (!order) {
           throw new TRPCError({ code: 'NOT_FOUND', message: 'Pedido não encontrado' });
-        }
-        
-        // Verificar permissão: admin ou dono do pedido
-        if (ctx.user.role !== 'admin' && order.userId !== ctx.user.id) {
-          throw new TRPCError({ code: 'FORBIDDEN', message: 'Acesso negado' });
         }
         
         const items = await db.getOrderItems(input.id);
@@ -165,6 +160,7 @@ export const appRouter = router({
         items: z.array(z.object({
           productId: z.number(),
           quantityGrams: z.number().positive(),
+          cutTypeName: z.string().optional(),
         })),
         customerName: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
         customerPhone: z.string().min(10, 'Telefone deve ter pelo menos 10 dígitos'),
@@ -197,6 +193,7 @@ export const appRouter = router({
             pricePerKg: product.pricePerKg,
             quantityGrams: item.quantityGrams,
             subtotal,
+            cutTypeName: item.cutTypeName || null,
           });
         }
         
