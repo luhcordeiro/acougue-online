@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from "@/components/ui/button";
 import { Eye } from "lucide-react";
 import { toast } from "sonner";
+import { useLocation } from "wouter";
 
 const statusLabels = {
   pending: "Pendente",
@@ -27,6 +28,17 @@ const statusColors = {
 };
 
 export default function AdminOrders() {
+  const [, setLocation] = useLocation();
+  
+  // Verificar autenticação com senha
+  const isAdminAuthenticated = sessionStorage.getItem("adminAuthenticated") === "true";
+  
+  // Redirecionar para login do admin se não estiver autenticado com senha
+  if (!isAdminAuthenticated) {
+    setLocation("/admin/login");
+    return null;
+  }
+  
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");

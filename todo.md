@@ -106,3 +106,4 @@
 - [x] Adicionar exibição de categoria na página de produtos (catálogo) para facilitar busca no mobile (já implementado com badges)
 - [x] Adicionar filtro por categoria na página inicial com botões acima da grade de produtos
 - [x] Implementar busca por nome de produto na página inicial
+- [x] Remover autenticação OAuth da tela de admin (manter apenas login com senha simples)

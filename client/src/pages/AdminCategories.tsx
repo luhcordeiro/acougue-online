@@ -9,8 +9,20 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Pencil, Trash2, Plus } from "lucide-react";
 import { toast } from "sonner";
+import { useLocation } from "wouter";
 
 export default function AdminCategories() {
+  const [, setLocation] = useLocation();
+  
+  // Verificar autenticação com senha
+  const isAdminAuthenticated = sessionStorage.getItem("adminAuthenticated") === "true";
+  
+  // Redirecionar para login do admin se não estiver autenticado com senha
+  if (!isAdminAuthenticated) {
+    setLocation("/admin/login");
+    return null;
+  }
+  
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<number | null>(null);
   const [formData, setFormData] = useState({
