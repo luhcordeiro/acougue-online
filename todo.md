@@ -108,3 +108,6 @@
 - [x] Implementar busca por nome de produto na página inicial
 - [x] Remover autenticação OAuth da tela de admin (manter apenas login com senha simples)
 - [x] Implementar página de confirmação de pedido com resumo detalhado e botão para compartilhar via WhatsApp
+
+## Notificações
+- [x] Implementar notificação automática ao proprietário quando novo pedido com status 'Pendente' for criado
