@@ -166,6 +166,8 @@ export const appRouter = router({
         customerPhone: z.string().min(10, 'Telefone deve ter pelo menos 10 dígitos'),
         notes: z.string().optional(),
         deliveryAddress: z.string().min(10, 'Endereço deve ter pelo menos 10 caracteres'),
+        paymentMethod: z.enum(['card', 'pix', 'cash']),
+        changeFor: z.number().optional(), // Valor em centavos para troco (apenas para pagamento em dinheiro)
       }))
       .mutation(async ({ ctx, input }) => {
         // Validar e calcular totais
@@ -208,6 +210,8 @@ export const appRouter = router({
           notes: input.notes,
           deliveryDate: null,
           deliveryAddress: input.deliveryAddress,
+          paymentMethod: input.paymentMethod,
+          changeFor: input.paymentMethod === 'cash' ? input.changeFor : null,
         };
         
         const orderId = await db.createOrderWithItems(orderData, orderItemsData);

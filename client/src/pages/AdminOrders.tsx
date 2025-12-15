@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Eye } from "lucide-react";
+import { Eye, CreditCard, QrCode, Banknote } from "lucide-react";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
 
@@ -25,6 +25,24 @@ const statusColors = {
   ready: "bg-green-100 text-green-800",
   delivered: "bg-gray-100 text-gray-800",
   cancelled: "bg-red-100 text-red-800",
+};
+
+const paymentMethodLabels = {
+  pix: "PIX",
+  card: "Cartão",
+  cash: "Dinheiro",
+};
+
+const paymentMethodIcons = {
+  pix: QrCode,
+  card: CreditCard,
+  cash: Banknote,
+};
+
+const paymentMethodColors = {
+  pix: "text-green-600",
+  card: "text-blue-600",
+  cash: "text-yellow-600",
 };
 
 export default function AdminOrders() {
@@ -160,6 +178,7 @@ export default function AdminOrders() {
                   <TableHead>Cliente</TableHead>
                   <TableHead>Total</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Pagamento</TableHead>
                   <TableHead>Data</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
@@ -191,6 +210,19 @@ export default function AdminOrders() {
                           </SelectContent>
                         </Select>
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      {(() => {
+                        const method = (order as any).paymentMethod as keyof typeof paymentMethodLabels;
+                        const Icon = paymentMethodIcons[method] || CreditCard;
+                        const color = paymentMethodColors[method] || "text-gray-600";
+                        return (
+                          <div className="flex items-center gap-1">
+                            <Icon className={`h-4 w-4 ${color}`} />
+                            <span className="text-sm">{paymentMethodLabels[method] || "N/A"}</span>
+                          </div>
+                        );
+                      })()}
                     </TableCell>
                     <TableCell>
                       {new Date(order.createdAt).toLocaleString('pt-BR')}
@@ -269,6 +301,29 @@ export default function AdminOrders() {
                   <p className="font-medium">{orderDetails.order.notes}</p>
                 </div>
               )}
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Forma de Pagamento</p>
+                  {(() => {
+                    const method = (orderDetails.order as any).paymentMethod as keyof typeof paymentMethodLabels;
+                    const Icon = paymentMethodIcons[method] || CreditCard;
+                    const color = paymentMethodColors[method] || "text-gray-600";
+                    return (
+                      <div className="flex items-center gap-2">
+                        <Icon className={`h-5 w-5 ${color}`} />
+                        <span className="font-medium">{paymentMethodLabels[method] || "Não informado"}</span>
+                      </div>
+                    );
+                  })()}
+                </div>
+                {(orderDetails.order as any).paymentMethod === "cash" && (orderDetails.order as any).changeFor && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">Troco para</p>
+                    <p className="font-medium">R$ {((orderDetails.order as any).changeFor / 100).toFixed(2)}</p>
+                  </div>
+                )}
+              </div>
 
               <div>
                 <h3 className="font-semibold mb-2">Itens do Pedido</h3>

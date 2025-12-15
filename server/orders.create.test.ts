@@ -25,8 +25,8 @@ describe('Orders - Create Order', () => {
       customerName: 'João Silva Teste',
       customerPhone: '(11) 98765-4321',
       deliveryAddress: 'Rua das Flores, 123, Apto 45, Centro, São Paulo - SP, CEP 01234-567',
-      deliveryDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days from now
       notes: 'Teste de criação de pedido',
+      paymentMethod: 'pix',
     });
 
     expect(result.success).toBe(true);

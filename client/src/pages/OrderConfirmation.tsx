@@ -3,7 +3,7 @@ import { useLocation, useRoute, Link } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle2, Home, Share2, MapPin, User, Phone, Truck } from "lucide-react";
+import { CheckCircle2, Home, Share2, MapPin, User, Phone, Truck, CreditCard, QrCode, Banknote } from "lucide-react";
 import { APP_TITLE } from "@/const";
 
 export default function OrderConfirmation() {
@@ -25,6 +25,23 @@ export default function OrderConfirmation() {
   // Calcular subtotal dos itens (total - taxa de entrega)
   const itemsSubtotal = items.reduce((sum, item) => sum + item.subtotal, 0);
 
+  // Mapear forma de pagamento para exibição
+  const getPaymentMethodDisplay = (method: string | undefined) => {
+    switch (method) {
+      case "pix":
+        return { label: "PIX", icon: QrCode, color: "text-green-600" };
+      case "card":
+        return { label: "Cartão", icon: CreditCard, color: "text-blue-600" };
+      case "cash":
+        return { label: "Dinheiro", icon: Banknote, color: "text-yellow-600" };
+      default:
+        return { label: "Não informado", icon: CreditCard, color: "text-gray-600" };
+    }
+  };
+
+  const paymentInfo = getPaymentMethodDisplay((order as any)?.paymentMethod);
+  const PaymentIcon = paymentInfo.icon;
+
   useEffect(() => {
     if (!orderId) {
       setLocation("/");
@@ -45,6 +62,8 @@ export default function OrderConfirmation() {
       `👤 *Cliente:* ${order.customerName}\n` +
       `📱 *Telefone:* ${order.customerPhone}\n` +
       `📍 *Endereço:* ${order.deliveryAddress}\n\n` +
+      `💳 *Pagamento:* ${paymentInfo.label}` +
+      ((order as any)?.paymentMethod === "cash" && (order as any)?.changeFor ? ` (Troco para R$ ${((order as any).changeFor / 100).toFixed(2)})` : "") + "\n\n" +
       (order.notes ? `📝 *Observações:* ${order.notes}\n\n` : "") +
       `✅ Pedido confirmado com sucesso!`;
 
@@ -170,6 +189,24 @@ export default function OrderConfirmation() {
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+
+            {/* Payment Method */}
+            <div className="space-y-3">
+              <h3 className="font-semibold text-sm text-muted-foreground uppercase">
+                Forma de Pagamento
+              </h3>
+              <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                <PaymentIcon className={`h-6 w-6 ${paymentInfo.color}`} />
+                <div>
+                  <p className="font-medium">{paymentInfo.label}</p>
+                  {(order as any)?.paymentMethod === "cash" && (order as any)?.changeFor && (
+                    <p className="text-sm text-muted-foreground">
+                      Troco para: R$ {((order as any).changeFor / 100).toFixed(2)}
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
 

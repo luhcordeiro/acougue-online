@@ -141,8 +141,14 @@
 - [x] Atualizar checkout para exibir e somar taxa de entrega ao total
 - [x] Remover campo de data/hora de entrega do checkout
 - [x] Atualizar página de confirmação para exibir taxa de entrega
-- [x] Atualizar painel admin para exibir taxa de entrega nos pedidos
-- [x] Testar fluxo completo de checkout com taxa de entrega
+- [x] Atualizar painel admin para exibir taxa de entrega nos pedi- [x] Testar fluxo completo de checkout com forma de pagamentoa
 
 ## Melhorias na Gestão de Pedidos
 - [x] Exibir nome do cliente na tela de pedidos do admin
+
+## Forma de Pagamento no Checkout
+- [x] Adicionar campos de forma de pagamento no schema (paymentMethod, changeFor)
+- [x] Atualizar interface do checkout com seleção de pagamento (Cartão, PIX, Dinheiro)
+- [x] Adicionar campo de troco para pagamento em dinheiro
+- [x] Atualizar página de confirmação para exibir forma de pagamento
+- [x] Atualizar painel admin para exibir forma de pagamento nos pedidos

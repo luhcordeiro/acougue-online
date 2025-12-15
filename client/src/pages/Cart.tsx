@@ -4,8 +4,9 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
-import { ArrowLeft, Trash2, ShoppingCart, User, Phone, MapPin, Truck } from "lucide-react";
+import { ArrowLeft, Trash2, ShoppingCart, User, Phone, MapPin, Truck, CreditCard, QrCode, Banknote } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
@@ -17,6 +18,8 @@ type CartItem = {
   quantityGrams: number;
   cutTypeName?: string;
 };
+
+type PaymentMethod = "card" | "pix" | "cash";
 
 export default function Cart() {
   const [, setLocation] = useLocation();
@@ -30,6 +33,8 @@ export default function Cart() {
   const [customerPhone, setCustomerPhone] = useState("");
   const [deliveryAddress, setDeliveryAddress] = useState("");
   const [notes, setNotes] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("pix");
+  const [changeFor, setChangeFor] = useState("");
 
   // Buscar taxa de entrega
   const { data: deliveryFee = 0 } = trpc.settings.getDeliveryFee.useQuery();
@@ -77,6 +82,17 @@ export default function Cart() {
       return;
     }
 
+    // Validar troco se pagamento em dinheiro
+    let changeForValue: number | undefined;
+    if (paymentMethod === "cash" && changeFor.trim()) {
+      const changeAmount = parseFloat(changeFor.replace(",", ".")) * 100;
+      if (isNaN(changeAmount) || changeAmount < total) {
+        toast.error("O valor para troco deve ser maior ou igual ao total do pedido");
+        return;
+      }
+      changeForValue = Math.round(changeAmount);
+    }
+
     createOrderMutation.mutate({
       items: cart.map((item) => ({
         productId: item.productId,
@@ -87,6 +103,8 @@ export default function Cart() {
       customerPhone: customerPhone.trim(),
       deliveryAddress: deliveryAddress.trim(),
       notes: notes.trim() || undefined,
+      paymentMethod,
+      changeFor: changeForValue,
     });
   };
 
@@ -271,6 +289,73 @@ export default function Cart() {
                     className="text-base resize-none"
                   />
                 </div>
+
+                {/* Forma de Pagamento */}
+                <div className="space-y-3">
+                  <Label className="flex items-center gap-2">
+                    <CreditCard className="h-4 w-4" />
+                    Forma de Pagamento *
+                  </Label>
+                  <RadioGroup
+                    value={paymentMethod}
+                    onValueChange={(value) => setPaymentMethod(value as PaymentMethod)}
+                    className="space-y-2"
+                  >
+                    <div className="flex items-center space-x-3 border rounded-lg p-3 cursor-pointer hover:bg-gray-50 transition-colors">
+                      <RadioGroupItem value="pix" id="pix" />
+                      <Label htmlFor="pix" className="flex items-center gap-2 cursor-pointer flex-1">
+                        <QrCode className="h-5 w-5 text-green-600" />
+                        <div>
+                          <p className="font-medium">PIX</p>
+                          <p className="text-xs text-muted-foreground">Pagamento instantâneo</p>
+                        </div>
+                      </Label>
+                    </div>
+                    
+                    <div className="flex items-center space-x-3 border rounded-lg p-3 cursor-pointer hover:bg-gray-50 transition-colors">
+                      <RadioGroupItem value="card" id="card" />
+                      <Label htmlFor="card" className="flex items-center gap-2 cursor-pointer flex-1">
+                        <CreditCard className="h-5 w-5 text-blue-600" />
+                        <div>
+                          <p className="font-medium">Cartão</p>
+                          <p className="text-xs text-muted-foreground">Crédito ou débito na entrega</p>
+                        </div>
+                      </Label>
+                    </div>
+                    
+                    <div className="flex items-center space-x-3 border rounded-lg p-3 cursor-pointer hover:bg-gray-50 transition-colors">
+                      <RadioGroupItem value="cash" id="cash" />
+                      <Label htmlFor="cash" className="flex items-center gap-2 cursor-pointer flex-1">
+                        <Banknote className="h-5 w-5 text-yellow-600" />
+                        <div>
+                          <p className="font-medium">Dinheiro</p>
+                          <p className="text-xs text-muted-foreground">Pagamento em espécie na entrega</p>
+                        </div>
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+
+                {/* Campo de Troco (apenas para dinheiro) */}
+                {paymentMethod === "cash" && (
+                  <div className="space-y-2 animate-in slide-in-from-top-2 duration-200">
+                    <Label htmlFor="changeFor" className="flex items-center gap-2">
+                      <Banknote className="h-4 w-4" />
+                      Troco para quanto? (opcional)
+                    </Label>
+                    <Input
+                      id="changeFor"
+                      type="text"
+                      placeholder={`Ex: ${((total / 100) + 10).toFixed(2)}`}
+                      value={changeFor}
+                      onChange={(e) => setChangeFor(e.target.value)}
+                      className="text-base"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Deixe em branco se tiver o valor exato (R$ {(total / 100).toFixed(2)})
+                    </p>
+                  </div>
+                )}
 
                 {/* Observações */}
                 <div className="space-y-2">

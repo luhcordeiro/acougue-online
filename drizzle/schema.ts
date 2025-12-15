@@ -72,6 +72,10 @@ export const orders = mysqlTable("orders", {
   deliveryDate: timestamp("deliveryDate"), // Data e hora agendada para entrega
   deliveryAddress: text("deliveryAddress").notNull(), // Endereço completo informado pelo cliente
   
+  // Informações de pagamento
+  paymentMethod: mysqlEnum("paymentMethod", ["card", "pix", "cash"]).default("cash").notNull(),
+  changeFor: int("changeFor"), // Valor em centavos para troco (apenas para pagamento em dinheiro)
+  
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
