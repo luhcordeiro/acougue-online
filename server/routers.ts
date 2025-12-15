@@ -328,6 +328,62 @@ export const appRouter = router({
         return await db.removeCutTypeFromProduct(input.productId, input.cutTypeId);
       }),
   }),
+
+  // ========== Quick Quantities (Quantidades Rápidas) ==========
+  quickQuantities: router({
+    list: publicProcedure.query(async () => {
+      return await db.getAllQuickQuantities();
+    }),
+    create: adminProcedure
+      .input(z.object({
+        valueGrams: z.number().min(1),
+        label: z.string().min(1),
+        sortOrder: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        return await db.createQuickQuantity(input);
+      }),
+    update: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        valueGrams: z.number().min(1).optional(),
+        label: z.string().min(1).optional(),
+        sortOrder: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        return await db.updateQuickQuantity(id, data);
+      }),
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        return await db.deleteQuickQuantity(input.id);
+      }),
+    // Obter quantidades disponíveis para um produto
+    getByProduct: publicProcedure
+      .input(z.object({ productId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getProductQuickQuantities(input.productId);
+      }),
+    // Adicionar quantidade a um produto
+    addToProduct: adminProcedure
+      .input(z.object({
+        productId: z.number(),
+        quickQuantityId: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        return await db.addQuickQuantityToProduct(input.productId, input.quickQuantityId);
+      }),
+    // Remover quantidade de um produto
+    removeFromProduct: adminProcedure
+      .input(z.object({
+        productId: z.number(),
+        quickQuantityId: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        return await db.removeQuickQuantityFromProduct(input.productId, input.quickQuantityId);
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

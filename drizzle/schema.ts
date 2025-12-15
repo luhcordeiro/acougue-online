@@ -147,3 +147,34 @@ export const productCutTypes = mysqlTable("productCutTypes", {
 
 export type ProductCutType = typeof productCutTypes.$inferSelect;
 export type InsertProductCutType = typeof productCutTypes.$inferInsert;
+
+
+/**
+ * Quantidades rápidas disponíveis (ex: 0.5kg, 1kg, 1.5kg, 2kg, 3kg, etc.)
+ * Valor armazenado em gramas para precisão
+ */
+export const quickQuantities = mysqlTable("quickQuantities", {
+  id: int("id").autoincrement().primaryKey(),
+  valueGrams: int("valueGrams").notNull(), // Valor em gramas (ex: 500 = 0.5kg)
+  label: varchar("label", { length: 50 }).notNull(), // Label de exibição (ex: "0.5kg", "500g")
+  sortOrder: int("sortOrder").default(0).notNull(), // Ordem de exibição
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type QuickQuantity = typeof quickQuantities.$inferSelect;
+export type InsertQuickQuantity = typeof quickQuantities.$inferInsert;
+
+/**
+ * Relação muitos-para-muitos entre produtos e quantidades rápidas
+ * Define quais quantidades estão disponíveis para cada produto
+ */
+export const productQuickQuantities = mysqlTable("productQuickQuantities", {
+  id: int("id").autoincrement().primaryKey(),
+  productId: int("productId").notNull().references(() => products.id),
+  quickQuantityId: int("quickQuantityId").notNull().references(() => quickQuantities.id),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ProductQuickQuantity = typeof productQuickQuantities.$inferSelect;
+export type InsertProductQuickQuantity = typeof productQuickQuantities.$inferInsert;

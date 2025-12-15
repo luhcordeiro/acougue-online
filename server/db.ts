@@ -1,6 +1,6 @@
 import { eq, desc, and } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, categories, InsertCategory, products, InsertProduct, orders, InsertOrder, orderItems, InsertOrderItem, addresses, InsertAddress, cutTypes, InsertCutType, productCutTypes, InsertProductCutType } from "../drizzle/schema";
+import { InsertUser, users, categories, InsertCategory, products, InsertProduct, orders, InsertOrder, orderItems, InsertOrderItem, addresses, InsertAddress, cutTypes, InsertCutType, productCutTypes, InsertProductCutType, quickQuantities, InsertQuickQuantity, productQuickQuantities, InsertProductQuickQuantity } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -427,6 +427,113 @@ export async function removeCutTypeFromProduct(productId: number, cutTypeId: num
     .where(and(
       eq(productCutTypes.productId, productId),
       eq(productCutTypes.cutTypeId, cutTypeId)
+    ));
+  
+  return { success: true };
+}
+
+
+// ========================================
+// QUICK QUANTITIES (Quantidades Rápidas)
+// ========================================
+
+export async function getAllQuickQuantities() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db.select().from(quickQuantities).orderBy(quickQuantities.sortOrder, quickQuantities.valueGrams);
+}
+
+export async function getQuickQuantityById(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.select().from(quickQuantities).where(eq(quickQuantities.id, id)).limit(1);
+  return result[0] || null;
+}
+
+export async function createQuickQuantity(data: InsertQuickQuantity) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.insert(quickQuantities).values(data);
+  return { success: true, quickQuantityId: Number(result[0].insertId) };
+}
+
+export async function updateQuickQuantity(id: number, data: Partial<InsertQuickQuantity>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(quickQuantities).set(data).where(eq(quickQuantities.id, id));
+  return { success: true };
+}
+
+export async function deleteQuickQuantity(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Primeiro, remover associações com produtos
+  await db.delete(productQuickQuantities).where(eq(productQuickQuantities.quickQuantityId, id));
+  
+  // Depois, deletar a quantidade rápida
+  await db.delete(quickQuantities).where(eq(quickQuantities.id, id));
+  return { success: true };
+}
+
+// ========================================
+// PRODUCT QUICK QUANTITIES (Relação Produto-Quantidade)
+// ========================================
+
+export async function getProductQuickQuantities(productId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db
+    .select({
+      id: quickQuantities.id,
+      valueGrams: quickQuantities.valueGrams,
+      label: quickQuantities.label,
+      sortOrder: quickQuantities.sortOrder,
+    })
+    .from(productQuickQuantities)
+    .innerJoin(quickQuantities, eq(productQuickQuantities.quickQuantityId, quickQuantities.id))
+    .where(eq(productQuickQuantities.productId, productId))
+    .orderBy(quickQuantities.sortOrder, quickQuantities.valueGrams);
+  
+  return result;
+}
+
+export async function addQuickQuantityToProduct(productId: number, quickQuantityId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Verificar se já existe
+  const existing = await db
+    .select()
+    .from(productQuickQuantities)
+    .where(and(
+      eq(productQuickQuantities.productId, productId),
+      eq(productQuickQuantities.quickQuantityId, quickQuantityId)
+    ))
+    .limit(1);
+  
+  if (existing.length > 0) {
+    return { success: true, message: "Quantidade já associada ao produto" };
+  }
+  
+  await db.insert(productQuickQuantities).values({ productId, quickQuantityId });
+  return { success: true };
+}
+
+export async function removeQuickQuantityFromProduct(productId: number, quickQuantityId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db
+    .delete(productQuickQuantities)
+    .where(and(
+      eq(productQuickQuantities.productId, productId),
+      eq(productQuickQuantities.quickQuantityId, quickQuantityId)
     ));
   
   return { success: true };

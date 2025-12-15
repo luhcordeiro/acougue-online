@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { Package, ShoppingBag, Tag, ArrowLeft, Scissors } from "lucide-react";
+import { Package, ShoppingBag, Tag, ArrowLeft, Scissors, Scale } from "lucide-react";
 import { Link, useLocation } from "wouter";
 
 export default function AdminDashboard() {
@@ -133,6 +133,21 @@ export default function AdminDashboard() {
                 <CardTitle>Tipos de Corte</CardTitle>
                 <CardDescription>
                   Gerencie os tipos de corte disponíveis (Moído, Em Cubos, etc.)
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button className="w-full">Acessar</Button>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href="/admin/quick-quantities">
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+              <CardHeader>
+                <Scale className="h-12 w-12 text-primary mb-2" />
+                <CardTitle>Quantidades Rápidas</CardTitle>
+                <CardDescription>
+                  Gerencie as opções de quantidade rápida (0.5kg, 1kg, 2kg, etc.)
                 </CardDescription>
               </CardHeader>
               <CardContent>

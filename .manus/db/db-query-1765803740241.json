@@ -1,0 +1,15 @@
+{
+  "query": "SELECT p.id, p.name, COUNT(pq.quickQuantityId) as qty_count FROM products p LEFT JOIN productQuickQuantities pq ON p.id = pq.productId GROUP BY p.id, p.name HAVING qty_count > 0 LIMIT 5",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2Ct94FQQX2tqCCM.root --database jtWWBUdj7qZKX8P4ihhs3o --execute SELECT p.id, p.name, COUNT(pq.quickQuantityId) as qty_count FROM products p LEFT JOIN productQuickQuantities pq ON p.id = pq.productId GROUP BY p.id, p.name HAVING qty_count > 0 LIMIT 5",
+  "rows": [
+    {
+      "id": "150002",
+      "name": "Produto Teste",
+      "qty_count": "2"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tqty_count\n150002\tProduto Teste\t2\n",
+  "stderr": "",
+  "execution_time_ms": 60
+}

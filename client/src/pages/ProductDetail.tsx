@@ -29,8 +29,19 @@ export default function ProductDetail() {
   // Usar tipos de corte do produto se houver, senão usar todos
   const cutTypes = productCutTypes.length > 0 ? productCutTypes : allCutTypes;
 
-  // Quantidades pré-definidas
-  const predefinedQuantities = [0.5, 1.0, 1.5, 2.0];
+  // Buscar quantidades rápidas específicas do produto
+  const { data: productQuickQuantities = [] } = trpc.quickQuantities.getByProduct.useQuery(
+    { productId },
+    { enabled: productId > 0 }
+  );
+  // Fallback para todas as quantidades rápidas se o produto não tiver nenhuma associada
+  const { data: allQuickQuantities = [] } = trpc.quickQuantities.list.useQuery();
+  
+  // Usar quantidades do produto se houver, senão usar todas
+  const quickQuantities = productQuickQuantities.length > 0 ? productQuickQuantities : allQuickQuantities;
+
+  // Quantidades pré-definidas padrão (fallback se não houver nenhuma cadastrada)
+  const defaultQuantities = [500, 1000, 1500, 2000]; // em gramas
 
   const subtotal = product ? (product.pricePerKg / 100) * parseFloat(quantity || "0") : 0;
 
@@ -168,21 +179,35 @@ export default function ProductDetail() {
                   </Select>
                 </div>
 
-                {/* Botões de Quantidades Pré-definidas */}
+                {/* Botões de Quantidades Rápidas */}
                 <div className="space-y-2">
                   <Label>Quantidades Rápidas</Label>
                   <div className="grid grid-cols-4 gap-2">
-                    {predefinedQuantities.map((qty) => (
-                      <Button
-                        key={qty}
-                        type="button"
-                        variant={parseFloat(quantity) === qty ? "default" : "outline"}
-                        onClick={() => setQuantity(qty.toFixed(1))}
-                        className="h-12 text-base font-semibold"
-                      >
-                        {qty.toFixed(1)}kg
-                      </Button>
-                    ))}
+                    {quickQuantities.length > 0 ? (
+                      quickQuantities.map((qq) => (
+                        <Button
+                          key={qq.id}
+                          type="button"
+                          variant={parseFloat(quantity) === qq.valueGrams / 1000 ? "default" : "outline"}
+                          onClick={() => setQuantity((qq.valueGrams / 1000).toFixed(1))}
+                          className="h-12 text-base font-semibold"
+                        >
+                          {qq.label}
+                        </Button>
+                      ))
+                    ) : (
+                      defaultQuantities.map((grams) => (
+                        <Button
+                          key={grams}
+                          type="button"
+                          variant={parseFloat(quantity) === grams / 1000 ? "default" : "outline"}
+                          onClick={() => setQuantity((grams / 1000).toFixed(1))}
+                          className="h-12 text-base font-semibold"
+                        >
+                          {(grams / 1000).toFixed(1)}kg
+                        </Button>
+                      ))
+                    )}
                   </div>
                 </div>
 

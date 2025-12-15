@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Pencil, Trash2, Plus, Upload, Scissors, X } from "lucide-react";
+import { Pencil, Trash2, Plus, Upload, Scissors, Scale, X } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
@@ -40,11 +40,13 @@ export default function AdminProducts() {
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [selectedCutTypes, setSelectedCutTypes] = useState<number[]>([]);
+  const [selectedQuickQuantities, setSelectedQuickQuantities] = useState<number[]>([]);
 
   const utils = trpc.useUtils();
   const { data: products = [], isLoading } = trpc.products.list.useQuery();
   const { data: categories = [] } = trpc.categories.list.useQuery();
   const { data: cutTypes = [] } = trpc.cutTypes.list.useQuery();
+  const { data: quickQuantities = [] } = trpc.quickQuantities.list.useQuery();
   
   // Mutations para tipos de corte
   const addCutTypeMutation = trpc.cutTypes.addToProduct.useMutation({
@@ -59,12 +61,31 @@ export default function AdminProducts() {
     },
   });
   
+  // Mutations para quantidades rápidas
+  const addQuickQuantityMutation = trpc.quickQuantities.addToProduct.useMutation({
+    onSuccess: () => {
+      utils.quickQuantities.getByProduct.invalidate();
+    },
+  });
+  
+  const removeQuickQuantityMutation = trpc.quickQuantities.removeFromProduct.useMutation({
+    onSuccess: () => {
+      utils.quickQuantities.getByProduct.invalidate();
+    },
+  });
+  
   const createMutation = trpc.products.create.useMutation({
     onSuccess: async (result) => {
       // Salvar tipos de corte para o novo produto
       if (result.id && selectedCutTypes.length > 0) {
         for (const cutTypeId of selectedCutTypes) {
           await addCutTypeMutation.mutateAsync({ productId: result.id, cutTypeId });
+        }
+      }
+      // Salvar quantidades rápidas para o novo produto
+      if (result.id && selectedQuickQuantities.length > 0) {
+        for (const quickQuantityId of selectedQuickQuantities) {
+          await addQuickQuantityMutation.mutateAsync({ productId: result.id, quickQuantityId });
         }
       }
       toast.success("Produto criado com sucesso!");
@@ -95,6 +116,24 @@ export default function AdminProducts() {
         for (const id of selectedCutTypes) {
           if (!currentIds.includes(id)) {
             await addCutTypeMutation.mutateAsync({ productId: editingProduct, cutTypeId: id });
+          }
+        }
+        
+        // Atualizar quantidades rápidas do produto
+        const currentQuickQuantities = await utils.quickQuantities.getByProduct.fetch({ productId: editingProduct });
+        const currentQQIds = currentQuickQuantities.map((qq: any) => qq.id);
+        
+        // Remover quantidades que foram desmarcadas
+        for (const id of currentQQIds) {
+          if (!selectedQuickQuantities.includes(id)) {
+            await removeQuickQuantityMutation.mutateAsync({ productId: editingProduct, quickQuantityId: id });
+          }
+        }
+        
+        // Adicionar novas quantidades
+        for (const id of selectedQuickQuantities) {
+          if (!currentQQIds.includes(id)) {
+            await addQuickQuantityMutation.mutateAsync({ productId: editingProduct, quickQuantityId: id });
           }
         }
       }
@@ -136,6 +175,7 @@ export default function AdminProducts() {
     });
     setImageFile(null);
     setSelectedCutTypes([]);
+    setSelectedQuickQuantities([]);
     setEditingProduct(null);
     setIsDialogOpen(false);
   };
@@ -155,6 +195,9 @@ export default function AdminProducts() {
     // Carregar tipos de corte do produto
     const productCutTypes = await utils.cutTypes.getByProduct.fetch({ productId: product.id });
     setSelectedCutTypes(productCutTypes.map((ct: any) => ct.id));
+    // Carregar quantidades rápidas do produto
+    const productQuickQuantities = await utils.quickQuantities.getByProduct.fetch({ productId: product.id });
+    setSelectedQuickQuantities(productQuickQuantities.map((qq: any) => qq.id));
     setIsDialogOpen(true);
   };
 
@@ -346,6 +389,45 @@ export default function AdminProducts() {
                 {selectedCutTypes.length > 0 && (
                   <p className="text-xs text-muted-foreground mt-1">
                     {selectedCutTypes.length} tipo(s) de corte selecionado(s)
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <Label className="flex items-center gap-2">
+                  <Scale className="h-4 w-4" />
+                  Quantidades Rápidas Disponíveis
+                </Label>
+                <div className="grid grid-cols-2 gap-2 mt-2 p-3 border rounded-md bg-muted/30">
+                  {quickQuantities.length === 0 ? (
+                    <p className="text-sm text-muted-foreground col-span-2">Nenhuma quantidade rápida cadastrada</p>
+                  ) : (
+                    quickQuantities.map((qq) => (
+                      <div key={qq.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`quickQuantity-${qq.id}`}
+                          checked={selectedQuickQuantities.includes(qq.id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedQuickQuantities([...selectedQuickQuantities, qq.id]);
+                            } else {
+                              setSelectedQuickQuantities(selectedQuickQuantities.filter(id => id !== qq.id));
+                            }
+                          }}
+                        />
+                        <label
+                          htmlFor={`quickQuantity-${qq.id}`}
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                        >
+                          {qq.label}
+                        </label>
+                      </div>
+                    ))
+                  )}
+                </div>
+                {selectedQuickQuantities.length > 0 && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {selectedQuickQuantities.length} quantidade(s) rápida(s) selecionada(s)
                   </p>
                 )}
               </div>

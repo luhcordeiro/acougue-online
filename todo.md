@@ -124,3 +124,13 @@
 - [x] Atualizar interface de cadastro de produto com seleção de tipos de corte
 - [x] Atualizar página de detalhes do produto para mostrar apenas cortes disponíveis
 - [x] Testar funcionalidade completa de tipos de corte por produto
+
+## Sistema de Quantidades Rápidas por Produto
+- [x] Criar tabela de quantidades rápidas no schema (id, valor em kg, label)
+- [x] Criar tabela de relacionamento produto-quantidade no schema
+- [x] Implementar funções de banco de dados para gerenciar quantidades
+- [x] Criar rotas tRPC para CRUD de quantidades e associação com produtos
+- [x] Criar interface de CRUD de quantidades no painel admin
+- [x] Atualizar cadastro de produtos com seleção de quantidades disponíveis
+- [x] Atualizar página de detalhes do produto para usar quantidades personalizadas
+- [x] Testar funcionalidade completa
