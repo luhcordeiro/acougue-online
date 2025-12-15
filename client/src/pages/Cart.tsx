@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
-import { ArrowLeft, Trash2, ShoppingCart, User, Phone, MapPin, Calendar } from "lucide-react";
+import { ArrowLeft, Trash2, ShoppingCart, User, Phone, MapPin, Truck } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
@@ -29,8 +29,10 @@ export default function Cart() {
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [deliveryAddress, setDeliveryAddress] = useState("");
-  const [deliveryDate, setDeliveryDate] = useState("");
   const [notes, setNotes] = useState("");
+
+  // Buscar taxa de entrega
+  const { data: deliveryFee = 0 } = trpc.settings.getDeliveryFee.useQuery();
 
   const createOrderMutation = trpc.orders.create.useMutation({
     onSuccess: (data) => {
@@ -53,9 +55,7 @@ export default function Cart() {
     toast.success("Item removido do carrinho");
   };
 
-
-
-  const calculateTotal = () => {
+  const calculateSubtotal = () => {
     return cart.reduce((total, item) => {
       return total + Math.round((item.pricePerKg * item.quantityGrams) / 1000);
     }, 0);
@@ -77,18 +77,6 @@ export default function Cart() {
       return;
     }
 
-    if (!deliveryDate) {
-      toast.error("Por favor, selecione a data e hora de entrega");
-      return;
-    }
-
-    const selectedDate = new Date(deliveryDate);
-    const now = new Date();
-    if (selectedDate <= now) {
-      toast.error("A data de entrega deve ser futura");
-      return;
-    }
-
     createOrderMutation.mutate({
       items: cart.map((item) => ({
         productId: item.productId,
@@ -98,7 +86,6 @@ export default function Cart() {
       customerName: customerName.trim(),
       customerPhone: customerPhone.trim(),
       deliveryAddress: deliveryAddress.trim(),
-      deliveryDate: selectedDate.toISOString(),
       notes: notes.trim() || undefined,
     });
   };
@@ -133,10 +120,8 @@ export default function Cart() {
     );
   }
 
-  const total = calculateTotal();
-  const minDate = new Date();
-  minDate.setHours(minDate.getHours() + 2);
-  const minDateString = minDate.toISOString().slice(0, 16);
+  const subtotal = calculateSubtotal();
+  const total = subtotal + deliveryFee;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-red-50 to-white">
@@ -163,7 +148,7 @@ export default function Cart() {
                 {/* Layout de Cards para Mobile */}
                 <div className="space-y-4">
                   {cart.map((item, index) => {
-                    const subtotal = Math.round((item.pricePerKg * item.quantityGrams) / 1000);
+                    const itemSubtotal = Math.round((item.pricePerKg * item.quantityGrams) / 1000);
                     return (
                       <div key={`${item.productId}-${item.cutTypeName}-${index}`} className="border rounded-lg p-4 space-y-3">
                         <div className="flex justify-between items-start">
@@ -199,7 +184,7 @@ export default function Cart() {
                           <div className="text-right">
                             <p className="text-xs text-muted-foreground">Subtotal</p>
                             <p className="text-lg font-bold text-red-600">
-                              R$ {(subtotal / 100).toFixed(2)}
+                              R$ {(itemSubtotal / 100).toFixed(2)}
                             </p>
                           </div>
                         </div>
@@ -208,9 +193,25 @@ export default function Cart() {
                   })}
                 </div>
 
-                <div className="mt-6 flex justify-between items-center text-lg font-bold border-t pt-4">
-                  <span>Total:</span>
-                  <span className="text-2xl text-red-600">R$ {(total / 100).toFixed(2)}</span>
+                {/* Resumo de valores */}
+                <div className="mt-6 border-t pt-4 space-y-2">
+                  <div className="flex justify-between items-center text-base">
+                    <span className="text-muted-foreground">Subtotal dos produtos:</span>
+                    <span className="font-medium">R$ {(subtotal / 100).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-base">
+                    <span className="text-muted-foreground flex items-center gap-2">
+                      <Truck className="h-4 w-4" />
+                      Taxa de entrega:
+                    </span>
+                    <span className="font-medium">
+                      {deliveryFee > 0 ? `R$ ${(deliveryFee / 100).toFixed(2)}` : "Grátis"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center text-lg font-bold pt-2 border-t">
+                    <span>Total:</span>
+                    <span className="text-2xl text-red-600">R$ {(total / 100).toFixed(2)}</span>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -268,22 +269,6 @@ export default function Cart() {
                     onChange={(e) => setDeliveryAddress(e.target.value)}
                     rows={3}
                     className="text-base resize-none"
-                  />
-                </div>
-
-                {/* Data e Hora */}
-                <div className="space-y-2">
-                  <Label htmlFor="deliveryDate" className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4" />
-                    Data e Hora de Entrega *
-                  </Label>
-                  <Input
-                    id="deliveryDate"
-                    type="datetime-local"
-                    min={minDateString}
-                    value={deliveryDate}
-                    onChange={(e) => setDeliveryDate(e.target.value)}
-                    className="text-base"
                   />
                 </div>
 

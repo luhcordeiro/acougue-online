@@ -178,3 +178,20 @@ export const productQuickQuantities = mysqlTable("productQuickQuantities", {
 
 export type ProductQuickQuantity = typeof productQuickQuantities.$inferSelect;
 export type InsertProductQuickQuantity = typeof productQuickQuantities.$inferInsert;
+
+
+/**
+ * Configurações do sistema (taxa de entrega, etc.)
+ * Usa chave-valor para flexibilidade
+ */
+export const systemSettings = mysqlTable("systemSettings", {
+  id: int("id").autoincrement().primaryKey(),
+  key: varchar("key", { length: 100 }).notNull().unique(),
+  value: text("value").notNull(),
+  description: text("description"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type SystemSetting = typeof systemSettings.$inferSelect;
+export type InsertSystemSetting = typeof systemSettings.$inferInsert;

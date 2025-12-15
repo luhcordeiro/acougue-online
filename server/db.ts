@@ -1,6 +1,6 @@
 import { eq, desc, and } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, categories, InsertCategory, products, InsertProduct, orders, InsertOrder, orderItems, InsertOrderItem, addresses, InsertAddress, cutTypes, InsertCutType, productCutTypes, InsertProductCutType, quickQuantities, InsertQuickQuantity, productQuickQuantities, InsertProductQuickQuantity } from "../drizzle/schema";
+import { InsertUser, users, categories, InsertCategory, products, InsertProduct, orders, InsertOrder, orderItems, InsertOrderItem, addresses, InsertAddress, cutTypes, InsertCutType, productCutTypes, InsertProductCutType, quickQuantities, InsertQuickQuantity, productQuickQuantities, InsertProductQuickQuantity, systemSettings, InsertSystemSetting } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -537,4 +537,50 @@ export async function removeQuickQuantityFromProduct(productId: number, quickQua
     ));
   
   return { success: true };
+}
+
+
+// ==================== SYSTEM SETTINGS ====================
+
+export async function getSystemSetting(key: string): Promise<string | null> {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db.select().from(systemSettings).where(eq(systemSettings.key, key)).limit(1);
+  return result.length > 0 ? result[0].value : null;
+}
+
+export async function setSystemSetting(key: string, value: string, description?: string): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  
+  const existing = await db.select().from(systemSettings).where(eq(systemSettings.key, key)).limit(1);
+  
+  if (existing.length > 0) {
+    await db.update(systemSettings).set({ value, description }).where(eq(systemSettings.key, key));
+  } else {
+    await db.insert(systemSettings).values({ key, value, description });
+  }
+}
+
+export async function getAllSystemSettings(): Promise<{ key: string; value: string; description: string | null }[]> {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const result = await db.select({
+    key: systemSettings.key,
+    value: systemSettings.value,
+    description: systemSettings.description,
+  }).from(systemSettings);
+  
+  return result;
+}
+
+export async function getDeliveryFee(): Promise<number> {
+  const fee = await getSystemSetting("delivery_fee");
+  return fee ? parseInt(fee) : 0; // Retorna em centavos, default 0
+}
+
+export async function setDeliveryFee(feeInCents: number): Promise<void> {
+  await setSystemSetting("delivery_fee", feeInCents.toString(), "Taxa de entrega em centavos");
 }

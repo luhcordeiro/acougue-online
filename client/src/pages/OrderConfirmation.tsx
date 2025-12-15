@@ -1,15 +1,18 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useLocation, useRoute, Link } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle2, Home, Share2, MapPin, Calendar, User, Phone } from "lucide-react";
+import { CheckCircle2, Home, Share2, MapPin, User, Phone, Truck } from "lucide-react";
 import { APP_TITLE } from "@/const";
 
 export default function OrderConfirmation() {
   const [, params] = useRoute("/order/confirmation/:id");
   const [, setLocation] = useLocation();
   const orderId = params?.id ? parseInt(params.id) : null;
+
+  // Buscar taxa de entrega - DEVE estar antes de qualquer return condicional
+  const { data: deliveryFee = 0 } = trpc.settings.getDeliveryFee.useQuery();
 
   const { data: orderData, isLoading } = trpc.orders.getById.useQuery(
     { id: orderId! },
@@ -18,12 +21,36 @@ export default function OrderConfirmation() {
 
   const order = orderData?.order;
   const items = orderData?.items || [];
+  
+  // Calcular subtotal dos itens (total - taxa de entrega)
+  const itemsSubtotal = items.reduce((sum, item) => sum + item.subtotal, 0);
 
   useEffect(() => {
     if (!orderId) {
       setLocation("/");
     }
   }, [orderId, setLocation]);
+
+  const handleShareWhatsApp = () => {
+    if (!order) return;
+    
+    const itemsText = items
+      .map((item) => `• ${item.productName} - ${item.cutTypeName || 'Sem corte'} - ${(item.quantityGrams / 1000).toFixed(1)}kg - R$ ${(item.subtotal / 100).toFixed(2)}`)
+      .join("\n");
+
+    const message = `🥩 *Pedido #${order.id} - ${APP_TITLE}*\n\n` +
+      `📦 *Itens do Pedido:*\n${itemsText}\n\n` +
+      (deliveryFee > 0 ? `🚚 *Taxa de Entrega:* R$ ${(deliveryFee / 100).toFixed(2)}\n` : "") +
+      `💰 *Total: R$ ${(order.totalAmount / 100).toFixed(2)}*\n\n` +
+      `👤 *Cliente:* ${order.customerName}\n` +
+      `📱 *Telefone:* ${order.customerPhone}\n` +
+      `📍 *Endereço:* ${order.deliveryAddress}\n\n` +
+      (order.notes ? `📝 *Observações:* ${order.notes}\n\n` : "") +
+      `✅ Pedido confirmado com sucesso!`;
+
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, "_blank");
+  };
 
   if (isLoading) {
     return (
@@ -52,25 +79,6 @@ export default function OrderConfirmation() {
       </div>
     );
   }
-
-  const handleShareWhatsApp = () => {
-    const itemsText = items
-      .map((item) => `• ${item.productName} - ${item.cutTypeName || 'Sem corte'} - ${(item.quantityGrams / 1000).toFixed(1)}kg - R$ ${(item.subtotal / 100).toFixed(2)}`)
-      .join("\n");
-
-    const message = `🥩 *Pedido #${order.id} - ${APP_TITLE}*\n\n` +
-      `📦 *Itens do Pedido:*\n${itemsText}\n\n` +
-      `💰 *Total: R$ ${(order.totalAmount / 100).toFixed(2)}*\n\n` +
-      `👤 *Cliente:* ${order.customerName}\n` +
-      `📱 *Telefone:* ${order.customerPhone}\n` +
-      `📍 *Endereço:* ${order.deliveryAddress}\n` +
-      `📅 *Entrega:* ${new Date(order.deliveryDate!).toLocaleString("pt-BR")}\n\n` +
-      (order.notes ? `📝 *Observações:* ${order.notes}\n\n` : "") +
-      `✅ Pedido confirmado com sucesso!`;
-
-    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, "_blank");
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-background">
@@ -124,24 +132,13 @@ export default function OrderConfirmation() {
             {/* Delivery Info */}
             <div className="space-y-3">
               <h3 className="font-semibold text-sm text-muted-foreground uppercase">
-                Informações de Entrega
+                Endereço de Entrega
               </h3>
               <div className="space-y-2">
                 <div className="flex items-start gap-3">
                   <MapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
                   <div>
                     <p className="font-medium">{order.deliveryAddress}</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Calendar className="h-5 w-5 text-muted-foreground mt-0.5" />
-                  <div>
-                    <p className="font-medium">
-                      {new Date(order.deliveryDate!).toLocaleString("pt-BR", {
-                        dateStyle: "long",
-                        timeStyle: "short",
-                      })}
-                    </p>
                   </div>
                 </div>
               </div>
@@ -187,8 +184,19 @@ export default function OrderConfirmation() {
             )}
 
             {/* Total */}
-            <div className="pt-4 border-t">
-              <div className="flex justify-between items-center">
+            <div className="pt-4 border-t space-y-2">
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-muted-foreground">Subtotal dos produtos</span>
+                <span>R$ {(itemsSubtotal / 100).toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-muted-foreground flex items-center gap-2">
+                  <Truck className="h-4 w-4" />
+                  Taxa de entrega
+                </span>
+                <span>{deliveryFee > 0 ? `R$ ${(deliveryFee / 100).toFixed(2)}` : "Grátis"}</span>
+              </div>
+              <div className="flex justify-between items-center pt-2 border-t">
                 <span className="text-lg font-semibold">Total</span>
                 <span className="text-2xl font-bold text-primary">
                   R$ {(order.totalAmount / 100).toFixed(2)}

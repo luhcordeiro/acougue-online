@@ -13,6 +13,7 @@ import AdminOrders from "./pages/AdminOrders";
 import AdminCategories from "./pages/AdminCategories";
 import AdminCutTypes from "./pages/AdminCutTypes";
 import AdminQuickQuantities from "./pages/AdminQuickQuantities";
+import AdminSettings from "./pages/AdminSettings";
 import AdminLogin from "./pages/AdminLogin";
 import OrderConfirmation from "./pages/OrderConfirmation";
 
@@ -31,6 +32,7 @@ function Router() {
       <Route path="/admin/categories" component={AdminCategories} />
       <Route path="/admin/cut-types" component={AdminCutTypes} />
       <Route path="/admin/quick-quantities" component={AdminQuickQuantities} />
+      <Route path="/admin/settings" component={AdminSettings} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>

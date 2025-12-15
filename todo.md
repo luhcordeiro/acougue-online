@@ -134,3 +134,12 @@
 - [x] Atualizar cadastro de produtos com seleção de quantidades disponíveis
 - [x] Atualizar página de detalhes do produto para usar quantidades personalizadas
 - [x] Testar funcionalidade completa
+
+## Taxa de Entrega e Simplificação do Checkout
+- [x] Criar tabela de configurações no banco de dados para armazenar taxa de entrega
+- [x] Criar interface no admin para configurar valor da taxa de entrega
+- [x] Atualizar checkout para exibir e somar taxa de entrega ao total
+- [x] Remover campo de data/hora de entrega do checkout
+- [x] Atualizar página de confirmação para exibir taxa de entrega
+- [x] Atualizar painel admin para exibir taxa de entrega nos pedidos
+- [x] Testar fluxo completo de checkout com taxa de entrega

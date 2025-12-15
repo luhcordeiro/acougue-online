@@ -166,7 +166,6 @@ export const appRouter = router({
         customerPhone: z.string().min(10, 'Telefone deve ter pelo menos 10 dígitos'),
         notes: z.string().optional(),
         deliveryAddress: z.string().min(10, 'Endereço deve ter pelo menos 10 caracteres'),
-        deliveryDate: z.string(), // ISO string
       }))
       .mutation(async ({ ctx, input }) => {
         // Validar e calcular totais
@@ -197,13 +196,17 @@ export const appRouter = router({
           });
         }
         
+        // Buscar taxa de entrega e adicionar ao total
+        const deliveryFee = await db.getDeliveryFee();
+        const totalWithDelivery = totalAmount + deliveryFee;
+        
         const orderData: InsertOrder = {
           userId: ctx.user?.id || null,
           customerName: input.customerName,
           customerPhone: input.customerPhone,
-          totalAmount,
+          totalAmount: totalWithDelivery,
           notes: input.notes,
-          deliveryDate: new Date(input.deliveryDate),
+          deliveryDate: null,
           deliveryAddress: input.deliveryAddress,
         };
         
@@ -212,7 +215,7 @@ export const appRouter = router({
         // Notificar o proprietário sobre novo pedido
         await notifyOwner({
           title: 'Novo Pedido Recebido',
-          content: `Pedido #${orderId} de ${input.customerName} (${input.customerPhone}) - Total: R$ ${(totalAmount / 100).toFixed(2)} - Entrega: ${new Date(input.deliveryDate).toLocaleString('pt-BR')}`,
+          content: `Pedido #${orderId} de ${input.customerName} (${input.customerPhone}) - Total: R$ ${(totalWithDelivery / 100).toFixed(2)} - Endereço: ${input.deliveryAddress}`,
         });
         
         return { success: true, orderId };
@@ -383,6 +386,24 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         return await db.removeQuickQuantityFromProduct(input.productId, input.quickQuantityId);
       }),
+  }),
+
+  // ========== System Settings (Configurações do Sistema) ==========
+  settings: router({
+    getDeliveryFee: publicProcedure.query(async () => {
+      return await db.getDeliveryFee();
+    }),
+    setDeliveryFee: adminProcedure
+      .input(z.object({
+        feeInCents: z.number().min(0),
+      }))
+      .mutation(async ({ input }) => {
+        await db.setDeliveryFee(input.feeInCents);
+        return { success: true };
+      }),
+    getAll: adminProcedure.query(async () => {
+      return await db.getAllSystemSettings();
+    }),
   }),
 });
 
