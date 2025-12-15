@@ -42,6 +42,7 @@ export default function AdminOrders() {
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [selectedStatus, setSelectedStatus] = useState<string>("all");
 
   const utils = trpc.useUtils();
   const { data: allOrders = [], isLoading: isLoadingAll } = trpc.orders.listAll.useQuery();
@@ -51,7 +52,12 @@ export default function AdminOrders() {
   );
   const { data: categories = [] } = trpc.categories.list.useQuery();
   
-  const orders = selectedCategory === "all" ? allOrders : filteredOrdersByCategory;
+  let orders = selectedCategory === "all" ? allOrders : filteredOrdersByCategory;
+  
+  // Filtrar por status se selecionado
+  if (selectedStatus !== "all") {
+    orders = orders.filter(order => order.status === selectedStatus);
+  }
   const isLoading = selectedCategory === "all" ? isLoadingAll : isLoadingFiltered;
   const { data: orderDetails } = trpc.orders.getById.useQuery(
     { id: selectedOrderId! },
@@ -113,6 +119,21 @@ export default function AdminOrders() {
                 </SelectContent>
               </Select>
             </div>
+            <div className="flex-1">
+              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Filtrar por status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os Status</SelectItem>
+                  {Object.entries(statusLabels).map(([value, label]) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -150,21 +171,26 @@ export default function AdminOrders() {
                     <TableCell>Cliente ID: {order.userId}</TableCell>
                     <TableCell>R$ {(order.totalAmount / 100).toFixed(2)}</TableCell>
                     <TableCell>
-                      <Select
-                        value={order.status}
-                        onValueChange={(value) => handleStatusChange(order.id, value)}
-                      >
-                        <SelectTrigger className="w-[140px]">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {Object.entries(statusLabels).map(([value, label]) => (
-                            <SelectItem key={value} value={value}>
-                              {label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[order.status as keyof typeof statusColors]}`}>
+                          {statusLabels[order.status as keyof typeof statusLabels]}
+                        </span>
+                        <Select
+                          value={order.status}
+                          onValueChange={(value) => handleStatusChange(order.id, value)}
+                        >
+                          <SelectTrigger className="w-[140px]">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Object.entries(statusLabels).map(([value, label]) => (
+                              <SelectItem key={value} value={value}>
+                                {label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </TableCell>
                     <TableCell>
                       {new Date(order.createdAt).toLocaleString('pt-BR')}
@@ -199,7 +225,9 @@ export default function AdminOrders() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-muted-foreground">Status</p>
-                  <p className="font-medium">{statusLabels[orderDetails.order.status]}</p>
+                  <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${statusColors[orderDetails.order.status as keyof typeof statusColors]}`}>
+                    {statusLabels[orderDetails.order.status as keyof typeof statusLabels]}
+                  </span>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Total</p>

@@ -111,3 +111,8 @@
 
 ## Notificações
 - [x] Implementar notificação automática ao proprietário quando novo pedido com status 'Pendente' for criado
+
+## Sistema de Status de Pedidos
+- [x] Implementar sistema de cores por status (Pendente=amarelo, Confirmado=azul, Preparando=roxo, Pronto=verde, Entregue=cinza, Cancelado=vermelho)
+- [x] Adicionar filtros por status no painel admin
+- [x] Implementar atualização visual de status em tempo real
