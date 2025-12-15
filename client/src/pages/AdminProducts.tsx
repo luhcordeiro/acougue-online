@@ -8,7 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Pencil, Trash2, Plus, Upload } from "lucide-react";
+import { Pencil, Trash2, Plus, Upload, Scissors, X } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
 import { useLocation } from "wouter";
@@ -38,13 +39,34 @@ export default function AdminProducts() {
     imageKey: "",
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [selectedCutTypes, setSelectedCutTypes] = useState<number[]>([]);
 
   const utils = trpc.useUtils();
   const { data: products = [], isLoading } = trpc.products.list.useQuery();
   const { data: categories = [] } = trpc.categories.list.useQuery();
+  const { data: cutTypes = [] } = trpc.cutTypes.list.useQuery();
+  
+  // Mutations para tipos de corte
+  const addCutTypeMutation = trpc.cutTypes.addToProduct.useMutation({
+    onSuccess: () => {
+      utils.cutTypes.getByProduct.invalidate();
+    },
+  });
+  
+  const removeCutTypeMutation = trpc.cutTypes.removeFromProduct.useMutation({
+    onSuccess: () => {
+      utils.cutTypes.getByProduct.invalidate();
+    },
+  });
   
   const createMutation = trpc.products.create.useMutation({
-    onSuccess: () => {
+    onSuccess: async (result) => {
+      // Salvar tipos de corte para o novo produto
+      if (result.id && selectedCutTypes.length > 0) {
+        for (const cutTypeId of selectedCutTypes) {
+          await addCutTypeMutation.mutateAsync({ productId: result.id, cutTypeId });
+        }
+      }
       toast.success("Produto criado com sucesso!");
       utils.products.list.invalidate();
       resetForm();
@@ -55,7 +77,27 @@ export default function AdminProducts() {
   });
 
   const updateMutation = trpc.products.update.useMutation({
-    onSuccess: () => {
+    onSuccess: async () => {
+      // Atualizar tipos de corte do produto
+      if (editingProduct) {
+        // Buscar tipos de corte atuais
+        const currentCutTypes = await utils.cutTypes.getByProduct.fetch({ productId: editingProduct });
+        const currentIds = currentCutTypes.map((ct: any) => ct.id);
+        
+        // Remover tipos de corte que foram desmarcados
+        for (const id of currentIds) {
+          if (!selectedCutTypes.includes(id)) {
+            await removeCutTypeMutation.mutateAsync({ productId: editingProduct, cutTypeId: id });
+          }
+        }
+        
+        // Adicionar novos tipos de corte
+        for (const id of selectedCutTypes) {
+          if (!currentIds.includes(id)) {
+            await addCutTypeMutation.mutateAsync({ productId: editingProduct, cutTypeId: id });
+          }
+        }
+      }
       toast.success("Produto atualizado com sucesso!");
       utils.products.list.invalidate();
       resetForm();
@@ -93,11 +135,12 @@ export default function AdminProducts() {
       imageKey: "",
     });
     setImageFile(null);
+    setSelectedCutTypes([]);
     setEditingProduct(null);
     setIsDialogOpen(false);
   };
 
-  const handleEdit = (product: any) => {
+  const handleEdit = async (product: any) => {
     setEditingProduct(product.id);
     setFormData({
       name: product.name,
@@ -109,6 +152,9 @@ export default function AdminProducts() {
       imageUrl: product.imageUrl || "",
       imageKey: product.imageKey || "",
     });
+    // Carregar tipos de corte do produto
+    const productCutTypes = await utils.cutTypes.getByProduct.fetch({ productId: product.id });
+    setSelectedCutTypes(productCutTypes.map((ct: any) => ct.id));
     setIsDialogOpen(true);
   };
 
@@ -263,6 +309,45 @@ export default function AdminProducts() {
                     placeholder="0.0"
                   />
                 </div>
+              </div>
+
+              <div>
+                <Label className="flex items-center gap-2">
+                  <Scissors className="h-4 w-4" />
+                  Tipos de Corte Disponíveis
+                </Label>
+                <div className="grid grid-cols-2 gap-2 mt-2 p-3 border rounded-md bg-muted/30">
+                  {cutTypes.length === 0 ? (
+                    <p className="text-sm text-muted-foreground col-span-2">Nenhum tipo de corte cadastrado</p>
+                  ) : (
+                    cutTypes.map((cutType) => (
+                      <div key={cutType.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`cutType-${cutType.id}`}
+                          checked={selectedCutTypes.includes(cutType.id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedCutTypes([...selectedCutTypes, cutType.id]);
+                            } else {
+                              setSelectedCutTypes(selectedCutTypes.filter(id => id !== cutType.id));
+                            }
+                          }}
+                        />
+                        <label
+                          htmlFor={`cutType-${cutType.id}`}
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                        >
+                          {cutType.name}
+                        </label>
+                      </div>
+                    ))
+                  )}
+                </div>
+                {selectedCutTypes.length > 0 && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {selectedCutTypes.length} tipo(s) de corte selecionado(s)
+                  </p>
+                )}
               </div>
 
               <div>

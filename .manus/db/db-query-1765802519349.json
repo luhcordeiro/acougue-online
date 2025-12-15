@@ -1,0 +1,50 @@
+{
+  "query": "SELECT id, name FROM products ORDER BY id LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2Ct94FQQX2tqCCM.root --database jtWWBUdj7qZKX8P4ihhs3o --execute SELECT id, name FROM products ORDER BY id LIMIT 10;",
+  "rows": [
+    {
+      "id": "1",
+      "name": "Picanha"
+    },
+    {
+      "id": "2",
+      "name": "Alcatra"
+    },
+    {
+      "id": "3",
+      "name": "Maminha"
+    },
+    {
+      "id": "4",
+      "name": "Costela Bovina"
+    },
+    {
+      "id": "5",
+      "name": "Filé Mignon"
+    },
+    {
+      "id": "6",
+      "name": "Costela Suína"
+    },
+    {
+      "id": "7",
+      "name": "Lombo Suíno"
+    },
+    {
+      "id": "8",
+      "name": "Bacon"
+    },
+    {
+      "id": "9",
+      "name": "Frango Inteiro"
+    },
+    {
+      "id": "10",
+      "name": "Peito de Frango"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\n1\tPicanha\n2\tAlcatra\n3\tMaminha\n4\tCostela Bovina\n5\tFilé Mignon\n6\tCostela Suína\n7\tLombo Suíno\n8\tBacon\n9\tFrango Inteiro\n10\tPeito de Frango\n",
+  "stderr": "",
+  "execution_time_ms": 52
+}

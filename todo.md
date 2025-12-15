@@ -116,3 +116,11 @@
 - [x] Implementar sistema de cores por status (Pendente=amarelo, Confirmado=azul, Preparando=roxo, Pronto=verde, Entregue=cinza, Cancelado=vermelho)
 - [x] Adicionar filtros por status no painel admin
 - [x] Implementar atualização visual de status em tempo real
+
+## Tipos de Corte por Produto
+- [x] Criar tabela de relacionamento produto-tipo de corte no schema (já existia)
+- [x] Implementar funções de banco de dados para gerenciar associações (já existiam)
+- [x] Criar rotas tRPC para gerenciar tipos de corte por produto (já existiam)
+- [x] Atualizar interface de cadastro de produto com seleção de tipos de corte
+- [x] Atualizar página de detalhes do produto para mostrar apenas cortes disponíveis
+- [x] Testar funcionalidade completa de tipos de corte por produto

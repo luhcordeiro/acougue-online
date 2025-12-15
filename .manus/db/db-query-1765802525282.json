@@ -1,0 +1,22 @@
+{
+  "query": "SELECT pct.productId, pct.cutTypeId, ct.name as cutTypeName, p.name as productName \nFROM productCutTypes pct \nJOIN cutTypes ct ON pct.cutTypeId = ct.id \nJOIN products p ON pct.productId = p.id\nORDER BY pct.productId;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2Ct94FQQX2tqCCM.root --database jtWWBUdj7qZKX8P4ihhs3o --execute SELECT pct.productId, pct.cutTypeId, ct.name as cutTypeName, p.name as productName \nFROM productCutTypes pct \nJOIN cutTypes ct ON pct.cutTypeId = ct.id \nJOIN products p ON pct.productId = p.id\nORDER BY pct.productId;",
+  "rows": [
+    {
+      "productId": "150003",
+      "cutTypeId": "2",
+      "cutTypeName": "Em Cubos Original",
+      "productName": "Acém"
+    },
+    {
+      "productId": "150003",
+      "cutTypeId": "1",
+      "cutTypeName": "Moído",
+      "productName": "Acém"
+    }
+  ],
+  "messages": [],
+  "stdout": "productId\tcutTypeId\tcutTypeName\tproductName\n150003\t2\tEm Cubos Original\tAcém\n150003\t1\tMoído\tAcém\n",
+  "stderr": "",
+  "execution_time_ms": 59
+}

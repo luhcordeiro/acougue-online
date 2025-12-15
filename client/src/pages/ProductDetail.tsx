@@ -18,7 +18,16 @@ export default function ProductDetail() {
   
 
   const { data: product, isLoading } = trpc.products.getById.useQuery({ id: productId });
-  const { data: cutTypes = [] } = trpc.cutTypes.list.useQuery();
+  // Buscar tipos de corte específicos do produto
+  const { data: productCutTypes = [] } = trpc.cutTypes.getByProduct.useQuery(
+    { productId },
+    { enabled: productId > 0 }
+  );
+  // Fallback para todos os tipos de corte se o produto não tiver nenhum associado
+  const { data: allCutTypes = [] } = trpc.cutTypes.list.useQuery();
+  
+  // Usar tipos de corte do produto se houver, senão usar todos
+  const cutTypes = productCutTypes.length > 0 ? productCutTypes : allCutTypes;
 
   // Quantidades pré-definidas
   const predefinedQuantities = [0.5, 1.0, 1.5, 2.0];
@@ -139,16 +148,22 @@ export default function ProductDetail() {
                       <SelectValue placeholder="Selecione o tipo de corte" />
                     </SelectTrigger>
                     <SelectContent>
-                      {cutTypes.map((cutType) => (
-                        <SelectItem key={cutType.id} value={cutType.name} className="text-base">
-                          {cutType.name}
-                          {cutType.description && (
-                            <span className="text-sm text-muted-foreground ml-2">
-                              - {cutType.description}
-                            </span>
-                          )}
+                      {cutTypes.length === 0 ? (
+                        <SelectItem value="_none" disabled className="text-muted-foreground">
+                          Nenhum tipo de corte disponível
                         </SelectItem>
-                      ))}
+                      ) : (
+                        cutTypes.map((cutType) => (
+                          <SelectItem key={cutType.id} value={cutType.name} className="text-base">
+                            {cutType.name}
+                            {cutType.description && (
+                              <span className="text-sm text-muted-foreground ml-2">
+                                - {cutType.description}
+                              </span>
+                            )}
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
                 </div>

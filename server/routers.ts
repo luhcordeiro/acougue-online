@@ -88,8 +88,8 @@ export const appRouter = router({
         stockKg: z.number().default(0), // Em gramas
       }))
       .mutation(async ({ input }) => {
-        await db.createProduct(input);
-        return { success: true };
+        const result = await db.createProduct(input);
+        return { success: true, id: result.insertId };
       }),
     update: adminProcedure
       .input(z.object({

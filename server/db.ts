@@ -140,7 +140,9 @@ export async function createProduct(data: InsertProduct) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   const result = await db.insert(products).values(data);
-  return result;
+  // Buscar o último produto inserido para obter o id
+  const [lastProduct] = await db.select({ id: products.id }).from(products).orderBy(desc(products.id)).limit(1);
+  return { ...result, insertId: lastProduct?.id };
 }
 
 export async function updateProduct(id: number, data: Partial<InsertProduct>) {
