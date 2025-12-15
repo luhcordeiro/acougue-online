@@ -168,7 +168,7 @@ export default function AdminOrders() {
                 {orders.map((order) => (
                   <TableRow key={order.id}>
                     <TableCell className="font-medium">#{order.id}</TableCell>
-                    <TableCell>Cliente ID: {order.userId}</TableCell>
+                    <TableCell>{(order as any).customerName || `Cliente ID: ${order.userId}`}</TableCell>
                     <TableCell>R$ {(order.totalAmount / 100).toFixed(2)}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
@@ -237,10 +237,16 @@ export default function AdminOrders() {
                   <p className="text-sm text-muted-foreground">Data do Pedido</p>
                   <p className="font-medium">{new Date(orderDetails.order.createdAt).toLocaleString('pt-BR')}</p>
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Cliente ID</p>
-                  <p className="font-medium">{orderDetails.order.userId}</p>
-                </div>
+<div>
+                                  <p className="text-sm text-muted-foreground">Cliente</p>
+                                  <p className="font-medium">{(orderDetails.order as any).customerName || `ID: ${orderDetails.order.userId}`}</p>
+                                </div>
+                                {(orderDetails.order as any).customerPhone && (
+                                  <div>
+                                    <p className="text-sm text-muted-foreground">Telefone</p>
+                                    <p className="font-medium">{(orderDetails.order as any).customerPhone}</p>
+                                  </div>
+                                )}
               </div>
 
               {orderDetails.order.deliveryAddress && (

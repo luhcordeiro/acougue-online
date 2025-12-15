@@ -143,3 +143,6 @@
 - [x] Atualizar página de confirmação para exibir taxa de entrega
 - [x] Atualizar painel admin para exibir taxa de entrega nos pedidos
 - [x] Testar fluxo completo de checkout com taxa de entrega
+
+## Melhorias na Gestão de Pedidos
+- [x] Exibir nome do cliente na tela de pedidos do admin
