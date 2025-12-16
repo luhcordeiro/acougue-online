@@ -114,6 +114,15 @@ export const appRouter = router({
         await db.deleteProduct(input.id);
         return { success: true };
       }),
+    bulkUpdateAvailability: adminProcedure
+      .input(z.object({
+        productIds: z.array(z.number()),
+        available: z.boolean(),
+      }))
+      .mutation(async ({ input }) => {
+        await db.bulkUpdateProductAvailability(input.productIds, input.available);
+        return { success: true, count: input.productIds.length };
+      }),
     uploadImage: adminProcedure
       .input(z.object({
         fileName: z.string(),

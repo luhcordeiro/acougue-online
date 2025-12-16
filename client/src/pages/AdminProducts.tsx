@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Pencil, Trash2, Plus, Upload, Scissors, Scale, X, ArrowLeft, Package } from "lucide-react";
+import { Pencil, Trash2, Plus, Upload, Scissors, Scale, X, ArrowLeft, Package, Search, CheckSquare, Power, PowerOff } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
@@ -41,6 +41,10 @@ export default function AdminProducts() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [selectedCutTypes, setSelectedCutTypes] = useState<number[]>([]);
   const [selectedQuickQuantities, setSelectedQuickQuantities] = useState<number[]>([]);
+  
+  // Estados para seleção múltipla e filtro
+  const [selectedProducts, setSelectedProducts] = useState<number[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const utils = trpc.useUtils();
   const { data: products = [], isLoading } = trpc.products.list.useQuery();
@@ -161,6 +165,62 @@ export default function AdminProducts() {
       toast.error(`Erro ao fazer upload da imagem: ${error.message}`);
     },
   });
+
+  const bulkUpdateMutation = trpc.products.bulkUpdateAvailability.useMutation({
+    onSuccess: (result) => {
+      toast.success(`${result.count} produto(s) atualizado(s) com sucesso!`);
+      utils.products.list.invalidate();
+      setSelectedProducts([]);
+    },
+    onError: (error) => {
+      toast.error(`Erro ao atualizar produtos: ${error.message}`);
+    },
+  });
+
+  // Filtrar produtos pela busca
+  const filteredProducts = products.filter((product) => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    const category = categories.find(c => c.id === product.categoryId);
+    return (
+      product.name.toLowerCase().includes(query) ||
+      (category?.name || "").toLowerCase().includes(query) ||
+      (product.description || "").toLowerCase().includes(query)
+    );
+  });
+
+  // Funções para seleção múltipla
+  const handleSelectAll = () => {
+    if (selectedProducts.length === filteredProducts.length) {
+      setSelectedProducts([]);
+    } else {
+      setSelectedProducts(filteredProducts.map(p => p.id));
+    }
+  };
+
+  const handleSelectProduct = (productId: number) => {
+    setSelectedProducts(prev => 
+      prev.includes(productId) 
+        ? prev.filter(id => id !== productId)
+        : [...prev, productId]
+    );
+  };
+
+  const handleBulkActivate = () => {
+    if (selectedProducts.length === 0) {
+      toast.error("Selecione pelo menos um produto");
+      return;
+    }
+    bulkUpdateMutation.mutate({ productIds: selectedProducts, available: true });
+  };
+
+  const handleBulkDeactivate = () => {
+    if (selectedProducts.length === 0) {
+      toast.error("Selecione pelo menos um produto");
+      return;
+    }
+    bulkUpdateMutation.mutate({ productIds: selectedProducts, available: false });
+  };
 
   const resetForm = () => {
     setFormData({
@@ -492,20 +552,66 @@ export default function AdminProducts() {
         <CardHeader>
           <CardTitle>Produtos Cadastrados</CardTitle>
           <CardDescription>
-            {products.length} produto(s) no total
+            {filteredProducts.length} de {products.length} produto(s)
+            {selectedProducts.length > 0 && ` • ${selectedProducts.length} selecionado(s)`}
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {/* Barra de busca e ações em massa */}
+          <div className="flex flex-col sm:flex-row gap-4 mb-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nome, categoria ou descrição..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            {selectedProducts.length > 0 && (
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleBulkActivate}
+                  disabled={bulkUpdateMutation.isPending}
+                  className="text-green-600 border-green-600 hover:bg-green-50"
+                >
+                  <Power className="h-4 w-4 mr-2" />
+                  Ativar ({selectedProducts.length})
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleBulkDeactivate}
+                  disabled={bulkUpdateMutation.isPending}
+                  className="text-red-600 border-red-600 hover:bg-red-50"
+                >
+                  <PowerOff className="h-4 w-4 mr-2" />
+                  Desativar ({selectedProducts.length})
+                </Button>
+              </div>
+            )}
+          </div>
+
           {isLoading ? (
             <p className="text-center py-8 text-muted-foreground">Carregando produtos...</p>
-          ) : products.length === 0 ? (
+          ) : filteredProducts.length === 0 ? (
             <p className="text-center py-8 text-muted-foreground">
-              Nenhum produto cadastrado. Clique em "Novo Produto" para começar.
+              {products.length === 0 
+                ? 'Nenhum produto cadastrado. Clique em "Novo Produto" para começar.'
+                : 'Nenhum produto encontrado com os filtros aplicados.'}
             </p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-12">
+                    <Checkbox
+                      checked={selectedProducts.length === filteredProducts.length && filteredProducts.length > 0}
+                      onCheckedChange={handleSelectAll}
+                    />
+                  </TableHead>
                   <TableHead>Imagem</TableHead>
                   <TableHead>Nome</TableHead>
                   <TableHead>Categoria</TableHead>
@@ -516,10 +622,16 @@ export default function AdminProducts() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {products.map((product) => {
+                {filteredProducts.map((product) => {
                   const category = categories.find(c => c.id === product.categoryId);
                   return (
-                    <TableRow key={product.id}>
+                    <TableRow key={product.id} className={selectedProducts.includes(product.id) ? "bg-muted/50" : ""}>
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedProducts.includes(product.id)}
+                          onCheckedChange={() => handleSelectProduct(product.id)}
+                        />
+                      </TableCell>
                       <TableCell>
                         {product.imageUrl ? (
                           <img src={product.imageUrl} alt={product.name} className="h-12 w-12 object-cover rounded" />

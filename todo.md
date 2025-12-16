@@ -182,3 +182,8 @@
 
 ## Cadastro de Produtos via Planilha
 - [x] Cadastrar 22 produtos de Carnes Bovinas da planilha
+
+## Melhorias no Cadastro de Produtos
+- [x] Implementar seleção múltipla de produtos com checkboxes
+- [x] Adicionar ações em massa para ativar/desativar produtos
+- [x] Implementar filtro de busca para melhor gestão

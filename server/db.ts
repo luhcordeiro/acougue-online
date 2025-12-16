@@ -1,4 +1,4 @@
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { InsertUser, users, categories, InsertCategory, products, InsertProduct, orders, InsertOrder, orderItems, InsertOrderItem, addresses, InsertAddress, cutTypes, InsertCutType, productCutTypes, InsertProductCutType, quickQuantities, InsertQuickQuantity, productQuickQuantities, InsertProductQuickQuantity, systemSettings, InsertSystemSetting } from "../drizzle/schema";
 import { ENV } from './_core/env';
@@ -155,6 +155,13 @@ export async function deleteProduct(id: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.delete(products).where(eq(products.id, id));
+}
+
+export async function bulkUpdateProductAvailability(productIds: number[], available: boolean) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  if (productIds.length === 0) return;
+  await db.update(products).set({ available }).where(inArray(products.id, productIds));
 }
 
 // ========== Orders ==========
