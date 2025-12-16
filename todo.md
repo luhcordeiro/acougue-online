@@ -161,3 +161,6 @@
 
 ## Melhorias na Seleção de Tipo de Corte
 - [x] Alterar seleção de tipo de corte para formato de botões (igual às quantidades)
+
+## Simplificação da Seleção de Quantidade
+- [x] Ocultar campo "Ou digite a quantidade (kg)" da página de produto

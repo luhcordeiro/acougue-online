@@ -3,7 +3,6 @@ import { useRoute, Link, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 // Select removido - usando botões para tipo de corte
 import { ArrowLeft, ShoppingCart } from "lucide-react";
@@ -217,20 +216,6 @@ export default function ProductDetail() {
                   </div>
                 </div>
 
-                {/* Campo de Quantidade Manual */}
-                <div className="space-y-2">
-                  <Label htmlFor="quantity">Ou digite a quantidade (kg)</Label>
-                  <Input
-                    id="quantity"
-                    type="number"
-                    step="0.1"
-                    min="0.1"
-                    max={(product.stockKg / 1000).toString()}
-                    value={quantity}
-                    onChange={(e) => setQuantity(e.target.value)}
-                    className="text-base sm:text-lg h-12"
-                  />
-                </div>
 
                 <div className="bg-muted p-4 rounded-lg">
                   <div className="flex justify-between items-center">
