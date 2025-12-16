@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useRoute, Link } from "wouter";
+import { useRoute, Link, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +12,7 @@ import { toast } from "sonner";
 
 export default function ProductDetail() {
   const [, params] = useRoute("/product/:id");
+  const [, setLocation] = useLocation();
   const productId = params?.id ? parseInt(params.id) : 0;
   const [quantity, setQuantity] = useState("1.0");
   const [selectedCutType, setSelectedCutType] = useState<string>("");
@@ -81,7 +82,16 @@ export default function ProductDetail() {
     }
     
     localStorage.setItem("cart", JSON.stringify(cart));
+    
+    // Disparar evento para atualizar o carrinho flutuante
+    window.dispatchEvent(new Event("storage"));
+    
     toast.success(`${quantityNum} kg de ${product?.name} (${selectedCutType}) adicionado ao carrinho!`);
+    
+    // Voltar para o catálogo após adicionar
+    setTimeout(() => {
+      setLocation("/");
+    }, 500);
   };
 
   if (isLoading) {

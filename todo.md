@@ -152,3 +152,9 @@
 - [x] Adicionar campo de troco para pagamento em dinheiro
 - [x] Atualizar página de confirmação para exibir forma de pagamento
 - [x] Atualizar painel admin para exibir forma de pagamento nos pedidos
+
+## Melhorias de Experiência Mobile
+- [x] Implementar catálogo de produtos em formato de lista (ao invés de grid)
+- [x] Retornar automaticamente ao catálogo após adicionar produto ao carrinho
+- [x] Criar carrinho flutuante fixo na tela para fácil acesso no celular
+- [x] Testar experiência mobile completa

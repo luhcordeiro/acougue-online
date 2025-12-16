@@ -55,58 +55,54 @@ describe("Product Cut Types", () => {
     const ctx = createPublicContext();
     const caller = appRouter.createCaller(ctx);
     
-    // Buscar tipos de corte do produto 1
-    const productCutTypes = await caller.cutTypes.getByProduct({ productId: 1 });
-    expect(Array.isArray(productCutTypes)).toBe(true);
-  });
-
-  it("should add cut type to product (admin only)", async () => {
-    const publicCtx = createPublicContext();
-    const adminCtx = createAdminContext();
-    const publicCaller = appRouter.createCaller(publicCtx);
-    const adminCaller = appRouter.createCaller(adminCtx);
+    // Buscar produtos disponíveis primeiro
+    const products = await caller.products.available();
     
-    // Primeiro, buscar tipos de corte existentes
-    const cutTypes = await publicCaller.cutTypes.list();
-    
-    if (cutTypes.length > 0) {
-      const cutTypeId = cutTypes[0].id;
-      
-      // Adicionar ao produto 1 (admin)
-      const result = await adminCaller.cutTypes.addToProduct({
-        productId: 1,
-        cutTypeId: cutTypeId
-      });
-      
-      expect(result.success).toBe(true);
+    if (products.length > 0) {
+      // Usar o primeiro produto disponível
+      const productCutTypes = await caller.cutTypes.getByProduct({ productId: products[0].id });
+      expect(Array.isArray(productCutTypes)).toBe(true);
+    } else {
+      // Se não houver produtos, apenas verificar que a função não quebra
+      const productCutTypes = await caller.cutTypes.getByProduct({ productId: 999999 });
+      expect(Array.isArray(productCutTypes)).toBe(true);
     }
   });
 
-  it("should get product cut types after adding", async () => {
-    const ctx = createPublicContext();
-    const caller = appRouter.createCaller(ctx);
-    
-    const productCutTypes = await caller.cutTypes.getByProduct({ productId: 1 });
-    expect(Array.isArray(productCutTypes)).toBe(true);
-  });
-
-  it("should remove cut type from product (admin only)", async () => {
+  it("should add and remove cut type to product (admin only)", async () => {
     const publicCtx = createPublicContext();
     const adminCtx = createAdminContext();
     const publicCaller = appRouter.createCaller(publicCtx);
     const adminCaller = appRouter.createCaller(adminCtx);
     
-    const productCutTypes = await publicCaller.cutTypes.getByProduct({ productId: 1 });
+    // Buscar tipos de corte existentes
+    const cutTypes = await publicCaller.cutTypes.list();
+    // Buscar produtos disponíveis
+    const products = await publicCaller.products.available();
     
-    if (productCutTypes.length > 0) {
-      const cutTypeId = productCutTypes[0].id;
+    if (cutTypes.length > 0 && products.length > 0) {
+      const cutTypeId = cutTypes[0].id;
+      const productId = products[0].id;
       
-      const result = await adminCaller.cutTypes.removeFromProduct({
-        productId: 1,
+      // Adicionar ao produto (admin)
+      const addResult = await adminCaller.cutTypes.addToProduct({
+        productId: productId,
         cutTypeId: cutTypeId
       });
       
-      expect(result.success).toBe(true);
+      expect(addResult.success).toBe(true);
+      
+      // Verificar se foi adicionado
+      const productCutTypes = await publicCaller.cutTypes.getByProduct({ productId });
+      expect(Array.isArray(productCutTypes)).toBe(true);
+      
+      // Remover do produto (admin)
+      const removeResult = await adminCaller.cutTypes.removeFromProduct({
+        productId: productId,
+        cutTypeId: cutTypeId
+      });
+      
+      expect(removeResult.success).toBe(true);
     }
   });
 });
