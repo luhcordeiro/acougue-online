@@ -187,3 +187,7 @@
 - [x] Implementar seleção múltipla de produtos com checkboxes
 - [x] Adicionar ações em massa para ativar/desativar produtos
 - [x] Implementar filtro de busca para melhor gestão
+
+## Correção de Autenticação Admin
+- [x] Corrigir tela de Gestão de Pedidos para usar senha simples
+- [x] Verificar outras telas admin usam autenticação correta

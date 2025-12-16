@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -47,17 +47,23 @@ const paymentMethodColors = {
 
 export default function AdminOrders() {
   const [, setLocation] = useLocation();
+  const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
   
   // Verificar autenticação com senha
   const isAdminAuthenticated = sessionStorage.getItem("adminAuthenticated") === "true";
   
   // Redirecionar para login do admin se não estiver autenticado com senha
+  useEffect(() => {
+    if (!isAdminAuthenticated) {
+      setLocation("/admin/login");
+    }
+  }, [isAdminAuthenticated, setLocation]);
+  
+  // Não renderizar enquanto não estiver autenticado
   if (!isAdminAuthenticated) {
-    setLocation("/admin/login");
     return null;
   }
   
-  const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
