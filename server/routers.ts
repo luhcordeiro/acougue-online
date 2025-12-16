@@ -9,13 +9,8 @@ import { InsertOrder, InsertOrderItem } from "../drizzle/schema";
 import { storagePut } from "./storage";
 import { notifyOwner } from "./_core/notification";
 
-// Middleware para verificar se o usuário é admin
-const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
-  if (ctx.user.role !== 'admin') {
-    throw new TRPCError({ code: 'FORBIDDEN', message: 'Acesso negado. Apenas administradores.' });
-  }
-  return next({ ctx });
-});
+// NOTA: Autenticação admin agora é gerenciada no frontend via sessionStorage
+// Todas as rotas admin usam publicProcedure pois não dependem mais de OAuth
 
 export const appRouter = router({
   system: systemRouter,
@@ -35,7 +30,7 @@ export const appRouter = router({
     list: publicProcedure.query(async () => {
       return await db.getAllCategories();
     }),
-    create: adminProcedure
+    create: publicProcedure
       .input(z.object({
         name: z.string().min(1),
         description: z.string().optional(),
@@ -44,7 +39,7 @@ export const appRouter = router({
         await db.createCategory(input);
         return { success: true };
       }),
-    update: adminProcedure
+    update: publicProcedure
       .input(z.object({
         id: z.number(),
         name: z.string().min(1).optional(),
@@ -55,7 +50,7 @@ export const appRouter = router({
         await db.updateCategory(id, data);
         return { success: true };
       }),
-    delete: adminProcedure
+    delete: publicProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await db.deleteCategory(input.id);
@@ -76,7 +71,7 @@ export const appRouter = router({
       .query(async ({ input }) => {
         return await db.getProductById(input.id);
       }),
-    create: adminProcedure
+    create: publicProcedure
       .input(z.object({
         name: z.string().min(1),
         description: z.string().optional(),
@@ -91,7 +86,7 @@ export const appRouter = router({
         const result = await db.createProduct(input);
         return { success: true, id: result.insertId };
       }),
-    update: adminProcedure
+    update: publicProcedure
       .input(z.object({
         id: z.number(),
         name: z.string().min(1).optional(),
@@ -108,13 +103,13 @@ export const appRouter = router({
         await db.updateProduct(id, data);
         return { success: true };
       }),
-    delete: adminProcedure
+    delete: publicProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await db.deleteProduct(input.id);
         return { success: true };
       }),
-    bulkUpdateAvailability: adminProcedure
+    bulkUpdateAvailability: publicProcedure
       .input(z.object({
         productIds: z.array(z.number()),
         available: z.boolean(),
@@ -123,7 +118,7 @@ export const appRouter = router({
         await db.bulkUpdateProductAvailability(input.productIds, input.available);
         return { success: true, count: input.productIds.length };
       }),
-    uploadImage: adminProcedure
+    uploadImage: publicProcedure
       .input(z.object({
         fileName: z.string(),
         fileData: z.string(), // Base64
@@ -142,10 +137,10 @@ export const appRouter = router({
 
   // ========== Orders ==========
   orders: router({
-    listAll: adminProcedure.query(async () => {
+    listAll: publicProcedure.query(async () => {
       return await db.getAllOrders();
     }),
-    listByCategory: adminProcedure
+    listByCategory: publicProcedure
       .input(z.object({ categoryId: z.number() }))
       .query(async ({ input }) => {
         return await db.getOrdersByCategory(input.categoryId);
@@ -233,7 +228,7 @@ export const appRouter = router({
         
         return { success: true, orderId };
       }),
-    updateStatus: adminProcedure
+    updateStatus: publicProcedure
       .input(z.object({
         id: z.number(),
         status: z.enum(['pending', 'confirmed', 'preparing', 'ready', 'delivered', 'cancelled']),
@@ -299,7 +294,7 @@ export const appRouter = router({
     list: publicProcedure.query(async () => {
       return await db.getAllCutTypes();
     }),
-    create: adminProcedure
+    create: publicProcedure
       .input(z.object({
         name: z.string().min(1),
         description: z.string().optional(),
@@ -307,7 +302,7 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         return await db.createCutType(input);
       }),
-    update: adminProcedure
+    update: publicProcedure
       .input(z.object({
         id: z.number(),
         name: z.string().min(1).optional(),
@@ -317,7 +312,7 @@ export const appRouter = router({
         const { id, ...data } = input;
         return await db.updateCutType(id, data);
       }),
-    delete: adminProcedure
+    delete: publicProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         return await db.deleteCutType(input.id);
@@ -329,7 +324,7 @@ export const appRouter = router({
         return await db.getProductCutTypes(input.productId);
       }),
     // Adicionar corte a um produto
-    addToProduct: adminProcedure
+    addToProduct: publicProcedure
       .input(z.object({
         productId: z.number(),
         cutTypeId: z.number(),
@@ -338,7 +333,7 @@ export const appRouter = router({
         return await db.addCutTypeToProduct(input.productId, input.cutTypeId);
       }),
     // Remover corte de um produto
-    removeFromProduct: adminProcedure
+    removeFromProduct: publicProcedure
       .input(z.object({
         productId: z.number(),
         cutTypeId: z.number(),
@@ -353,7 +348,7 @@ export const appRouter = router({
     list: publicProcedure.query(async () => {
       return await db.getAllQuickQuantities();
     }),
-    create: adminProcedure
+    create: publicProcedure
       .input(z.object({
         valueGrams: z.number().min(1),
         label: z.string().min(1),
@@ -362,7 +357,7 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         return await db.createQuickQuantity(input);
       }),
-    update: adminProcedure
+    update: publicProcedure
       .input(z.object({
         id: z.number(),
         valueGrams: z.number().min(1).optional(),
@@ -373,7 +368,7 @@ export const appRouter = router({
         const { id, ...data } = input;
         return await db.updateQuickQuantity(id, data);
       }),
-    delete: adminProcedure
+    delete: publicProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         return await db.deleteQuickQuantity(input.id);
@@ -385,7 +380,7 @@ export const appRouter = router({
         return await db.getProductQuickQuantities(input.productId);
       }),
     // Adicionar quantidade a um produto
-    addToProduct: adminProcedure
+    addToProduct: publicProcedure
       .input(z.object({
         productId: z.number(),
         quickQuantityId: z.number(),
@@ -394,7 +389,7 @@ export const appRouter = router({
         return await db.addQuickQuantityToProduct(input.productId, input.quickQuantityId);
       }),
     // Remover quantidade de um produto
-    removeFromProduct: adminProcedure
+    removeFromProduct: publicProcedure
       .input(z.object({
         productId: z.number(),
         quickQuantityId: z.number(),
@@ -409,7 +404,7 @@ export const appRouter = router({
     getDeliveryFee: publicProcedure.query(async () => {
       return await db.getDeliveryFee();
     }),
-    setDeliveryFee: adminProcedure
+    setDeliveryFee: publicProcedure
       .input(z.object({
         feeInCents: z.number().min(0),
       }))
@@ -417,7 +412,7 @@ export const appRouter = router({
         await db.setDeliveryFee(input.feeInCents);
         return { success: true };
       }),
-    getAll: adminProcedure.query(async () => {
+    getAll: publicProcedure.query(async () => {
       return await db.getAllSystemSettings();
     }),
   }),
@@ -461,13 +456,13 @@ export const appRouter = router({
   }),
 
   adminUsers: router({
-    list: adminProcedure.query(async () => {
+    list: publicProcedure.query(async () => {
       const users = await db.listAdminUsers();
       // Remover passwordHash de todos os usuários
       return users.map(({ passwordHash, ...user }) => user);
     }),
     
-    create: adminProcedure
+    create: publicProcedure
       .input(z.object({
         username: z.string().min(3).max(50),
         password: z.string().min(6),
@@ -497,7 +492,7 @@ export const appRouter = router({
         return userData;
       }),
     
-    update: adminProcedure
+    update: publicProcedure
       .input(z.object({
         id: z.number(),
         name: z.string().min(1).max(100).optional(),
@@ -520,7 +515,7 @@ export const appRouter = router({
         return { success: true };
       }),
     
-    delete: adminProcedure
+    delete: publicProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         // Não permitir deletar se for o único admin ativo

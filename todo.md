@@ -210,3 +210,8 @@
 - [x] Atualizar todas as telas admin para usar novo sistema de autenticação
 - [x] Criar usuário admin padrão inicial
 - [x] Criar testes unitários para sistema de autenticação
+
+## Correção de Autenticação Admin - Remover OAuth
+- [x] Identificar uso de adminProcedure com OAuth
+- [x] Substituir adminProcedure por publicProcedure nas rotas admin
+- [x] Validação de autenticação movida para o frontend (sessionStorage)
