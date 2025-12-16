@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { Package, ShoppingBag, Tag, ArrowLeft, Scissors, Scale, Settings } from "lucide-react";
+import { Package, ShoppingBag, Tag, ArrowLeft, Scissors, Scale, Settings, Users } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
 
@@ -192,6 +192,21 @@ export default function AdminDashboard() {
                 <CardTitle>Configurações</CardTitle>
                 <CardDescription>
                   Configure taxa de entrega e outras opções do sistema
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button className="w-full">Acessar</Button>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href="/admin/users">
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+              <CardHeader>
+                <Users className="h-12 w-12 text-primary mb-2" />
+                <CardTitle>Usuários Admin</CardTitle>
+                <CardDescription>
+                  Gerencie os usuários com acesso ao painel administrativo
                 </CardDescription>
               </CardHeader>
               <CardContent>

@@ -200,3 +200,13 @@
 ## Remoção de Funcionalidade de Estoque
 - [x] Remover campo de estoque do formulário de cadastro/edição de produtos
 - [x] Remover exibição de estoque nas listagens de produtos (Home e Admin)
+
+## Sistema de Gerenciamento de Usuários Administradores
+- [x] Criar tabela adminUsers no schema do banco de dados
+- [x] Implementar procedures de autenticação (login/logout)
+- [x] Implementar CRUD de usuários administradores
+- [x] Criar tela de login com usuário e senha
+- [x] Criar tela de gerenciamento de usuários admin no painel
+- [x] Atualizar todas as telas admin para usar novo sistema de autenticação
+- [x] Criar usuário admin padrão inicial
+- [x] Criar testes unitários para sistema de autenticação

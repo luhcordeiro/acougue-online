@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO adminUsers (username, passwordHash, name, active) \nSELECT 'admin', '$2a$10$rXKvZR6hfp.vRw5YIjb5/.P8eFjYxeZJ3SxqhkJ0hKGEO.zKqN5Gy', 'Administrador', true\nWHERE NOT EXISTS (SELECT 1 FROM adminUsers WHERE username = 'admin')",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2Ct94FQQX2tqCCM.root --database jtWWBUdj7qZKX8P4ihhs3o --execute INSERT INTO adminUsers (username, passwordHash, name, active) \nSELECT 'admin', '$2a$10$rXKvZR6hfp.vRw5YIjb5/.P8eFjYxeZJ3SxqhkJ0hKGEO.zKqN5Gy', 'Administrador', true\nWHERE NOT EXISTS (SELECT 1 FROM adminUsers WHERE username = 'admin')",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 361
+}

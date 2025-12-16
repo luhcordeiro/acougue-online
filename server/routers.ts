@@ -421,6 +421,123 @@ export const appRouter = router({
       return await db.getAllSystemSettings();
     }),
   }),
+
+  // ========== Admin Authentication & Users ==========
+  adminAuth: router({
+    // Login com usuário e senha
+    login: publicProcedure
+      .input(z.object({
+        username: z.string().min(1),
+        password: z.string().min(1),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const user = await db.getAdminUserByUsername(input.username);
+        
+        if (!user || !user.active) {
+          throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Usuário ou senha inválidos' });
+        }
+        
+        // Importar bcrypt para verificar senha
+        const bcrypt = await import('bcryptjs');
+        const isValid = await bcrypt.compare(input.password, user.passwordHash);
+        
+        if (!isValid) {
+          throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Usuário ou senha inválidos' });
+        }
+        
+        // Atualizar último login
+        await db.updateAdminLastLogin(user.id);
+        
+        // Retornar dados do usuário (sem senha)
+        const { passwordHash, ...userData } = user;
+        return { user: userData, success: true };
+      }),
+    
+    // Verificar se está logado (baseado em sessionStorage no frontend)
+    checkAuth: publicProcedure.query(() => {
+      // Frontend gerencia autenticação via sessionStorage
+      return { authenticated: true };
+    }),
+  }),
+
+  adminUsers: router({
+    list: adminProcedure.query(async () => {
+      const users = await db.listAdminUsers();
+      // Remover passwordHash de todos os usuários
+      return users.map(({ passwordHash, ...user }) => user);
+    }),
+    
+    create: adminProcedure
+      .input(z.object({
+        username: z.string().min(3).max(50),
+        password: z.string().min(6),
+        name: z.string().min(1).max(100),
+        email: z.string().email().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        // Verificar se username já existe
+        const existing = await db.getAdminUserByUsername(input.username);
+        if (existing) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Nome de usuário já existe' });
+        }
+        
+        // Hash da senha
+        const bcrypt = await import('bcryptjs');
+        const passwordHash = await bcrypt.hash(input.password, 10);
+        
+        const newUser = await db.createAdminUser({
+          username: input.username,
+          passwordHash,
+          name: input.name,
+          email: input.email,
+          active: true,
+        });
+        
+        const { passwordHash: _, ...userData } = newUser;
+        return userData;
+      }),
+    
+    update: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().min(1).max(100).optional(),
+        email: z.string().email().optional(),
+        password: z.string().min(6).optional(),
+        active: z.boolean().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, password, ...data } = input;
+        
+        let updateData: any = { ...data };
+        
+        // Se senha foi fornecida, fazer hash
+        if (password) {
+          const bcrypt = await import('bcryptjs');
+          updateData.passwordHash = await bcrypt.hash(password, 10);
+        }
+        
+        await db.updateAdminUser(id, updateData);
+        return { success: true };
+      }),
+    
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        // Não permitir deletar se for o único admin ativo
+        const allUsers = await db.listAdminUsers();
+        const activeUsers = allUsers.filter(u => u.active);
+        
+        if (activeUsers.length === 1 && activeUsers[0].id === input.id) {
+          throw new TRPCError({ 
+            code: 'BAD_REQUEST', 
+            message: 'Não é possível deletar o único usuário ativo' 
+          });
+        }
+        
+        await db.deleteAdminUser(input.id);
+        return { success: true };
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

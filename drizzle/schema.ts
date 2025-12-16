@@ -199,3 +199,22 @@ export const systemSettings = mysqlTable("systemSettings", {
 
 export type SystemSetting = typeof systemSettings.$inferSelect;
 export type InsertSystemSetting = typeof systemSettings.$inferInsert;
+
+/**
+ * Usuários administradores do sistema
+ * Sistema de autenticação separado para acesso ao painel admin
+ */
+export const adminUsers = mysqlTable("adminUsers", {
+  id: int("id").autoincrement().primaryKey(),
+  username: varchar("username", { length: 50 }).notNull().unique(),
+  passwordHash: varchar("passwordHash", { length: 255 }).notNull(),
+  name: varchar("name", { length: 100 }).notNull(),
+  email: varchar("email", { length: 320 }),
+  active: boolean("active").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  lastLoginAt: timestamp("lastLoginAt"),
+});
+
+export type AdminUser = typeof adminUsers.$inferSelect;
+export type InsertAdminUser = typeof adminUsers.$inferInsert;

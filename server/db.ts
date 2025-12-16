@@ -1,6 +1,6 @@
 import { eq, desc, and, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, categories, InsertCategory, products, InsertProduct, orders, InsertOrder, orderItems, InsertOrderItem, addresses, InsertAddress, cutTypes, InsertCutType, productCutTypes, InsertProductCutType, quickQuantities, InsertQuickQuantity, productQuickQuantities, InsertProductQuickQuantity, systemSettings, InsertSystemSetting } from "../drizzle/schema";
+import { InsertUser, users, categories, InsertCategory, products, InsertProduct, orders, InsertOrder, orderItems, InsertOrderItem, addresses, InsertAddress, cutTypes, InsertCutType, productCutTypes, InsertProductCutType, quickQuantities, InsertQuickQuantity, productQuickQuantities, InsertProductQuickQuantity, systemSettings, InsertSystemSetting, adminUsers, InsertAdminUser, AdminUser } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -597,4 +597,60 @@ export async function getDeliveryFee(): Promise<number> {
 
 export async function setDeliveryFee(feeInCents: number): Promise<void> {
   await setSystemSetting("delivery_fee", feeInCents.toString(), "Taxa de entrega em centavos");
+}
+
+
+// ==================== ADMIN USERS ====================
+
+export async function createAdminUser(data: InsertAdminUser): Promise<AdminUser> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.insert(adminUsers).values(data);
+  const newUser = await db.select().from(adminUsers).where(eq(adminUsers.id, Number(result[0].insertId))).limit(1);
+  return newUser[0];
+}
+
+export async function getAdminUserByUsername(username: string): Promise<AdminUser | null> {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db.select().from(adminUsers).where(eq(adminUsers.username, username)).limit(1);
+  return result.length > 0 ? result[0] : null;
+}
+
+export async function getAdminUserById(id: number): Promise<AdminUser | null> {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db.select().from(adminUsers).where(eq(adminUsers.id, id)).limit(1);
+  return result.length > 0 ? result[0] : null;
+}
+
+export async function listAdminUsers(): Promise<AdminUser[]> {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return await db.select().from(adminUsers).orderBy(desc(adminUsers.createdAt));
+}
+
+export async function updateAdminUser(id: number, data: Partial<InsertAdminUser>): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(adminUsers).set(data).where(eq(adminUsers.id, id));
+}
+
+export async function deleteAdminUser(id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.delete(adminUsers).where(eq(adminUsers.id, id));
+}
+
+export async function updateAdminLastLogin(id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  
+  await db.update(adminUsers).set({ lastLoginAt: new Date() }).where(eq(adminUsers.id, id));
 }
