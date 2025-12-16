@@ -218,9 +218,7 @@ export default function Home() {
                                 <p className="text-lg sm:text-xl font-bold text-primary">
                                   R$ {(product.pricePerKg / 100).toFixed(2)}/kg
                                 </p>
-                                <p className="text-xs text-muted-foreground">
-                                  Estoque: {(product.stockKg / 1000).toFixed(1)} kg
-                                </p>
+
                               </div>
                               <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                             </div>

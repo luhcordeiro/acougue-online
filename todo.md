@@ -196,3 +196,7 @@
 - [x] Adicionar badge com contador de novos pedidos no header admin
 - [x] Implementar polling para verificar novos pedidos periodicamente
 - [x] Adicionar alerta visual (toast) quando novo pedido chegar
+
+## Remoção de Funcionalidade de Estoque
+- [x] Remover campo de estoque do formulário de cadastro/edição de produtos
+- [x] Remover exibição de estoque nas listagens de produtos (Home e Admin)

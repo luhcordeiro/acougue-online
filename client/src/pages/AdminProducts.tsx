@@ -33,7 +33,6 @@ export default function AdminProducts() {
     description: "",
     categoryId: "",
     pricePerKg: "",
-    stockKg: "",
     available: true,
     imageUrl: "",
     imageKey: "",
@@ -228,7 +227,6 @@ export default function AdminProducts() {
       description: "",
       categoryId: "",
       pricePerKg: "",
-      stockKg: "",
       available: true,
       imageUrl: "",
       imageKey: "",
@@ -247,7 +245,6 @@ export default function AdminProducts() {
       description: product.description || "",
       categoryId: product.categoryId?.toString() || "",
       pricePerKg: (product.pricePerKg / 100).toString(),
-      stockKg: (product.stockKg / 1000).toString(),
       available: product.available,
       imageUrl: product.imageUrl || "",
       imageKey: product.imageKey || "",
@@ -302,7 +299,6 @@ export default function AdminProducts() {
       description: formData.description || undefined,
       categoryId: formData.categoryId ? parseInt(formData.categoryId) : undefined,
       pricePerKg: Math.round(parseFloat(formData.pricePerKg) * 100), // Converter para centavos
-      stockKg: Math.round(parseFloat(formData.stockKg) * 1000), // Converter para gramas
       available: formData.available,
       imageUrl: imageUrl || undefined,
       imageKey: imageKey || undefined,
@@ -421,18 +417,7 @@ export default function AdminProducts() {
                   />
                 </div>
                 
-                <div>
-                  <Label htmlFor="stock">Estoque (Kg)</Label>
-                  <Input
-                    id="stock"
-                    type="number"
-                    step="0.1"
-                    min="0"
-                    value={formData.stockKg}
-                    onChange={(e) => setFormData({ ...formData, stockKg: e.target.value })}
-                    placeholder="0.0"
-                  />
-                </div>
+
               </div>
 
               <div>
@@ -616,7 +601,6 @@ export default function AdminProducts() {
                   <TableHead>Nome</TableHead>
                   <TableHead>Categoria</TableHead>
                   <TableHead>Preço/Kg</TableHead>
-                  <TableHead>Estoque</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
@@ -644,7 +628,6 @@ export default function AdminProducts() {
                       <TableCell className="font-medium">{product.name}</TableCell>
                       <TableCell>{category?.name || "—"}</TableCell>
                       <TableCell>R$ {(product.pricePerKg / 100).toFixed(2)}</TableCell>
-                      <TableCell>{(product.stockKg / 1000).toFixed(1)} kg</TableCell>
                       <TableCell>
                         <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                           product.available 
