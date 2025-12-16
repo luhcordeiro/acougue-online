@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Pencil, Trash2, Plus } from "lucide-react";
+import { Pencil, Trash2, Plus, ArrowLeft, Scale } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
@@ -124,13 +124,34 @@ export default function AdminQuickQuantities() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-red-50 to-white">
-      <div className="container py-8">
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-red-600 text-white shadow-lg">
+        <div className="container py-4">
+          <div className="flex items-center gap-4">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setLocation("/admin")}
+              className="text-white hover:bg-white/20"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Voltar
+            </Button>
+            <div className="flex items-center gap-2">
+              <Scale className="h-6 w-6" />
+              <h1 className="text-xl font-bold">Quantidades Rápidas</h1>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main className="container py-8">
         <Card>
           <CardHeader>
             <div className="flex justify-between items-center">
               <div>
-                <CardTitle>Quantidades Rápidas</CardTitle>
+                <CardTitle>Gerenciar Quantidades Rápidas</CardTitle>
                 <CardDescription>
                   Gerencie as opções de quantidade rápida disponíveis (0.5kg, 1kg, 2kg, etc.)
                 </CardDescription>
@@ -187,7 +208,6 @@ export default function AdminQuickQuantities() {
             )}
           </CardContent>
         </Card>
-      </div>
 
       {/* Dialog de Criar/Editar */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -255,6 +275,7 @@ export default function AdminQuickQuantities() {
           </form>
         </DialogContent>
       </Dialog>
+      </main>
     </div>
   );
 }

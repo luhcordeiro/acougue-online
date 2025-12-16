@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Pencil, Trash2, Plus } from "lucide-react";
+import { Pencil, Trash2, Plus, ArrowLeft, Tags } from "lucide-react";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
 
@@ -97,12 +97,33 @@ export default function AdminCategories() {
   };
 
   return (
-    <div className="container py-8">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">Gerenciar Categorias</h1>
-          <p className="text-muted-foreground">Organize seus produtos em categorias</p>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-red-600 text-white shadow-lg">
+        <div className="container py-4">
+          <div className="flex items-center gap-4">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setLocation("/admin")}
+              className="text-white hover:bg-white/20"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Voltar
+            </Button>
+            <div className="flex items-center gap-2">
+              <Tags className="h-6 w-6" />
+              <h1 className="text-xl font-bold">Gerenciar Categorias</h1>
+            </div>
+          </div>
         </div>
+      </header>
+
+      <main className="container py-8">
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <p className="text-muted-foreground">Organize seus produtos em categorias</p>
+          </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={() => { resetForm(); setIsDialogOpen(true); }}>
@@ -207,6 +228,7 @@ export default function AdminCategories() {
           )}
         </CardContent>
       </Card>
+      </main>
     </div>
   );
 }

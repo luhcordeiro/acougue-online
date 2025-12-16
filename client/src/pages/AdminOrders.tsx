@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Eye, CreditCard, QrCode, Banknote } from "lucide-react";
+import { Eye, CreditCard, QrCode, Banknote, ArrowLeft, ClipboardList } from "lucide-react";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
 
@@ -110,11 +110,32 @@ export default function AdminOrders() {
 
 
   return (
-    <div className="container py-8">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold">Gerenciar Pedidos</h1>
-        <p className="text-muted-foreground">Visualize e atualize o status dos pedidos</p>
-      </div>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-red-600 text-white shadow-lg">
+        <div className="container py-4">
+          <div className="flex items-center gap-4">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setLocation("/admin")}
+              className="text-white hover:bg-white/20"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Voltar
+            </Button>
+            <div className="flex items-center gap-2">
+              <ClipboardList className="h-6 w-6" />
+              <h1 className="text-xl font-bold">Gerenciar Pedidos</h1>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main className="container py-8">
+        <div className="mb-6">
+          <p className="text-muted-foreground">Visualize e atualize o status dos pedidos</p>
+        </div>
 
       <Card className="mb-6">
         <CardHeader>
@@ -352,6 +373,7 @@ export default function AdminOrders() {
           )}
         </DialogContent>
       </Dialog>
+      </main>
     </div>
   );
 }

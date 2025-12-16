@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Pencil, Trash2, Plus } from "lucide-react";
+import { Pencil, Trash2, Plus, ArrowLeft, Scissors } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
@@ -110,13 +110,34 @@ export default function AdminCutTypes() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-red-50 to-white">
-      <div className="container py-8">
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-red-600 text-white shadow-lg">
+        <div className="container py-4">
+          <div className="flex items-center gap-4">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setLocation("/admin")}
+              className="text-white hover:bg-white/20"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Voltar
+            </Button>
+            <div className="flex items-center gap-2">
+              <Scissors className="h-6 w-6" />
+              <h1 className="text-xl font-bold">Tipos de Corte</h1>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main className="container py-8">
         <Card>
           <CardHeader>
             <div className="flex justify-between items-center">
               <div>
-                <CardTitle>Tipos de Corte</CardTitle>
+                <CardTitle>Gerenciar Tipos de Corte</CardTitle>
                 <CardDescription>
                   Gerencie os tipos de corte disponíveis (Moído, Em Cubos, Peça Inteira, etc.)
                 </CardDescription>
@@ -173,7 +194,6 @@ export default function AdminCutTypes() {
             )}
           </CardContent>
         </Card>
-      </div>
 
       {/* Dialog de Criar/Editar */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -222,6 +242,7 @@ export default function AdminCutTypes() {
           </form>
         </DialogContent>
       </Dialog>
+      </main>
     </div>
   );
 }

@@ -172,3 +172,10 @@
 ## Limpeza de Dados
 - [x] Remover todos os pedidos do banco de dados
 - [x] Remover todos os produtos do banco de dados
+
+## Navegação no Painel Admin
+- [x] Implementar botão Voltar na tela de Gerenciar Produtos
+- [x] Implementar botão Voltar na tela de Gerenciar Pedidos
+- [x] Implementar botão Voltar na tela de Gerenciar Categorias
+- [x] Implementar botão Voltar na tela de Tipos de Corte
+- [x] Implementar botão Voltar na tela de Quantidades Rápidas
