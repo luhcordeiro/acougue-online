@@ -250,12 +250,13 @@ export default function OrderConfirmation() {
             variant="outline"
             onClick={handleShareWhatsApp}
             className="w-full"
+            style={{ backgroundColor: '#14db3c' }}
           >
             <Share2 className="mr-2 h-5 w-5" />
             Compartilhar no WhatsApp
           </Button>
           <Link href="/">
-            <Button size="lg" className="w-full" style={{ backgroundColor: '#16e967' }}>
+            <Button size="lg" className="w-full" style={{ backgroundColor: '#c10007' }}>
               <Home className="mr-2 h-5 w-5" />
               Voltar para a loja
             </Button>

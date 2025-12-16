@@ -164,3 +164,7 @@
 
 ## Simplificação da Seleção de Quantidade
 - [x] Ocultar campo "Ou digite a quantidade (kg)" da página de produto
+
+## Ajustes Visuais na Página de Confirmação
+- [x] Alterar cor do botão "Compartilhar no WhatsApp" para verde (#14db3c)
+- [x] Alterar cor do botão "Voltar para a loja" para vermelho (#c10007)
