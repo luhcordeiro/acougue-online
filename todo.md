@@ -168,3 +168,7 @@
 ## Ajustes Visuais na Página de Confirmação
 - [x] Alterar cor do botão "Compartilhar no WhatsApp" para verde (#14db3c)
 - [x] Alterar cor do botão "Voltar para a loja" para vermelho (#c10007)
+
+## Limpeza de Dados
+- [x] Remover todos os pedidos do banco de dados
+- [x] Remover todos os produtos do banco de dados
