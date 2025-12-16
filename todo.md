@@ -191,3 +191,8 @@
 ## Correção de Autenticação Admin
 - [x] Corrigir tela de Gestão de Pedidos para usar senha simples
 - [x] Verificar outras telas admin usam autenticação correta
+
+## Notificação de Novos Pedidos para Admin
+- [x] Adicionar badge com contador de novos pedidos no header admin
+- [x] Implementar polling para verificar novos pedidos periodicamente
+- [x] Adicionar alerta visual (toast) quando novo pedido chegar

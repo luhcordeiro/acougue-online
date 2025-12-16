@@ -224,6 +224,13 @@ export async function updateOrderStatus(id: number, status: "pending" | "confirm
   await db.update(orders).set({ status }).where(eq(orders.id, id));
 }
 
+export async function countPendingOrders() {
+  const db = await getDb();
+  if (!db) return 0;
+  const result = await db.select().from(orders).where(eq(orders.status, 'pending'));
+  return result.length;
+}
+
 // ========== Order Items ==========
 
 export async function getOrderItems(orderId: number) {

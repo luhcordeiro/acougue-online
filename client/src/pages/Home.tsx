@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { APP_LOGO, APP_TITLE } from "@/const";
 import { trpc } from "@/lib/trpc";
-import { ShoppingCart, Search, ChevronRight } from "lucide-react";
+import { ShoppingCart, Search, ChevronRight, Bell } from "lucide-react";
 import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
 
@@ -24,6 +24,18 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [cartItemCount, setCartItemCount] = useState(0);
   const [cartTotal, setCartTotal] = useState(0);
+  
+  // Verificar se está autenticado como admin
+  const isAdminAuthenticated = sessionStorage.getItem("adminAuthenticated") === "true";
+  
+  // Contador de pedidos pendentes (apenas para admin autenticado)
+  const { data: pendingOrdersCount = 0 } = trpc.orders.countPending.useQuery(
+    undefined,
+    { 
+      enabled: isAdminAuthenticated,
+      refetchInterval: 10000, // Atualizar a cada 10 segundos
+    }
+  );
 
   // Atualizar contador do carrinho
   useEffect(() => {
@@ -82,9 +94,16 @@ export default function Home() {
               <h1 className="text-lg sm:text-2xl font-bold">{APP_TITLE}</h1>
             </div>
             <div className="flex items-center gap-2 sm:gap-4">
-              <Link href="/admin/login">
-                <Button variant="outline" size="sm" className="text-sm sm:text-base px-3 sm:px-4 py-4 sm:py-5 bg-white/10 hover:bg-white/20">
+              <Link href={isAdminAuthenticated ? "/admin" : "/admin/login"}>
+                <Button variant="outline" size="sm" className="text-sm sm:text-base px-3 sm:px-4 py-4 sm:py-5 bg-white/10 hover:bg-white/20 relative">
                   Admin
+                  {isAdminAuthenticated && pendingOrdersCount > 0 && (
+                    <Badge 
+                      className="absolute -top-2 -right-2 h-6 w-6 flex items-center justify-center p-0 bg-red-500 hover:bg-red-600 text-white text-xs"
+                    >
+                      {pendingOrdersCount > 9 ? '9+' : pendingOrdersCount}
+                    </Badge>
+                  )}
                 </Button>
               </Link>
             </div>

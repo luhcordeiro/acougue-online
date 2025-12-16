@@ -242,6 +242,9 @@ export const appRouter = router({
         await db.updateOrderStatus(input.id, input.status);
         return { success: true };
       }),
+    countPending: publicProcedure.query(async () => {
+      return await db.countPendingOrders();
+    }),
   }),
 
   // ========== Addresses (Protected) ==========

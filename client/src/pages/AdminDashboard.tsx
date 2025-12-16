@@ -1,8 +1,10 @@
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
 import { Package, ShoppingBag, Tag, ArrowLeft, Scissors, Scale, Settings } from "lucide-react";
 import { Link, useLocation } from "wouter";
+import { toast } from "sonner";
 
 export default function AdminDashboard() {
   const [, setLocation] = useLocation();
@@ -19,6 +21,33 @@ export default function AdminDashboard() {
   const { data: products = [] } = trpc.products.list.useQuery();
   const { data: orders = [] } = trpc.orders.listAll.useQuery();
   const { data: categories = [] } = trpc.categories.list.useQuery();
+  
+  // Contador de pedidos pendentes com polling
+  const { data: pendingOrdersCount = 0 } = trpc.orders.countPending.useQuery(
+    undefined,
+    { refetchInterval: 10000 } // Atualizar a cada 10 segundos
+  );
+  
+  // Referência para o contador anterior
+  const previousCountRef = useRef<number>(0);
+  
+  // Detectar novos pedidos e mostrar toast
+  useEffect(() => {
+    if (previousCountRef.current > 0 && pendingOrdersCount > previousCountRef.current) {
+      const newOrdersCount = pendingOrdersCount - previousCountRef.current;
+      toast.success(
+        `🔔 ${newOrdersCount} novo${newOrdersCount > 1 ? 's' : ''} pedido${newOrdersCount > 1 ? 's' : ''} recebido${newOrdersCount > 1 ? 's' : ''}!`,
+        {
+          duration: 5000,
+          action: {
+            label: 'Ver Pedidos',
+            onClick: () => setLocation('/admin/orders'),
+          },
+        }
+      );
+    }
+    previousCountRef.current = pendingOrdersCount;
+  }, [pendingOrdersCount, setLocation]);
 
   const pendingOrders = orders.filter(o => o.status === 'pending').length;
 
