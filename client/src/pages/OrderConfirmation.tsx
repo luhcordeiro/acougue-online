@@ -255,7 +255,7 @@ export default function OrderConfirmation() {
             Compartilhar no WhatsApp
           </Button>
           <Link href="/">
-            <Button size="lg" className="w-full">
+            <Button size="lg" className="w-full" style={{ backgroundColor: '#16e967' }}>
               <Home className="mr-2 h-5 w-5" />
               Voltar para a loja
             </Button>
