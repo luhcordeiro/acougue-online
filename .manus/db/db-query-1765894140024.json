@@ -1,0 +1,120 @@
+{
+  "query": "SELECT id, name, pricePerKg/100 as preco_reais FROM products ORDER BY name;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2Ct94FQQX2tqCCM.root --database jtWWBUdj7qZKX8P4ihhs3o --execute SELECT id, name, pricePerKg/100 as preco_reais FROM products ORDER BY name;",
+  "rows": [
+    {
+      "id": "300001",
+      "name": "Acém",
+      "preco_reais": "28.9800"
+    },
+    {
+      "id": "300002",
+      "name": "Alcatra",
+      "preco_reais": "42.9800"
+    },
+    {
+      "id": "300003",
+      "name": "Bananinha",
+      "preco_reais": "29.9800"
+    },
+    {
+      "id": "300005",
+      "name": "Bife Especial",
+      "preco_reais": "36.9800"
+    },
+    {
+      "id": "300004",
+      "name": "Bife a Rolê",
+      "preco_reais": "42.9800"
+    },
+    {
+      "id": "300006",
+      "name": "Bisteca Bovina do 7",
+      "preco_reais": "36.9800"
+    },
+    {
+      "id": "300021",
+      "name": "Bisteca do Contra Filé",
+      "preco_reais": "38.9800"
+    },
+    {
+      "id": "300007",
+      "name": "Capa do Contra Filé",
+      "preco_reais": "30.9800"
+    },
+    {
+      "id": "300008",
+      "name": "Charque",
+      "preco_reais": "36.9800"
+    },
+    {
+      "id": "300009",
+      "name": "Contra Filé",
+      "preco_reais": "44.9800"
+    },
+    {
+      "id": "300010",
+      "name": "Cordão do Filé Mignon",
+      "preco_reais": "34.9800"
+    },
+    {
+      "id": "300011",
+      "name": "Costela Bovina",
+      "preco_reais": "23.9800"
+    },
+    {
+      "id": "300012",
+      "name": "Costela Gaúcha",
+      "preco_reais": "24.9800"
+    },
+    {
+      "id": "300013",
+      "name": "Coxão Duro",
+      "preco_reais": "37.9800"
+    },
+    {
+      "id": "300014",
+      "name": "Coxão Mole",
+      "preco_reais": "38.9800"
+    },
+    {
+      "id": "300015",
+      "name": "Cupim",
+      "preco_reais": "39.9800"
+    },
+    {
+      "id": "300016",
+      "name": "Filé Mignon",
+      "preco_reais": "67.9800"
+    },
+    {
+      "id": "300017",
+      "name": "Fraldinha",
+      "preco_reais": "38.9800"
+    },
+    {
+      "id": "300018",
+      "name": "Gabrielinha",
+      "preco_reais": "33.9800"
+    },
+    {
+      "id": "300019",
+      "name": "Lagarto",
+      "preco_reais": "37.9800"
+    },
+    {
+      "id": "300020",
+      "name": "Maminha",
+      "preco_reais": "42.9800"
+    },
+    {
+      "id": "300022",
+      "name": "Ponta de Peito",
+      "preco_reais": "34.9800"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tpreco_reais\n300001\tAcém\t28.9800\n300002\tAlcatra\t42.9800\n300003\tBananinha\t29.9800\n300005\tBife Especial\t36.9800\n300004\tBife a Rolê\t42.9800\n300006\tBisteca Bovina do 7\t36.9800\n300021\tBisteca do Contra Filé\t38.9800\n300007\tCapa do Contra Filé\t30.9800\n300008\tCharque\t36.9800\n300009\tContra Filé\t44.9800\n300010\tCordão do Filé Mignon\t34.9800\n300011\tCostela Bovina\t23.9800\n300012\tCostela Gaúcha\t24.9800\n300013\tCoxão Duro\t37.9800\n300014\tCoxão Mole\t38.9800\n300015\tCupim\t39.9800\n300016\tFilé Mignon\t67.9800\n300017\tFraldinha\t38.9800\n300018\tGabrielinha\t33.9800\n300019\tLagarto\t37.9800\n300020\tMaminha\t42.9800\n300022\tPonta de Peito\t34.9800\n",
+  "stderr": "",
+  "execution_time_ms": 55
+}

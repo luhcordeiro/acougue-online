@@ -1,0 +1,40 @@
+{
+  "query": "SELECT p.id, p.name, p.categoryId, c.name as category_name FROM products p LEFT JOIN categories c ON p.categoryId = c.id LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2Ct94FQQX2tqCCM.root --database jtWWBUdj7qZKX8P4ihhs3o --execute SELECT p.id, p.name, p.categoryId, c.name as category_name FROM products p LEFT JOIN categories c ON p.categoryId = c.id LIMIT 5;",
+  "rows": [
+    {
+      "id": "300005",
+      "name": "Bife Especial",
+      "categoryId": "4",
+      "category_name": "Linguiças"
+    },
+    {
+      "id": "300004",
+      "name": "Bife a Rolê",
+      "categoryId": "4",
+      "category_name": "Linguiças"
+    },
+    {
+      "id": "300003",
+      "name": "Bananinha",
+      "categoryId": "4",
+      "category_name": "Linguiças"
+    },
+    {
+      "id": "300002",
+      "name": "Alcatra",
+      "categoryId": "4",
+      "category_name": "Linguiças"
+    },
+    {
+      "id": "300001",
+      "name": "Acém",
+      "categoryId": "4",
+      "category_name": "Linguiças"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tcategoryId\tcategory_name\n300005\tBife Especial\t4\tLinguiças\n300004\tBife a Rolê\t4\tLinguiças\n300003\tBananinha\t4\tLinguiças\n300002\tAlcatra\t4\tLinguiças\n300001\tAcém\t4\tLinguiças\n",
+  "stderr": "",
+  "execution_time_ms": 51
+}

@@ -1,0 +1,78 @@
+{
+  "query": "SELECT id, name FROM categories ORDER BY id LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2Ct94FQQX2tqCCM.root --database jtWWBUdj7qZKX8P4ihhs3o --execute SELECT id, name FROM categories ORDER BY id LIMIT 20;",
+  "rows": [
+    {
+      "id": "1",
+      "name": "Carnes Bovinas"
+    },
+    {
+      "id": "2",
+      "name": "Carnes Suínas"
+    },
+    {
+      "id": "3",
+      "name": "Aves"
+    },
+    {
+      "id": "4",
+      "name": "Linguiças"
+    },
+    {
+      "id": "30001",
+      "name": "Carne Suína"
+    },
+    {
+      "id": "60001",
+      "name": "Mercearia"
+    },
+    {
+      "id": "90001",
+      "name": "Míudos Bovinos"
+    },
+    {
+      "id": "90002",
+      "name": "Frios e Congelados"
+    },
+    {
+      "id": "90003",
+      "name": "Pão de alho e Carvão"
+    },
+    {
+      "id": "90004",
+      "name": "Espetinhos (Pra Assar)"
+    },
+    {
+      "id": "90005",
+      "name": "Refrigerantes Água"
+    },
+    {
+      "id": "90006",
+      "name": "Doces, bolachas, paçoca, halls, trident..."
+    },
+    {
+      "id": "90007",
+      "name": "Higiene e Limpeza"
+    },
+    {
+      "id": "120001",
+      "name": "Churrasqueiras e Grelhas"
+    },
+    {
+      "id": "120002",
+      "name": "Temperos e Condimentos"
+    },
+    {
+      "id": "120003",
+      "name": "Molhos para Churrasco"
+    },
+    {
+      "id": "120004",
+      "name": "Assados (somente aos domingos)"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\n1\tCarnes Bovinas\n2\tCarnes Suínas\n3\tAves\n4\tLinguiças\n30001\tCarne Suína\n60001\tMercearia\n90001\tMíudos Bovinos\n90002\tFrios e Congelados\n90003\tPão de alho e Carvão\n90004\tEspetinhos (Pra Assar)\n90005\tRefrigerantes Água\n90006\tDoces, bolachas, paçoca, halls, trident...\n90007\tHigiene e Limpeza\n120001\tChurrasqueiras e Grelhas\n120002\tTemperos e Condimentos\n120003\tMolhos para Churrasco\n120004\tAssados (somente aos domingos)\n",
+  "stderr": "",
+  "execution_time_ms": 59
+}

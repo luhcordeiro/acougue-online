@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO products (name, description, categoryId, pricePerKg, available, stockKg) VALUES \n('Gabrielinha', 'Carne bovina - Gabrielinha', 4, 3398, 1, 100000),\n('Lagarto', 'Carne bovina - Lagarto', 4, 3798, 1, 100000),\n('Maminha', 'Carne bovina - Maminha', 4, 4298, 1, 100000),\n('Bisteca do Contra Filé', 'Carne bovina - Bisteca do Contra Filé', 4, 3898, 1, 100000),\n('Ponta de Peito', 'Carne bovina - Ponta de Peito', 4, 3498, 1, 100000);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2Ct94FQQX2tqCCM.root --database jtWWBUdj7qZKX8P4ihhs3o --execute INSERT INTO products (name, description, categoryId, pricePerKg, available, stockKg) VALUES \n('Gabrielinha', 'Carne bovina - Gabrielinha', 4, 3398, 1, 100000),\n('Lagarto', 'Carne bovina - Lagarto', 4, 3798, 1, 100000),\n('Maminha', 'Carne bovina - Maminha', 4, 4298, 1, 100000),\n('Bisteca do Contra Filé', 'Carne bovina - Bisteca do Contra Filé', 4, 3898, 1, 100000),\n('Ponta de Peito', 'Carne bovina - Ponta de Peito', 4, 3498, 1, 100000);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 72
+}

@@ -179,3 +179,6 @@
 - [x] Implementar botão Voltar na tela de Gerenciar Categorias
 - [x] Implementar botão Voltar na tela de Tipos de Corte
 - [x] Implementar botão Voltar na tela de Quantidades Rápidas
+
+## Cadastro de Produtos via Planilha
+- [x] Cadastrar 22 produtos de Carnes Bovinas da planilha

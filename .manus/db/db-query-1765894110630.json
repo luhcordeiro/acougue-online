@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO products (name, description, categoryId, pricePerKg, available, stockKg) VALUES \n('Bisteca Bovina do 7', 'Carne bovina - Bisteca Bovina do 7', 4, 3698, 1, 100000),\n('Capa do Contra Filé', 'Carne bovina - Capa do Contra Filé', 4, 3098, 1, 100000),\n('Charque', 'Carne bovina - Charque', 4, 3698, 1, 100000),\n('Contra Filé', 'Carne bovina - Contra Filé', 4, 4498, 1, 100000),\n('Cordão do Filé Mignon', 'Carne bovina - Cordão do Filé Mignon', 4, 3498, 1, 100000),\n('Costela Bovina', 'Carne bovina - Costela Bovina', 4, 2398, 1, 100000);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2Ct94FQQX2tqCCM.root --database jtWWBUdj7qZKX8P4ihhs3o --execute INSERT INTO products (name, description, categoryId, pricePerKg, available, stockKg) VALUES \n('Bisteca Bovina do 7', 'Carne bovina - Bisteca Bovina do 7', 4, 3698, 1, 100000),\n('Capa do Contra Filé', 'Carne bovina - Capa do Contra Filé', 4, 3098, 1, 100000),\n('Charque', 'Carne bovina - Charque', 4, 3698, 1, 100000),\n('Contra Filé', 'Carne bovina - Contra Filé', 4, 4498, 1, 100000),\n('Cordão do Filé Mignon', 'Carne bovina - Cordão do Filé Mignon', 4, 3498, 1, 100000),\n('Costela Bovina', 'Carne bovina - Costela Bovina', 4, 2398, 1, 100000);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 53
+}

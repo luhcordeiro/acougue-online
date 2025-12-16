@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO products (name, description, categoryId, pricePerKg, available, stockKg) VALUES \n('Acém', 'Carne bovina - Acém', 4, 2898, 1, 100000),\n('Alcatra', 'Carne bovina - Alcatra', 4, 4298, 1, 100000),\n('Bananinha', 'Carne bovina - Bananinha', 4, 2998, 1, 100000),\n('Bife a Rolê', 'Carne bovina - Bife a Rolê', 4, 4298, 1, 100000),\n('Bife Especial', 'Carne bovina - Bife Especial', 4, 3698, 1, 100000);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2Ct94FQQX2tqCCM.root --database jtWWBUdj7qZKX8P4ihhs3o --execute INSERT INTO products (name, description, categoryId, pricePerKg, available, stockKg) VALUES \n('Acém', 'Carne bovina - Acém', 4, 2898, 1, 100000),\n('Alcatra', 'Carne bovina - Alcatra', 4, 4298, 1, 100000),\n('Bananinha', 'Carne bovina - Bananinha', 4, 2998, 1, 100000),\n('Bife a Rolê', 'Carne bovina - Bife a Rolê', 4, 4298, 1, 100000),\n('Bife Especial', 'Carne bovina - Bife Especial', 4, 3698, 1, 100000);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 77
+}

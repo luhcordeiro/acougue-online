@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO products (name, description, categoryId, pricePerKg, available, stockKg) VALUES \n('Costela Gaúcha', 'Carne bovina - Costela Gaúcha', 4, 2498, 1, 100000),\n('Coxão Duro', 'Carne bovina - Coxão Duro', 4, 3798, 1, 100000),\n('Coxão Mole', 'Carne bovina - Coxão Mole', 4, 3898, 1, 100000),\n('Cupim', 'Carne bovina - Cupim', 4, 3998, 1, 100000),\n('Filé Mignon', 'Carne bovina - Filé Mignon', 4, 6798, 1, 100000),\n('Fraldinha', 'Carne bovina - Fraldinha', 4, 3898, 1, 100000);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2Ct94FQQX2tqCCM.root --database jtWWBUdj7qZKX8P4ihhs3o --execute INSERT INTO products (name, description, categoryId, pricePerKg, available, stockKg) VALUES \n('Costela Gaúcha', 'Carne bovina - Costela Gaúcha', 4, 2498, 1, 100000),\n('Coxão Duro', 'Carne bovina - Coxão Duro', 4, 3798, 1, 100000),\n('Coxão Mole', 'Carne bovina - Coxão Mole', 4, 3898, 1, 100000),\n('Cupim', 'Carne bovina - Cupim', 4, 3998, 1, 100000),\n('Filé Mignon', 'Carne bovina - Filé Mignon', 4, 6798, 1, 100000),\n('Fraldinha', 'Carne bovina - Fraldinha', 4, 3898, 1, 100000);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 66
+}

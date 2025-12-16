@@ -1,0 +1,17 @@
+{
+  "query": "SELECT * FROM categories WHERE name = 'Carnes Bovinas';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2Ct94FQQX2tqCCM.root --database jtWWBUdj7qZKX8P4ihhs3o --execute SELECT * FROM categories WHERE name = 'Carnes Bovinas';",
+  "rows": [
+    {
+      "id": "1",
+      "name": "Carnes Bovinas",
+      "description": "Cortes nobres e tradicionais de carne bovina",
+      "createdAt": "2025-11-25 19:23:51",
+      "updatedAt": "2025-11-25 19:23:51"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tdescription\tcreatedAt\tupdatedAt\n1\tCarnes Bovinas\tCortes nobres e tradicionais de carne bovina\t2025-11-25 19:23:51\t2025-11-25 19:23:51\n",
+  "stderr": "",
+  "execution_time_ms": 48
+}

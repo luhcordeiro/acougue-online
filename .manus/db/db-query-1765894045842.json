@@ -1,0 +1,14 @@
+{
+  "query": "SELECT id, name FROM categories WHERE name LIKE '%Carnes Bovinas%' OR name LIKE '%Bovinas%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2Ct94FQQX2tqCCM.root --database jtWWBUdj7qZKX8P4ihhs3o --execute SELECT id, name FROM categories WHERE name LIKE '%Carnes Bovinas%' OR name LIKE '%Bovinas%';",
+  "rows": [
+    {
+      "id": "1",
+      "name": "Carnes Bovinas"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\n1\tCarnes Bovinas\n",
+  "stderr": "",
+  "execution_time_ms": 48
+}
