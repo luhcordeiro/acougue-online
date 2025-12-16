@@ -158,3 +158,6 @@
 - [x] Retornar automaticamente ao catálogo após adicionar produto ao carrinho
 - [x] Criar carrinho flutuante fixo na tela para fácil acesso no celular
 - [x] Testar experiência mobile completa
+
+## Melhorias na Seleção de Tipo de Corte
+- [x] Alterar seleção de tipo de corte para formato de botões (igual às quantidades)

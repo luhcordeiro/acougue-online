@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+// Select removido - usando botões para tipo de corte
 import { ArrowLeft, ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
 
@@ -161,32 +161,28 @@ export default function ProductDetail() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Seleção de Tipo de Corte */}
+                {/* Seleção de Tipo de Corte - Botões */}
                 <div className="space-y-2">
-                  <Label htmlFor="cutType">Tipo de Corte *</Label>
-                  <Select value={selectedCutType} onValueChange={setSelectedCutType}>
-                    <SelectTrigger id="cutType" className="text-base sm:text-lg h-12">
-                      <SelectValue placeholder="Selecione o tipo de corte" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {cutTypes.length === 0 ? (
-                        <SelectItem value="_none" disabled className="text-muted-foreground">
-                          Nenhum tipo de corte disponível
-                        </SelectItem>
-                      ) : (
-                        cutTypes.map((cutType) => (
-                          <SelectItem key={cutType.id} value={cutType.name} className="text-base">
-                            {cutType.name}
-                            {cutType.description && (
-                              <span className="text-sm text-muted-foreground ml-2">
-                                - {cutType.description}
-                              </span>
-                            )}
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
+                  <Label>Tipo de Corte *</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {cutTypes.length === 0 ? (
+                      <p className="text-muted-foreground col-span-2 text-center py-2">
+                        Nenhum tipo de corte disponível
+                      </p>
+                    ) : (
+                      cutTypes.map((cutType) => (
+                        <Button
+                          key={cutType.id}
+                          type="button"
+                          variant={selectedCutType === cutType.name ? "default" : "outline"}
+                          onClick={() => setSelectedCutType(cutType.name)}
+                          className="h-12 text-base font-semibold"
+                        >
+                          {cutType.name}
+                        </Button>
+                      ))
+                    )}
+                  </div>
                 </div>
 
                 {/* Botões de Quantidades Rápidas */}
