@@ -4,31 +4,33 @@
  * Serve para separar dois problemas que parecem o mesmo: "a impressora não
  * imprime" e "a loja não está mandando cupom".
  *
- * Uso: node agent/testar-impressora.mjs
+ * Uso: node testar-impressora.mjs
  */
 
-import { execFile } from "node:child_process";
-import { readFileSync, unlinkSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { promisify } from "node:util";
+import { readFileSync } from "node:fs";
 import { buildEscPos } from "./escpos.mjs";
-
-const execFileAsync = promisify(execFile);
+import { enviarParaImpressora, listarImpressoras } from "./imprimir.mjs";
 
 try {
   const env = readFileSync(new URL("./.env", import.meta.url), "utf-8");
   for (const linha of env.split("\n")) {
-    const [chave, ...resto] = linha.split("=");
-    if (chave && resto.length && !process.env[chave.trim()]) {
-      process.env[chave.trim()] = resto.join("=").trim();
-    }
+    const limpa = linha.trim();
+    if (!limpa || limpa.startsWith("#")) continue;
+
+    const igual = limpa.indexOf("=");
+    if (igual < 0) continue;
+
+    const chave = limpa.slice(0, igual).trim();
+    if (!process.env[chave]) process.env[chave] = limpa.slice(igual + 1).trim();
   }
-} catch {}
+} catch {
+  // sem .env: usa as variáveis do sistema
+}
 
 const PRINTER = process.env.PRINTER ?? "";
+
 if (!PRINTER) {
-  console.error("Defina PRINTER em agent/.env");
+  console.error("Defina PRINTER no arquivo .env");
   process.exit(1);
 }
 
@@ -46,28 +48,31 @@ Valores...: R$ 1.234,56
         O papel deve ser cortado abaixo
 `;
 
-const arquivo = join(tmpdir(), `teste-${Date.now()}.bin`);
-writeFileSync(arquivo, buildEscPos(texto));
-
-console.log(`Enviando para \\localhost\${PRINTER}...`);
+console.log(`Enviando para a impressora "${PRINTER}"...`);
 
 try {
-  await execFileAsync(
-    "cmd",
-    ["/c", "copy", "/b", arquivo, `\\localhost\${PRINTER}`],
-    { windowsHide: true }
-  );
-  console.log("Enviado. Confira se o cupom saiu e se o papel foi cortado.");
+  const resultado = await enviarParaImpressora(buildEscPos(texto), PRINTER);
+  console.log(resultado);
+  console.log("");
+  console.log("Confira se o cupom saiu e se o papel foi cortado.");
 } catch (error) {
-  console.error("Falhou:", error.message);
   console.error("");
-  console.error("Verifique:");
-  console.error(`  1. A impressora esta compartilhada com o nome "${PRINTER}"?`);
-  console.error("     Painel de Controle > Dispositivos e Impressoras >");
-  console.error("     botao direito > Propriedades da impressora >");
-  console.error("     aba Compartilhamento > marcar e definir o nome");
-  console.error("  2. O nome do compartilhamento nao pode ter espacos");
+  console.error("FALHOU:", error.message.split("\n")[0]);
+  console.error("");
+
+  const impressoras = await listarImpressoras();
+
+  if (impressoras.length > 0) {
+    console.error("Impressoras instaladas neste computador:");
+    for (const nome of impressoras) {
+      console.error(`   ${nome}`);
+    }
+    console.error("");
+    console.error("Copie o nome EXATO de uma delas para PRINTER no .env,");
+    console.error("com os parenteses e espacos, se houver.");
+  } else {
+    console.error("Nenhuma impressora encontrada neste computador.");
+  }
+
   process.exit(1);
-} finally {
-  try { unlinkSync(arquivo); } catch {}
 }

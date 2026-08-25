@@ -23,13 +23,14 @@ Se a impressora estiver sem papel, o PC desligado ou a internet cair, o cupom
 ## Instalação rápida
 
 1. Instale o **Node.js** (versão LTS) em https://nodejs.org
-2. Compartilhe a impressora no Windows com o nome **`ELGIN`**
-   (Painel de Controle → Dispositivos e Impressoras → botão direito na Elgin i9
-   → Propriedades da impressora → aba **Compartilhamento**)
-3. Dê **duplo clique em `INSTALAR.bat`**
+2. Dê **duplo clique em `INSTALAR.bat`**
 
-O instalador pergunta o nome do compartilhamento e o token, testa a impressora
-e configura o início automático com o Windows.
+O instalador lista as impressoras instaladas, pergunta qual usar e o token,
+imprime um cupom de teste e configura o início automático com o Windows.
+
+**Não é preciso compartilhar a impressora.** O agente fala com o spooler do
+Windows diretamente, usando o nome da impressora como ela aparece em
+Configurações (ex: `ELGIN i9(USB)`).
 
 Depois disso, o agente sobe sozinho toda vez que o PC ligar. Para iniciar na
 mão, use `INICIAR.bat`.
@@ -47,16 +48,14 @@ mão, use `INICIAR.bat`.
 Baixe a versão LTS em https://nodejs.org e instale com as opções padrão.
 Para conferir, abra o Prompt de Comando e digite `node -v`.
 
-### 2. Compartilhar a impressora
+### 2. Descobrir o nome da impressora
 
-O agente envia comandos diretos para a impressora (ESC/POS), e no Windows isso
-passa pelo compartilhamento. Imprimir pelo caminho comum (Word, Bloco de Notas)
-descartaria esses comandos e você perderia o corte de papel e a acentuação.
+Em **Configurações → Bluetooth e dispositivos → Impressoras e scanners**,
+anote o nome exato — normalmente `ELGIN i9(USB)`.
 
-1. **Painel de Controle → Dispositivos e Impressoras**
-2. Botão direito na **Elgin i9** → **Propriedades da impressora**
-3. Aba **Compartilhamento** → marcar **Compartilhar esta impressora**
-4. Nome do compartilhamento: **`ELGIN`** (sem espaços e sem acentos)
+O agente envia comandos ESC/POS pelo spooler do Windows, em modo RAW. Imprimir
+pelo caminho comum (Word, Bloco de Notas) descartaria esses comandos e você
+perderia o corte de papel e a acentuação.
 
 ### 3. Configurar o agente
 
@@ -116,8 +115,9 @@ Se acumular cupom "aguardando", o agente está parado ou sem internet.
 
 ## Problemas comuns
 
-**"copy: acesso negado"** — o compartilhamento não existe ou o nome está
-diferente do `.env`. Confira o passo 2.
+**"Nao foi possivel abrir a impressora"** — o nome no `.env` está diferente do
+nome real. Rode `node testar-impressora.mjs`: ao falhar, ele lista as
+impressoras instaladas para você copiar o nome certo.
 
 **Sai o cupom mas com símbolos estranhos no lugar dos acentos** — a impressora
 está em outra página de código. O agente usa CP850, padrão da Elgin i9; se a

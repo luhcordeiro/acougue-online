@@ -15,14 +15,9 @@
  *   INTERVALO_MS  intervalo entre verificações (padrão 3000)
  */
 
-import { execFile } from "node:child_process";
-import { readFileSync, unlinkSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { promisify } from "node:util";
+import { readFileSync } from "node:fs";
 import { buildEscPos } from "./escpos.mjs";
-
-const execFileAsync = promisify(execFile);
+import { enviarParaImpressora, listarImpressoras } from "./imprimir.mjs";
 
 // ------------------------------------------------------------------ config
 
@@ -61,45 +56,6 @@ if (!LOJA_URL || !AGENT_TOKEN || !PRINTER) {
 
 const log = (...args) =>
   console.log(new Date().toLocaleTimeString("pt-BR"), ...args);
-
-// ---------------------------------------------------------------- impressão
-
-/**
- * Envia os bytes crus para a impressora.
- *
- * Passa pelo compartilhamento do Windows (\\localhost\NOME) porque é o único
- * caminho que aceita ESC/POS sem driver nativo: imprimir pelo Word ou pelo
- * `print` do Windows renderiza o texto e descarta os comandos da impressora,
- * perdendo o corte de papel e a acentuação.
- */
-async function imprimir(bytes) {
-  // Modo de teste: grava o que sairia na impressora, sem imprimir. Serve para
-  // validar a ligação com a loja antes de a impressora estar configurada.
-  if (PRINTER.toUpperCase() === "SIMULADO") {
-    const destino = join(tmpdir(), `cupom-simulado-${Date.now()}.bin`);
-    writeFileSync(destino, bytes);
-    log(`  [simulado] gravado em ${destino}`);
-    return;
-  }
-
-  const arquivo = join(tmpdir(), `cupom-${Date.now()}.bin`);
-  writeFileSync(arquivo, bytes);
-
-  try {
-    // /b = modo binário; sem isso o Windows interrompe no primeiro 0x1A
-    await execFileAsync(
-      "cmd",
-      ["/c", "copy", "/b", arquivo, `\\\\localhost\\${PRINTER}`],
-      { windowsHide: true }
-    );
-  } finally {
-    try {
-      unlinkSync(arquivo);
-    } catch {
-      // arquivo temporário: falhar ao apagar não é problema
-    }
-  }
-}
 
 // ------------------------------------------------------------------- fila
 
@@ -150,13 +106,15 @@ async function ciclo() {
 
   for (const cupom of cupons) {
     try {
-      await imprimir(buildEscPos(cupom.content));
+      const detalhe = await enviarParaImpressora(buildEscPos(cupom.content), PRINTER);
       await confirmar(cupom.id, true);
-      log(`cupom #${cupom.id} impresso (pedido #${cupom.orderId ?? "-"})`);
+      log(`cupom #${cupom.id} impresso (pedido #${cupom.orderId ?? "-"}) ${detalhe}`);
     } catch (error) {
       // devolve para a fila: a loja reenvia até o limite de tentativas
-      await confirmar(cupom.id, false, error.message).catch(() => {});
-      log(`falha ao imprimir cupom #${cupom.id}:`, error.message);
+      const motivo = error.message.split("
+")[0];
+      await confirmar(cupom.id, false, motivo).catch(() => {});
+      log(`falha ao imprimir cupom #${cupom.id}:`, motivo);
     }
   }
 }
@@ -165,7 +123,7 @@ async function ciclo() {
 
 log("agente de impressão iniciado");
 log(`  loja.......: ${LOJA_URL}`);
-log(`  impressora.: \\\\localhost\\${PRINTER}`);
+log(`  impressora.: ${PRINTER}`);
 log(`  verificando a cada ${INTERVALO_MS / 1000}s`);
 
 // um ciclo por vez: sem isso, uma impressão lenta acumularia ciclos em cima

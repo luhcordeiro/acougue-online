@@ -42,13 +42,16 @@ if exist ".env" (
 
 echo [2/4] Configuracao
 echo.
-echo   Nome do COMPARTILHAMENTO da impressora no Windows.
-echo   Nao e o nome do driver - e o nome definido em
-echo   Propriedades da impressora ^> aba Compartilhamento.
+echo   Impressoras instaladas neste computador:
 echo.
-set "PRINTERNAME=ELGIN"
-set /p PRINTERNAME="   Nome do compartilhamento [ELGIN]: "
-if "!PRINTERNAME!"=="" set "PRINTERNAME=ELGIN"
+for /f "usebackq tokens=*" %%p in (`powershell -NoProfile -Command "Get-Printer ^| Select-Object -ExpandProperty Name"`) do echo      %%p
+echo.
+echo   Copie o nome EXATO da sua impressora termica, com
+echo   parenteses e espacos, se houver.
+echo.
+set "PRINTERNAME=ELGIN i9(USB)"
+set /p PRINTERNAME="   Nome da impressora [ELGIN i9(USB)]: "
+if "!PRINTERNAME!"=="" set "PRINTERNAME=ELGIN i9(USB)"
 
 echo.
 echo   Token de acesso (fornecido junto com este instalador).
@@ -83,7 +86,7 @@ echo.
 node testar-impressora.mjs
 if errorlevel 1 (
     echo.
-    echo   O teste falhou. Confira o compartilhamento da impressora
+    echo   O teste falhou. Confira o nome da impressora
     echo   e rode este instalador de novo.
     echo.
     pause
