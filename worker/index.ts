@@ -20,8 +20,11 @@ export interface Env {
   ASSETS: { fetch: (request: Request) => Promise<Response> };
   /** Banco de dados (Cloudflare D1). */
   DB: D1Database;
-  /** Bucket das imagens de produto (binding nativo, sem credenciais). */
-  BUCKET: R2Bucket;
+  /**
+   * Bucket das imagens de produto (binding nativo, sem credenciais).
+   * Opcional: fica ausente enquanto o R2 não estiver habilitado na conta.
+   */
+  BUCKET?: R2Bucket;
 
   JWT_SECRET: string;
   /** Domínio público do bucket, usado para montar a URL das imagens. */
@@ -48,9 +51,11 @@ function ensureStorage(env: Env) {
     return;
   }
 
+  const bucket = env.BUCKET;
+
   setStorage({
     async put(key, data, contentType) {
-      await env.BUCKET.put(key, data, {
+      await bucket.put(key, data, {
         httpMetadata: { contentType },
       });
     },

@@ -22,13 +22,18 @@
     }
   ],
 
-  // Imagens dos produtos. Crie com: wrangler r2 bucket create acougue-online-imagens
-  "r2_buckets": [
-    {
-      "binding": "BUCKET",
-      "bucket_name": "acougue-online-imagens"
-    }
-  ],
+  // Imagens dos produtos. DESATIVADO ate o R2 ser habilitado no painel da
+  // Cloudflare. Para religar: habilite o R2, rode
+  //   wrangler r2 bucket create acougue-online-imagens
+  // descomente o bloco abaixo e faca o deploy de novo.
+  // Sem este binding o site funciona normalmente; apenas o upload de imagem
+  // de produto responde com erro explicito (ver ensureStorage no worker).
+  // "r2_buckets": [
+  //   {
+  //     "binding": "BUCKET",
+  //     "bucket_name": "acougue-online-imagens"
+  //   }
+  // ],
 
   "observability": {
     "enabled": true
