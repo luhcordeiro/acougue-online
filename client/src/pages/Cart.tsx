@@ -9,6 +9,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ArrowLeft, Trash2, ShoppingCart, User, Phone, MapPin, Truck, CreditCard, QrCode, Banknote } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
+import { formatQuantity } from "@shared/quantity";
 import { trpc } from "@/lib/trpc";
 import StoreStatusBanner from "@/components/StoreStatusBanner";
 
@@ -208,7 +209,7 @@ export default function Cart() {
                           <div>
                             <p className="text-sm text-muted-foreground">Quantidade</p>
                             <p className="text-base font-semibold">
-                              {(item.quantityGrams / 1000).toFixed(1)} kg
+                              {formatQuantity(item.quantityGrams)}
                             </p>
                           </div>
                           

@@ -4,7 +4,7 @@ import {
   createAdminToken,
 } from "./_core/adminAuth";
 import { hashPassword, verifyPassword } from "./_core/password";
-import { publicProcedure, adminProcedure, router } from "./_core/trpc";
+import { publicProcedure, adminProcedure, router, zin } from "./_core/trpc";
 import {
   getStoreStatus,
   WEEKDAY_NAMES,
@@ -12,6 +12,7 @@ import {
   isValidTime,
   type BusinessHours,
 } from "@shared/businessHours";
+import { MAX_ITEM_GRAMS, MIN_ITEM_GRAMS } from "@shared/quantity";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import * as db from "./db";
@@ -38,7 +39,7 @@ export const appRouter = router({
       return await db.getAllCategories();
     }),
     create: adminProcedure
-      .input(z.object({
+      .input(zin({
         name: z.string().min(1),
         description: z.string().optional(),
       }))
@@ -47,7 +48,7 @@ export const appRouter = router({
         return { success: true };
       }),
     update: adminProcedure
-      .input(z.object({
+      .input(zin({
         id: z.number(),
         name: z.string().min(1).optional(),
         description: z.string().optional(),
@@ -58,7 +59,7 @@ export const appRouter = router({
         return { success: true };
       }),
     delete: adminProcedure
-      .input(z.object({ id: z.number() }))
+      .input(zin({ id: z.number() }))
       .mutation(async ({ input }) => {
         await db.deleteCategory(input.id);
         return { success: true };
@@ -74,12 +75,12 @@ export const appRouter = router({
       return await db.getAvailableProducts();
     }),
     getById: publicProcedure
-      .input(z.object({ id: z.number() }))
+      .input(zin({ id: z.number() }))
       .query(async ({ input }) => {
         return await db.getProductById(input.id);
       }),
     create: adminProcedure
-      .input(z.object({
+      .input(zin({
         name: z.string().min(1),
         description: z.string().optional(),
         categoryId: z.number().optional(),
@@ -94,7 +95,7 @@ export const appRouter = router({
         return { success: true, id: result.insertId };
       }),
     update: adminProcedure
-      .input(z.object({
+      .input(zin({
         id: z.number(),
         name: z.string().min(1).optional(),
         description: z.string().optional(),
@@ -111,13 +112,13 @@ export const appRouter = router({
         return { success: true };
       }),
     delete: adminProcedure
-      .input(z.object({ id: z.number() }))
+      .input(zin({ id: z.number() }))
       .mutation(async ({ input }) => {
         await db.deleteProduct(input.id);
         return { success: true };
       }),
     bulkUpdateAvailability: adminProcedure
-      .input(z.object({
+      .input(zin({
         productIds: z.array(z.number()),
         available: z.boolean(),
       }))
@@ -126,7 +127,7 @@ export const appRouter = router({
         return { success: true, count: input.productIds.length };
       }),
     uploadImage: adminProcedure
-      .input(z.object({
+      .input(zin({
         fileName: z.string(),
         fileData: z.string(), // Base64
         mimeType: z.string(),
@@ -148,12 +149,12 @@ export const appRouter = router({
       return await db.getAllOrders();
     }),
     listByCategory: adminProcedure
-      .input(z.object({ categoryId: z.number() }))
+      .input(zin({ categoryId: z.number() }))
       .query(async ({ input }) => {
         return await db.getOrdersByCategory(input.categoryId);
       }),
     getById: publicProcedure
-      .input(z.object({ id: z.number() }))
+      .input(zin({ id: z.number() }))
       .query(async ({ input }) => {
         const order = await db.getOrderById(input.id);
         if (!order) {
@@ -164,10 +165,16 @@ export const appRouter = router({
         return { order, items };
       }),
     create: publicProcedure
-      .input(z.object({
+      .input(zin({
         items: z.array(z.object({
           productId: z.number(),
-          quantityGrams: z.number().positive(),
+          // Mesmos limites da tela: a validação do cliente é conveniência,
+          // esta é a que vale.
+          quantityGrams: z
+            .number()
+            .int('A quantidade deve ser em gramas inteiras')
+            .min(MIN_ITEM_GRAMS, `A quantidade mínima por item é ${MIN_ITEM_GRAMS}g`)
+            .max(MAX_ITEM_GRAMS, `A quantidade máxima por item é ${MAX_ITEM_GRAMS / 1000}kg`),
           cutTypeName: z.string().optional(),
         })),
         customerName: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
@@ -242,7 +249,7 @@ export const appRouter = router({
         return { success: true, orderId };
       }),
     updateStatus: adminProcedure
-      .input(z.object({
+      .input(zin({
         id: z.number(),
         status: z.enum(['pending', 'confirmed', 'preparing', 'ready', 'delivered', 'cancelled']),
       }))
@@ -261,7 +268,7 @@ export const appRouter = router({
       return await db.getAllCutTypes();
     }),
     create: adminProcedure
-      .input(z.object({
+      .input(zin({
         name: z.string().min(1),
         description: z.string().optional(),
       }))
@@ -269,7 +276,7 @@ export const appRouter = router({
         return await db.createCutType(input);
       }),
     update: adminProcedure
-      .input(z.object({
+      .input(zin({
         id: z.number(),
         name: z.string().min(1).optional(),
         description: z.string().optional(),
@@ -279,19 +286,19 @@ export const appRouter = router({
         return await db.updateCutType(id, data);
       }),
     delete: adminProcedure
-      .input(z.object({ id: z.number() }))
+      .input(zin({ id: z.number() }))
       .mutation(async ({ input }) => {
         return await db.deleteCutType(input.id);
       }),
     // Obter cortes disponíveis para um produto
     getByProduct: publicProcedure
-      .input(z.object({ productId: z.number() }))
+      .input(zin({ productId: z.number() }))
       .query(async ({ input }) => {
         return await db.getProductCutTypes(input.productId);
       }),
     // Adicionar corte a um produto
     addToProduct: adminProcedure
-      .input(z.object({
+      .input(zin({
         productId: z.number(),
         cutTypeId: z.number(),
       }))
@@ -300,7 +307,7 @@ export const appRouter = router({
       }),
     // Remover corte de um produto
     removeFromProduct: adminProcedure
-      .input(z.object({
+      .input(zin({
         productId: z.number(),
         cutTypeId: z.number(),
       }))
@@ -315,7 +322,7 @@ export const appRouter = router({
       return await db.getAllQuickQuantities();
     }),
     create: adminProcedure
-      .input(z.object({
+      .input(zin({
         valueGrams: z.number().min(1),
         label: z.string().min(1),
         sortOrder: z.number().optional(),
@@ -324,7 +331,7 @@ export const appRouter = router({
         return await db.createQuickQuantity(input);
       }),
     update: adminProcedure
-      .input(z.object({
+      .input(zin({
         id: z.number(),
         valueGrams: z.number().min(1).optional(),
         label: z.string().min(1).optional(),
@@ -335,19 +342,19 @@ export const appRouter = router({
         return await db.updateQuickQuantity(id, data);
       }),
     delete: adminProcedure
-      .input(z.object({ id: z.number() }))
+      .input(zin({ id: z.number() }))
       .mutation(async ({ input }) => {
         return await db.deleteQuickQuantity(input.id);
       }),
     // Obter quantidades disponíveis para um produto
     getByProduct: publicProcedure
-      .input(z.object({ productId: z.number() }))
+      .input(zin({ productId: z.number() }))
       .query(async ({ input }) => {
         return await db.getProductQuickQuantities(input.productId);
       }),
     // Adicionar quantidade a um produto
     addToProduct: adminProcedure
-      .input(z.object({
+      .input(zin({
         productId: z.number(),
         quickQuantityId: z.number(),
       }))
@@ -356,7 +363,7 @@ export const appRouter = router({
       }),
     // Remover quantidade de um produto
     removeFromProduct: adminProcedure
-      .input(z.object({
+      .input(zin({
         productId: z.number(),
         quickQuantityId: z.number(),
       }))
@@ -378,7 +385,7 @@ export const appRouter = router({
     }),
     setBusinessHours: adminProcedure
       .input(
-        z.object({
+        zin({
           hours: z
             .array(
               z.object({
@@ -403,7 +410,7 @@ export const appRouter = router({
         return { success: true };
       }),
     setDeliveryFee: adminProcedure
-      .input(z.object({
+      .input(zin({
         feeInCents: z.number().min(0),
       }))
       .mutation(async ({ input }) => {
@@ -419,7 +426,7 @@ export const appRouter = router({
   adminAuth: router({
     // Login com usuário e senha
     login: publicProcedure
-      .input(z.object({
+      .input(zin({
         username: z.string().min(1),
         password: z.string().min(1),
       }))
@@ -476,7 +483,7 @@ export const appRouter = router({
     }),
     
     create: adminProcedure
-      .input(z.object({
+      .input(zin({
         username: z.string().min(3).max(50),
         password: z.string().min(6),
         name: z.string().min(1).max(100),
@@ -505,7 +512,7 @@ export const appRouter = router({
       }),
     
     update: adminProcedure
-      .input(z.object({
+      .input(zin({
         id: z.number(),
         name: z.string().min(1).max(100).optional(),
         email: z.string().email().optional(),
@@ -527,7 +534,7 @@ export const appRouter = router({
       }),
     
     delete: adminProcedure
-      .input(z.object({ id: z.number() }))
+      .input(zin({ id: z.number() }))
       .mutation(async ({ input }) => {
         // Não permitir deletar se for o único admin ativo
         const allUsers = await db.listAdminUsers();

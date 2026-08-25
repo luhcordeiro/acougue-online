@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle2, Home, Share2, MapPin, User, Phone, Truck, CreditCard, QrCode, Banknote } from "lucide-react";
 import { APP_TITLE } from "@/const";
+import { formatQuantity } from "@shared/quantity";
 
 export default function OrderConfirmation() {
   const [, params] = useRoute("/order/confirmation/:id");
@@ -52,7 +53,7 @@ export default function OrderConfirmation() {
     if (!order) return;
     
     const itemsText = items
-      .map((item) => `• ${item.productName} - ${item.cutTypeName || 'Sem corte'} - ${(item.quantityGrams / 1000).toFixed(1)}kg - R$ ${(item.subtotal / 100).toFixed(2)}`)
+      .map((item) => `• ${item.productName} - ${item.cutTypeName || 'Sem corte'} - ${formatQuantity(item.quantityGrams)} - R$ ${(item.subtotal / 100).toFixed(2)}`)
       .join("\n");
 
     const message = `🥩 *Pedido #${order.id} - ${APP_TITLE}*\n\n` +
@@ -179,7 +180,7 @@ export default function OrderConfirmation() {
                         </p>
                       )}
                       <p className="text-sm text-muted-foreground">
-                        Quantidade: {(item.quantityGrams / 1000).toFixed(1)} kg
+                        Quantidade: {formatQuantity(item.quantityGrams)}
                       </p>
                     </div>
                     <div className="text-right">

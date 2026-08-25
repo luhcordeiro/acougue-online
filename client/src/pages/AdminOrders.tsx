@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from "@/components/ui/button";
 import { Eye, CreditCard, QrCode, Banknote, ArrowLeft, ClipboardList } from "lucide-react";
 import { toast } from "sonner";
+import { formatQuantity } from "@shared/quantity";
 import { useLocation } from "wouter";
 
 const statusLabels = {
@@ -353,7 +354,7 @@ export default function AdminOrders() {
                       <TableRow key={item.id}>
                         <TableCell className="font-medium">{item.productName}</TableCell>
                         <TableCell>R$ {(item.pricePerKg / 100).toFixed(2)}</TableCell>
-                        <TableCell>{(item.quantityGrams / 1000).toFixed(2)} kg</TableCell>
+                        <TableCell>{formatQuantity(item.quantityGrams)}</TableCell>
                         <TableCell className="text-right">R$ {(item.subtotal / 100).toFixed(2)}</TableCell>
                       </TableRow>
                     ))}
