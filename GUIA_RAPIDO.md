@@ -63,16 +63,21 @@ pnpm db:seed:remote      # popula o D1 de produção
 
 ## Deploy
 
-Uma vez por conta:
+**Em produção:** https://acougue-online.luhcordeiroo.workers.dev
+
+A conta já está configurada (D1 `acougue-online`, bucket
+`acougue-online-imagens` com acesso público, secrets `JWT_SECRET` e
+`R2_PUBLIC_URL`). Se precisar refazer do zero em outra conta:
 
 ```bash
 npx wrangler login
+npx wrangler d1 create acougue-online          # atualizar o id no wrangler.jsonc
 npx wrangler r2 bucket create acougue-online-imagens
-npx wrangler secret put JWT_SECRET
-npx wrangler secret put R2_PUBLIC_URL
+npx wrangler r2 bucket dev-url enable acougue-online-imagens
+npx wrangler secret bulk .dev.vars              # JWT_SECRET e R2_PUBLIC_URL
 ```
 
-Depois, a cada publicação:
+A cada publicação:
 
 ```bash
 pnpm db:migrate:remote   # só quando o schema mudar
