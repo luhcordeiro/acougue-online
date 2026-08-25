@@ -53,7 +53,7 @@ export default function OrderConfirmation() {
     if (!order) return;
     
     const itemsText = items
-      .map((item) => `• ${item.productName} - ${item.cutTypeName || 'Sem corte'} - ${formatQuantity(item.quantityGrams)} - R$ ${(item.subtotal / 100).toFixed(2)}`)
+      .map((item) => `• ${item.productName} - ${item.cutTypeName || 'Sem corte'} - ${formatQuantity(item.quantity, item.unit)} - R$ ${(item.subtotal / 100).toFixed(2)}`)
       .join("\n");
 
     const message = `🥩 *Pedido #${order.id} - ${APP_TITLE}*\n\n` +
@@ -180,7 +180,7 @@ export default function OrderConfirmation() {
                         </p>
                       )}
                       <p className="text-sm text-muted-foreground">
-                        Quantidade: {formatQuantity(item.quantityGrams)}
+                        Quantidade: {formatQuantity(item.quantity, item.unit)}
                       </p>
                     </div>
                     <div className="text-right">

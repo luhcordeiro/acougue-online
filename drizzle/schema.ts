@@ -48,7 +48,15 @@ export const products = sqliteTable(
     name: text("name").notNull(),
     description: text("description"),
     categoryId: integer("categoryId").references(() => categories.id),
-    pricePerKg: integer("pricePerKg").notNull(), // Preço em centavos por kg
+    /**
+     * Preço em centavos pela unidade de venda: por quilo quando unit = "kg",
+     * por peça quando unit = "un".
+     */
+    price: integer("price").notNull(),
+    /** Como o produto é vendido: a peso (kg) ou por peça (un). */
+    unit: text("unit", { enum: ["kg", "un"] })
+      .default("kg")
+      .notNull(),
     imageUrl: text("imageUrl"),
     imageKey: text("imageKey"), // chave no R2, para gerenciamento
     available: integer("available", { mode: "boolean" }).default(true).notNull(),
@@ -124,8 +132,13 @@ export const orderItems = sqliteTable(
       .notNull()
       .references(() => products.id),
     productName: text("productName").notNull(), // Snapshot do nome
-    pricePerKg: integer("pricePerKg").notNull(), // Snapshot do preço em centavos
-    quantityGrams: integer("quantityGrams").notNull(),
+    price: integer("price").notNull(), // Snapshot do preço em centavos
+    /** Snapshot da unidade: o produto pode mudar depois do pedido feito. */
+    unit: text("unit", { enum: ["kg", "un"] })
+      .default("kg")
+      .notNull(),
+    /** Gramas quando unit = "kg"; peças quando unit = "un". */
+    quantity: integer("quantity").notNull(),
     subtotal: integer("subtotal").notNull(), // Em centavos
     cutTypeName: text("cutTypeName"), // Tipo de corte escolhido
     createdAt: createdAt(),

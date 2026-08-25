@@ -35,14 +35,14 @@ describe("orders.create", () => {
     
     expect(products.length).toBeGreaterThan(0);
     expect(products[0]).toHaveProperty('id');
-    expect(products[0]).toHaveProperty('pricePerKg');
+    expect(products[0]).toHaveProperty('price');
   });
 
   it("valida cálculo de preço", async () => {
     // Teste de cálculo: 1.5kg a R$50/kg = R$75
-    const pricePerKg = 5000; // R$50 em centavos
+    const price = 5000; // R$50 em centavos
     const quantityGrams = 1500; // 1.5kg
-    const expectedTotal = Math.round((pricePerKg * quantityGrams) / 1000);
+    const expectedTotal = Math.round((price * quantityGrams) / 1000);
     
     expect(expectedTotal).toBe(7500); // R$75 em centavos
   });
@@ -50,11 +50,11 @@ describe("orders.create", () => {
   it("valida estrutura de item de pedido", async () => {
     const item = {
       productId: 1,
-      quantityGrams: 1000,
+      quantity: 1000,
     };
 
     expect(item.productId).toBeGreaterThan(0);
-    expect(item.quantityGrams).toBeGreaterThan(0);
+    expect(item.quantity).toBeGreaterThan(0);
   });
 });
 

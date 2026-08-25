@@ -20,7 +20,7 @@ describe('Payment Method', () => {
     const result = await caller.orders.create({
       items: [{
         productId: testProduct.id,
-        quantityGrams: 1000,
+        quantity: 1000,
         cutTypeName: 'Moído',
       }],
       customerName: 'Cliente Teste PIX',
@@ -55,7 +55,7 @@ describe('Payment Method', () => {
     const result = await caller.orders.create({
       items: [{
         productId: testProduct.id,
-        quantityGrams: 1500,
+        quantity: 1500,
         cutTypeName: 'Bife',
       }],
       customerName: 'Cliente Teste Cartão',
@@ -90,7 +90,7 @@ describe('Payment Method', () => {
     const result = await caller.orders.create({
       items: [{
         productId: testProduct.id,
-        quantityGrams: 2000,
+        quantity: 2000,
         cutTypeName: 'Em Cubos',
       }],
       customerName: 'Cliente Teste Dinheiro',
@@ -126,7 +126,7 @@ describe('Payment Method', () => {
     const result = await caller.orders.create({
       items: [{
         productId: testProduct.id,
-        quantityGrams: 1000,
+        quantity: 1000,
         cutTypeName: 'Inteiro',
       }],
       customerName: 'Cliente Teste Sem Troco',

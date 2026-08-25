@@ -5,17 +5,11 @@ import { Input } from "@/components/ui/input";
 import { APP_LOGO, APP_TITLE } from "@/const";
 import { trpc } from "@/lib/trpc";
 import StoreStatusBanner from "@/components/StoreStatusBanner";
+import { formatPrice } from "@shared/quantity";
+import { cartTotal as somarCarrinho, readCart } from "@/lib/cart";
 import { ShoppingCart, Search, ChevronRight, Bell } from "lucide-react";
 import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
-
-interface CartItem {
-  productId: number;
-  productName: string;
-  quantityGrams: number;
-  pricePerKg: number;
-  cutTypeName: string;
-}
 
 export default function Home() {
   const { data: products = [], isLoading } = trpc.products.available.useQuery();
@@ -45,23 +39,9 @@ export default function Home() {
   // Atualizar contador do carrinho
   useEffect(() => {
     const updateCartCount = () => {
-      const cartData = localStorage.getItem("cart");
-      if (cartData) {
-        try {
-          const cart: CartItem[] = JSON.parse(cartData);
-          setCartItemCount(cart.length);
-          const total = cart.reduce((sum, item) => {
-            return sum + Math.round((item.pricePerKg * item.quantityGrams) / 1000);
-          }, 0);
-          setCartTotal(total);
-        } catch {
-          setCartItemCount(0);
-          setCartTotal(0);
-        }
-      } else {
-        setCartItemCount(0);
-        setCartTotal(0);
-      }
+      const cart = readCart();
+      setCartItemCount(cart.length);
+      setCartTotal(somarCarrinho(cart));
     };
 
     updateCartCount();
@@ -226,7 +206,7 @@ export default function Home() {
                             <div className="mt-2 flex items-center justify-between">
                               <div>
                                 <p className="text-lg sm:text-xl font-bold text-primary">
-                                  R$ {(product.pricePerKg / 100).toFixed(2)}/kg
+                                  {formatPrice(product.price, product.unit)}
                                 </p>
 
                               </div>

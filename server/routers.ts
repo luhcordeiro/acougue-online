@@ -12,7 +12,13 @@ import {
   isValidTime,
   type BusinessHours,
 } from "@shared/businessHours";
-import { MAX_ITEM_GRAMS, MIN_ITEM_GRAMS } from "@shared/quantity";
+import {
+  calcSubtotal,
+  formatQuantity,
+  maxQuantity,
+  minQuantity,
+  SALE_UNITS,
+} from "@shared/quantity";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import * as db from "./db";
@@ -84,7 +90,8 @@ export const appRouter = router({
         name: z.string().min(1),
         description: z.string().optional(),
         categoryId: z.number().optional(),
-        pricePerKg: z.number().min(0), // Em centavos
+        price: z.number().int().min(0), // Em centavos, pela unidade de venda
+        unit: z.enum(SALE_UNITS).default('kg'),
         imageUrl: z.string().optional(),
         imageKey: z.string().optional(),
         available: z.boolean().default(true),
@@ -100,7 +107,8 @@ export const appRouter = router({
         name: z.string().min(1).optional(),
         description: z.string().optional(),
         categoryId: z.number().optional(),
-        pricePerKg: z.number().min(0).optional(),
+        price: z.number().int().min(0).optional(),
+        unit: z.enum(SALE_UNITS).optional(),
         imageUrl: z.string().optional(),
         imageKey: z.string().optional(),
         available: z.boolean().optional(),
@@ -168,13 +176,9 @@ export const appRouter = router({
       .input(zin({
         items: z.array(z.object({
           productId: z.number(),
-          // Mesmos limites da tela: a validação do cliente é conveniência,
-          // esta é a que vale.
-          quantityGrams: z
-            .number()
-            .int('A quantidade deve ser em gramas inteiras')
-            .min(MIN_ITEM_GRAMS, `A quantidade mínima por item é ${MIN_ITEM_GRAMS}g`)
-            .max(MAX_ITEM_GRAMS, `A quantidade máxima por item é ${MAX_ITEM_GRAMS / 1000}kg`),
+          // Gramas ou peças, conforme a unidade do produto. Os limites por
+          // unidade são conferidos abaixo, quando o produto já é conhecido.
+          quantity: z.number().int('Quantidade inválida').positive(),
           cutTypeName: z.string().optional(),
         })),
         customerName: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
@@ -210,16 +214,27 @@ export const appRouter = router({
             throw new TRPCError({ code: 'BAD_REQUEST', message: `Produto ${product.name} não está disponível` });
           }
           
-          // Calcular subtotal: (preço por kg em centavos × quantidade em gramas) / 1000
-          const subtotal = Math.round((product.pricePerKg * item.quantityGrams) / 1000);
+          const unit = product.unit;
+          const min = minQuantity(unit);
+          const max = maxQuantity(unit);
+
+          if (item.quantity < min || item.quantity > max) {
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+              message: `${product.name}: quantidade deve estar entre ${formatQuantity(min, unit)} e ${formatQuantity(max, unit)}`,
+            });
+          }
+
+          const subtotal = calcSubtotal(unit, product.price, item.quantity);
           totalAmount += subtotal;
           
           orderItemsData.push({
             orderId: 0, // Será preenchido após criar o pedido
             productId: product.id,
             productName: product.name,
-            pricePerKg: product.pricePerKg,
-            quantityGrams: item.quantityGrams,
+            price: product.price,
+            unit,
+            quantity: item.quantity,
             subtotal,
             cutTypeName: item.cutTypeName || null,
           });

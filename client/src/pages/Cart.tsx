@@ -9,26 +9,16 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ArrowLeft, Trash2, ShoppingCart, User, Phone, MapPin, Truck, CreditCard, QrCode, Banknote } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
-import { formatQuantity } from "@shared/quantity";
+import { calcSubtotal, formatPrice, formatQuantity } from "@shared/quantity";
 import { trpc } from "@/lib/trpc";
 import StoreStatusBanner from "@/components/StoreStatusBanner";
-
-type CartItem = {
-  productId: number;
-  productName: string;
-  pricePerKg: number;
-  quantityGrams: number;
-  cutTypeName?: string;
-};
+import { cartTotal, clearCart, readCart, writeCart, type CartItem } from "@/lib/cart";
 
 type PaymentMethod = "card" | "pix" | "cash";
 
 export default function Cart() {
   const [, setLocation] = useLocation();
-  const [cart, setCart] = useState<CartItem[]>(() => {
-    const saved = localStorage.getItem("cart");
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [cart, setCart] = useState<CartItem[]>(() => readCart());
 
   // Estados do formulário de checkout
   const [customerName, setCustomerName] = useState("");
@@ -45,7 +35,7 @@ export default function Cart() {
     onSuccess: (data) => {
       toast.success("Pedido realizado com sucesso!");
       setCart([]);
-      localStorage.removeItem("cart");
+      clearCart();
       setLocation(`/order/confirmation/${data.orderId}`);
     },
     onError: (error) => {
@@ -58,15 +48,11 @@ export default function Cart() {
       !(item.productId === productId && item.cutTypeName === cutTypeName)
     );
     setCart(newCart);
-    localStorage.setItem("cart", JSON.stringify(newCart));
+    writeCart(newCart);
     toast.success("Item removido do carrinho");
   };
 
-  const calculateSubtotal = () => {
-    return cart.reduce((total, item) => {
-      return total + Math.round((item.pricePerKg * item.quantityGrams) / 1000);
-    }, 0);
-  };
+  const calculateSubtotal = () => cartTotal(cart);
 
   // Loja fechada bloqueia o checkout; o servidor recusa de qualquer forma,
   // mas avisar antes evita o cliente preencher tudo à toa.
@@ -110,7 +96,7 @@ export default function Cart() {
     createOrderMutation.mutate({
       items: cart.map((item) => ({
         productId: item.productId,
-        quantityGrams: item.quantityGrams,
+        quantity: item.quantity,
         cutTypeName: item.cutTypeName || "Não especificado",
       })),
       customerName: customerName.trim(),
@@ -180,7 +166,7 @@ export default function Cart() {
                 {/* Layout de Cards para Mobile */}
                 <div className="space-y-4">
                   {cart.map((item, index) => {
-                    const itemSubtotal = Math.round((item.pricePerKg * item.quantityGrams) / 1000);
+                    const itemSubtotal = calcSubtotal(item.unit, item.price, item.quantity);
                     return (
                       <div key={`${item.productId}-${item.cutTypeName}-${index}`} className="border rounded-lg p-4 space-y-3">
                         <div className="flex justify-between items-start">
@@ -192,7 +178,7 @@ export default function Cart() {
                               </p>
                             )}
                             <p className="text-sm text-muted-foreground mt-1">
-                              R$ {(item.pricePerKg / 100).toFixed(2)}/kg
+                              {formatPrice(item.price, item.unit)}
                             </p>
                           </div>
                           <Button
@@ -209,7 +195,7 @@ export default function Cart() {
                           <div>
                             <p className="text-sm text-muted-foreground">Quantidade</p>
                             <p className="text-base font-semibold">
-                              {formatQuantity(item.quantityGrams)}
+                              {formatQuantity(item.quantity, item.unit)}
                             </p>
                           </div>
                           

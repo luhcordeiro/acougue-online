@@ -11,6 +11,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Pencil, Trash2, Plus, Upload, Scissors, Scale, X, ArrowLeft, Package, Search, CheckSquare, Power, PowerOff } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
+import {
+  formatPrice,
+  SALE_UNITS,
+  unitLabel,
+  type SaleUnit,
+} from "@shared/quantity";
 import { Switch } from "@/components/ui/switch";
 import { useLocation } from "wouter";
 
@@ -23,7 +29,8 @@ export default function AdminProducts() {
     name: "",
     description: "",
     categoryId: "",
-    pricePerKg: "",
+    price: "",
+    unit: "kg" as SaleUnit,
     available: true,
     imageUrl: "",
     imageKey: "",
@@ -217,7 +224,8 @@ export default function AdminProducts() {
       name: "",
       description: "",
       categoryId: "",
-      pricePerKg: "",
+      price: "",
+      unit: "kg" as SaleUnit,
       available: true,
       imageUrl: "",
       imageKey: "",
@@ -235,7 +243,8 @@ export default function AdminProducts() {
       name: product.name,
       description: product.description || "",
       categoryId: product.categoryId?.toString() || "",
-      pricePerKg: (product.pricePerKg / 100).toString(),
+      price: (product.price / 100).toString(),
+      unit: product.unit,
       available: product.available,
       imageUrl: product.imageUrl || "",
       imageKey: product.imageKey || "",
@@ -289,7 +298,8 @@ export default function AdminProducts() {
       name: formData.name,
       description: formData.description || undefined,
       categoryId: formData.categoryId ? parseInt(formData.categoryId) : undefined,
-      pricePerKg: Math.round(parseFloat(formData.pricePerKg) * 100), // Converter para centavos
+      price: Math.round(parseFloat(formData.price) * 100), // Converter para centavos
+      unit: formData.unit,
       available: formData.available,
       imageUrl: imageUrl || undefined,
       imageKey: imageKey || undefined,
@@ -395,20 +405,46 @@ export default function AdminProducts() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="price">Preço por Kg (R$) *</Label>
+                  <Label htmlFor="unit">Vendido por *</Label>
+                  <Select
+                    value={formData.unit}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, unit: value as SaleUnit })
+                    }
+                  >
+                    <SelectTrigger id="unit">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SALE_UNITS.map((u) => (
+                        <SelectItem key={u} value={u}>
+                          {unitLabel(u)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {formData.unit === "kg"
+                      ? "O cliente escolhe o peso (ex: 1,5 kg)"
+                      : "O cliente escolhe a quantidade de peças"}
+                  </p>
+                </div>
+
+                <div>
+                  <Label htmlFor="price">
+                    {formData.unit === "kg" ? "Preço por Kg (R$) *" : "Preço por Unidade (R$) *"}
+                  </Label>
                   <Input
                     id="price"
                     type="number"
                     step="0.01"
                     min="0"
-                    value={formData.pricePerKg}
-                    onChange={(e) => setFormData({ ...formData, pricePerKg: e.target.value })}
+                    value={formData.price}
+                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                     required
                     placeholder="0.00"
                   />
                 </div>
-                
-
               </div>
 
               <div>
@@ -618,7 +654,7 @@ export default function AdminProducts() {
                       </TableCell>
                       <TableCell className="font-medium">{product.name}</TableCell>
                       <TableCell>{category?.name || "—"}</TableCell>
-                      <TableCell>R$ {(product.pricePerKg / 100).toFixed(2)}</TableCell>
+                      <TableCell>{formatPrice(product.price, product.unit)}</TableCell>
                       <TableCell>
                         <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                           product.available 

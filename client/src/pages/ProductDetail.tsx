@@ -9,11 +9,15 @@ import { Label } from "@/components/ui/label";
 import { ArrowLeft, Minus, Plus, ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
 import {
+  calcSubtotal,
+  formatPrice,
   formatQuantity,
-  MAX_ITEM_GRAMS,
-  MIN_ITEM_GRAMS,
+  maxQuantity,
+  minQuantity,
   parseKgInput,
+  type SaleUnit,
 } from "@shared/quantity";
+import { readCart, writeCart } from "@/lib/cart";
 
 
 export default function ProductDetail() {
@@ -50,20 +54,28 @@ export default function ProductDetail() {
   // Quantidades pré-definidas padrão (fallback se não houver nenhuma cadastrada)
   const defaultQuantities = [500, 1000, 1500, 2000]; // em gramas
 
+  const unit: SaleUnit = product?.unit ?? "kg";
+  const isUnit = unit === "un";
+
+  // A peso o campo é em kg (o cliente pensa "1,5"); por peça é a contagem.
   const quantityNum = parseKgInput(quantity);
-  const quantityGrams = Number.isFinite(quantityNum)
-    ? Math.round(quantityNum * 1000)
+  const quantityValue = Number.isFinite(quantityNum)
+    ? isUnit
+      ? Math.round(quantityNum)
+      : Math.round(quantityNum * 1000)
     : 0;
 
-  const subtotal = product && Number.isFinite(quantityNum)
-    ? (product.pricePerKg / 100) * quantityNum
-    : 0;
+  const min = minQuantity(unit);
+  const max = maxQuantity(unit);
 
-  /** Ajusta em passos de 100 g pelos botões - e +. */
-  const stepQuantity = (deltaGrams: number) => {
-    const base = Number.isFinite(quantityNum) ? quantityNum : 0;
-    const next = Math.round(base * 1000) + deltaGrams;
-    setQuantity((Math.max(MIN_ITEM_GRAMS, next) / 1000).toString().replace(".", ","));
+  const subtotal = product ? calcSubtotal(unit, product.price, quantityValue) / 100 : 0;
+
+  /** Passo de 100 g a peso, de 1 peça por unidade. */
+  const stepQuantity = (delta: number) => {
+    const proximo = Math.min(max, Math.max(min, quantityValue + delta));
+    setQuantity(
+      isUnit ? String(proximo) : String(proximo / 1000).replace(".", ",")
+    );
   };
 
   const handleAddToCart = () => {
@@ -72,13 +84,13 @@ export default function ProductDetail() {
       return;
     }
 
-    if (quantityGrams < MIN_ITEM_GRAMS) {
-      toast.error(`A quantidade mínima é ${MIN_ITEM_GRAMS}g`);
+    if (quantityValue < min) {
+      toast.error(`A quantidade mínima é ${formatQuantity(min, unit)}`);
       return;
     }
 
-    if (quantityGrams > MAX_ITEM_GRAMS) {
-      toast.error(`A quantidade máxima por item é ${MAX_ITEM_GRAMS / 1000}kg`);
+    if (quantityValue > max) {
+      toast.error(`A quantidade máxima por item é ${formatQuantity(max, unit)}`);
       return;
     }
 
@@ -87,35 +99,32 @@ export default function ProductDetail() {
       return;
     }
 
-    // Adicionar ao carrinho (localStorage)
-    const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+    const cart = readCart();
     
     // Verificar se já existe item com mesmo produto E mesmo corte
-    const existingItemIndex = cart.findIndex((item: any) => 
-      item.productId === productId && item.cutTypeName === selectedCutType
+    const existingItemIndex = cart.findIndex(
+      item => item.productId === productId && item.cutTypeName === selectedCutType
     );
     
     if (existingItemIndex >= 0) {
       // Atualizar quantidade do item existente
-      cart[existingItemIndex].quantityGrams = quantityGrams;
+      cart[existingItemIndex].quantity = quantityValue;
     } else {
       // Adicionar novo item
       cart.push({
         productId,
-        productName: product?.name,
-        pricePerKg: product?.pricePerKg,
-        quantityGrams,
-        imageUrl: product?.imageUrl,
+        productName: product!.name,
+        price: product!.price,
+        unit,
+        quantity: quantityValue,
+        imageUrl: product!.imageUrl,
         cutTypeName: selectedCutType,
       });
     }
     
-    localStorage.setItem("cart", JSON.stringify(cart));
+    writeCart(cart);
     
-    // Disparar evento para atualizar o carrinho flutuante
-    window.dispatchEvent(new Event("storage"));
-    
-    toast.success(`${formatQuantity(quantityGrams)} de ${product?.name} (${selectedCutType}) adicionado ao carrinho!`);
+    toast.success(`${formatQuantity(quantityValue, unit)} de ${product?.name} (${selectedCutType}) adicionado ao carrinho!`);
     
     // Voltar para o catálogo após adicionar
     setTimeout(() => {
@@ -183,10 +192,12 @@ export default function ProductDetail() {
             <Card>
               <CardHeader>
                 <CardTitle className="text-2xl sm:text-3xl text-primary">
-                  R$ {(product.pricePerKg / 100).toFixed(2)}/kg
+                  {formatPrice(product.price, product.unit)}
                 </CardTitle>
                 <CardDescription>
-                  Estoque disponível: {(product.stockKg / 1000).toFixed(1)} kg
+                  {isUnit
+                    ? "Vendido por unidade"
+                    : "Vendido a peso — escolha a quantidade desejada"}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -223,9 +234,9 @@ export default function ProductDetail() {
                       variant="outline"
                       size="icon"
                       className="h-12 w-12 shrink-0"
-                      onClick={() => stepQuantity(-100)}
-                      disabled={quantityGrams <= MIN_ITEM_GRAMS}
-                      aria-label="Diminuir 100 gramas"
+                      onClick={() => stepQuantity(isUnit ? -1 : -100)}
+                      disabled={quantityValue <= min}
+                      aria-label={isUnit ? "Diminuir uma unidade" : "Diminuir 100 gramas"}
                     >
                       <Minus className="h-4 w-4" />
                     </Button>
@@ -234,14 +245,14 @@ export default function ProductDetail() {
                       <Input
                         id="quantidade"
                         type="text"
-                        inputMode="decimal"
+                        inputMode={isUnit ? "numeric" : "decimal"}
                         value={quantity}
                         onChange={(e) => setQuantity(e.target.value)}
-                        placeholder="Ex: 1,5"
+                        placeholder={isUnit ? "Ex: 2" : "Ex: 1,5"}
                         className="h-12 pr-12 text-center text-lg font-semibold"
                       />
                       <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground">
-                        kg
+                        {isUnit ? "un" : "kg"}
                       </span>
                     </div>
 
@@ -250,21 +261,22 @@ export default function ProductDetail() {
                       variant="outline"
                       size="icon"
                       className="h-12 w-12 shrink-0"
-                      onClick={() => stepQuantity(100)}
-                      disabled={quantityGrams >= MAX_ITEM_GRAMS}
-                      aria-label="Aumentar 100 gramas"
+                      onClick={() => stepQuantity(isUnit ? 1 : 100)}
+                      disabled={quantityValue >= max}
+                      aria-label={isUnit ? "Aumentar uma unidade" : "Aumentar 100 gramas"}
                     >
                       <Plus className="h-4 w-4" />
                     </Button>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {Number.isFinite(quantityNum) && quantityGrams >= MIN_ITEM_GRAMS
-                      ? `Equivale a ${formatQuantity(quantityGrams)}`
-                      : `Digite a quantidade desejada (mínimo ${MIN_ITEM_GRAMS}g)`}
+                    {Number.isFinite(quantityNum) && quantityValue >= min
+                      ? `Equivale a ${formatQuantity(quantityValue, unit)}`
+                      : `Digite a quantidade desejada (mínimo ${formatQuantity(min, unit)})`}
                   </p>
                 </div>
 
-                {/* Botões de Quantidades Rápidas */}
+                {/* Quantidades rápidas só fazem sentido a peso */}
+                {!isUnit && (
                 <div className="space-y-2">
                   <Label>Quantidades Rápidas</Label>
                   <div className="grid grid-cols-4 gap-2">
@@ -273,7 +285,7 @@ export default function ProductDetail() {
                         <Button
                           key={qq.id}
                           type="button"
-                          variant={quantityGrams === qq.valueGrams ? "default" : "outline"}
+                          variant={quantityValue === qq.valueGrams ? "default" : "outline"}
                           onClick={() => setQuantity(String(qq.valueGrams / 1000).replace(".", ","))}
                           className="h-12 text-base font-semibold"
                         >
@@ -285,7 +297,7 @@ export default function ProductDetail() {
                         <Button
                           key={grams}
                           type="button"
-                          variant={quantityGrams === grams ? "default" : "outline"}
+                          variant={quantityValue === grams ? "default" : "outline"}
                           onClick={() => setQuantity(String(grams / 1000).replace(".", ","))}
                           className="h-12 text-base font-semibold"
                         >
@@ -295,7 +307,7 @@ export default function ProductDetail() {
                     )}
                   </div>
                 </div>
-
+                )}
 
                 <div className="bg-muted p-4 rounded-lg">
                   <div className="flex justify-between items-center">
@@ -309,7 +321,7 @@ export default function ProductDetail() {
                 <Button 
                   className="w-full h-12 sm:h-14 text-base sm:text-lg" 
                   onClick={handleAddToCart}
-                  disabled={!selectedCutType || quantityGrams < MIN_ITEM_GRAMS || quantityGrams > MAX_ITEM_GRAMS}
+                  disabled={!selectedCutType || quantityValue < min || quantityValue > max}
                 >
                   <ShoppingCart className="mr-2 h-5 w-5" />
                   Adicionar ao Carrinho

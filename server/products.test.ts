@@ -68,7 +68,7 @@ describe("products.create", () => {
     const result = await caller.products.create({
       name: "Produto Teste",
       description: "Descrição do produto teste",
-      pricePerKg: 5000, // R$ 50.00/kg
+      price: 5000, // R$ 50.00/kg
       stockKg: 10000, // 10 kg em gramas
       available: true,
     });
@@ -83,7 +83,7 @@ describe("products.create", () => {
     await expect(
       caller.products.create({
         name: "Produto Não Autorizado",
-        pricePerKg: 5000,
+        price: 5000,
         stockKg: 10000,
         available: true,
       })
@@ -103,7 +103,7 @@ describe("products.update", () => {
 
       const result = await caller.products.update({
         id: productId,
-        pricePerKg: 6000, // Atualizar preço
+        price: 6000, // Atualizar preço
       });
 
       expect(result.success).toBe(true);

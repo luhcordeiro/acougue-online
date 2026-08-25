@@ -68,9 +68,9 @@ lines.push("");
 
 for (const p of data.products) {
   lines.push(
-    `INSERT INTO products (name, description, categoryId, pricePerKg, stockKg, available) ` +
+    `INSERT INTO products (name, description, categoryId, price, unit, stockKg, available) ` +
       `SELECT ${quote(p.name)}, ${quote(p.description)}, ` +
-      `(SELECT id FROM categories WHERE name = ${quote(p.category)}), ${p.pricePerKg}, ${p.stockKg}, 1 ` +
+      `(SELECT id FROM categories WHERE name = ${quote(p.category)}), ${p.price}, ${quote(p.unit ?? "kg")}, ${p.stockKg}, 1 ` +
       `WHERE NOT EXISTS (SELECT 1 FROM products WHERE name = ${quote(p.name)});`
   );
 }

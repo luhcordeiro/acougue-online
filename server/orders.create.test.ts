@@ -20,7 +20,7 @@ describe('Orders - Create Order', () => {
     const result = await caller.orders.create({
       items: [{
         productId: testProduct.id,
-        quantityGrams: 1000, // 1kg
+        quantity: 1000, // 1kg
         cutTypeName: 'Moído',
       }],
       customerName: 'João Silva Teste',
@@ -43,7 +43,7 @@ describe('Orders - Create Order', () => {
     const items = await db.getOrderItems(result.orderId);
     expect(items.length).toBe(1);
     expect(items[0].productId).toBe(testProduct.id);
-    expect(items[0].quantityGrams).toBe(1000);
+    expect(items[0].quantity).toBe(1000);
     expect(items[0].cutTypeName).toBe('Moído');
   });
 });

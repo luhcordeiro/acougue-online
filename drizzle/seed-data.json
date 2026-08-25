@@ -1,37 +1,168 @@
 {
-  "_comment": "Catálogo inicial. Fonte única usada pelos testes (server/seed.ts) e pelo seed de produção (scripts/seed-sql.mjs). Preços em centavos por kg; estoque em gramas.",
-  "categories": [
-    { "name": "Carnes Bovinas", "description": "Cortes nobres e tradicionais de carne bovina" },
-    { "name": "Carnes Suínas", "description": "Cortes de porco frescos e selecionados" },
-    { "name": "Aves", "description": "Frango, chester e outras aves" },
-    { "name": "Carnes Especiais", "description": "Cortes premium e diferenciados" }
-  ],
-  "products": [
-    { "name": "Picanha", "description": "Corte nobre, macio e suculento, ideal para churrasco", "category": "Carnes Bovinas", "pricePerKg": 8990, "stockKg": 15000 },
-    { "name": "Alcatra", "description": "Carne magra e versátil, ótima para bifes e assados", "category": "Carnes Bovinas", "pricePerKg": 5490, "stockKg": 20000 },
-    { "name": "Maminha", "description": "Corte macio e saboroso, perfeito para grelhar", "category": "Carnes Bovinas", "pricePerKg": 6990, "stockKg": 12000 },
-    { "name": "Costela Bovina", "description": "Ideal para churrasco, muito saborosa", "category": "Carnes Bovinas", "pricePerKg": 3990, "stockKg": 25000 },
-    { "name": "Filé Mignon", "description": "O corte mais macio da carne bovina", "category": "Carnes Bovinas", "pricePerKg": 9990, "stockKg": 8000 },
-    { "name": "Costela Suína", "description": "Costela de porco temperada, ideal para assar", "category": "Carnes Suínas", "pricePerKg": 2990, "stockKg": 18000 },
-    { "name": "Lombo Suíno", "description": "Corte magro e macio de porco", "category": "Carnes Suínas", "pricePerKg": 3490, "stockKg": 15000 },
-    { "name": "Bacon", "description": "Bacon defumado em tiras", "category": "Carnes Suínas", "pricePerKg": 4990, "stockKg": 10000 },
-    { "name": "Frango Inteiro", "description": "Frango caipira fresco", "category": "Aves", "pricePerKg": 1890, "stockKg": 30000 },
-    { "name": "Peito de Frango", "description": "Filé de peito sem osso", "category": "Aves", "pricePerKg": 2490, "stockKg": 25000 },
-    { "name": "Coxa e Sobrecoxa", "description": "Corte suculento de frango", "category": "Aves", "pricePerKg": 1690, "stockKg": 28000 },
-    { "name": "Wagyu", "description": "Carne premium importada com marmoreio excepcional", "category": "Carnes Especiais", "pricePerKg": 29990, "stockKg": 3000 }
-  ],
-  "cutTypes": [
-    { "name": "Peça Inteira", "description": "Sem cortes, a peça como veio" },
-    { "name": "Bifes", "description": "Fatiado em bifes" },
-    { "name": "Em Cubos", "description": "Cortado em cubos, para ensopados e espetinhos" },
-    { "name": "Moído", "description": "Passado na máquina de moer" },
-    { "name": "Em Tiras", "description": "Cortado em tiras finas" }
-  ],
-  "quickQuantities": [
-    { "valueGrams": 500, "label": "500g", "sortOrder": 1 },
-    { "valueGrams": 1000, "label": "1kg", "sortOrder": 2 },
-    { "valueGrams": 1500, "label": "1,5kg", "sortOrder": 3 },
-    { "valueGrams": 2000, "label": "2kg", "sortOrder": 4 },
-    { "valueGrams": 3000, "label": "3kg", "sortOrder": 5 }
-  ]
+ "_comment": "Catálogo inicial. Fonte única usada pelos testes (server/seed.ts) e pelo seed de produção (scripts/seed-sql.mjs). Preços em centavos por kg; estoque em gramas.",
+ "categories": [
+  {
+   "name": "Carnes Bovinas",
+   "description": "Cortes nobres e tradicionais de carne bovina"
+  },
+  {
+   "name": "Carnes Suínas",
+   "description": "Cortes de porco frescos e selecionados"
+  },
+  {
+   "name": "Aves",
+   "description": "Frango, chester e outras aves"
+  },
+  {
+   "name": "Carnes Especiais",
+   "description": "Cortes premium e diferenciados"
+  }
+ ],
+ "products": [
+  {
+   "name": "Picanha",
+   "description": "Corte nobre, macio e suculento, ideal para churrasco",
+   "category": "Carnes Bovinas",
+   "stockKg": 15000,
+   "price": 8990,
+   "unit": "kg"
+  },
+  {
+   "name": "Alcatra",
+   "description": "Carne magra e versátil, ótima para bifes e assados",
+   "category": "Carnes Bovinas",
+   "stockKg": 20000,
+   "price": 5490,
+   "unit": "kg"
+  },
+  {
+   "name": "Maminha",
+   "description": "Corte macio e saboroso, perfeito para grelhar",
+   "category": "Carnes Bovinas",
+   "stockKg": 12000,
+   "price": 6990,
+   "unit": "kg"
+  },
+  {
+   "name": "Costela Bovina",
+   "description": "Ideal para churrasco, muito saborosa",
+   "category": "Carnes Bovinas",
+   "stockKg": 25000,
+   "price": 3990,
+   "unit": "kg"
+  },
+  {
+   "name": "Filé Mignon",
+   "description": "O corte mais macio da carne bovina",
+   "category": "Carnes Bovinas",
+   "stockKg": 8000,
+   "price": 9990,
+   "unit": "kg"
+  },
+  {
+   "name": "Costela Suína",
+   "description": "Costela de porco temperada, ideal para assar",
+   "category": "Carnes Suínas",
+   "stockKg": 18000,
+   "price": 2990,
+   "unit": "kg"
+  },
+  {
+   "name": "Lombo Suíno",
+   "description": "Corte magro e macio de porco",
+   "category": "Carnes Suínas",
+   "stockKg": 15000,
+   "price": 3490,
+   "unit": "kg"
+  },
+  {
+   "name": "Bacon",
+   "description": "Bacon defumado em tiras",
+   "category": "Carnes Suínas",
+   "stockKg": 10000,
+   "price": 4990,
+   "unit": "kg"
+  },
+  {
+   "name": "Frango Inteiro",
+   "description": "Frango caipira fresco",
+   "category": "Aves",
+   "stockKg": 30000,
+   "price": 1890,
+   "unit": "kg"
+  },
+  {
+   "name": "Peito de Frango",
+   "description": "Filé de peito sem osso",
+   "category": "Aves",
+   "stockKg": 25000,
+   "price": 2490,
+   "unit": "kg"
+  },
+  {
+   "name": "Coxa e Sobrecoxa",
+   "description": "Corte suculento de frango",
+   "category": "Aves",
+   "stockKg": 28000,
+   "price": 1690,
+   "unit": "kg"
+  },
+  {
+   "name": "Wagyu",
+   "description": "Carne premium importada com marmoreio excepcional",
+   "category": "Carnes Especiais",
+   "stockKg": 3000,
+   "price": 29990,
+   "unit": "kg"
+  }
+ ],
+ "cutTypes": [
+  {
+   "name": "Peça Inteira",
+   "description": "Sem cortes, a peça como veio"
+  },
+  {
+   "name": "Bifes",
+   "description": "Fatiado em bifes"
+  },
+  {
+   "name": "Em Cubos",
+   "description": "Cortado em cubos, para ensopados e espetinhos"
+  },
+  {
+   "name": "Moído",
+   "description": "Passado na máquina de moer"
+  },
+  {
+   "name": "Em Tiras",
+   "description": "Cortado em tiras finas"
+  }
+ ],
+ "quickQuantities": [
+  {
+   "valueGrams": 500,
+   "label": "500g",
+   "sortOrder": 1
+  },
+  {
+   "valueGrams": 1000,
+   "label": "1kg",
+   "sortOrder": 2
+  },
+  {
+   "valueGrams": 1500,
+   "label": "1,5kg",
+   "sortOrder": 3
+  },
+  {
+   "valueGrams": 2000,
+   "label": "2kg",
+   "sortOrder": 4
+  },
+  {
+   "valueGrams": 3000,
+   "label": "3kg",
+   "sortOrder": 5
+  }
+ ]
 }

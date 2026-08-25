@@ -173,7 +173,7 @@ describe("rotas de horário", () => {
 
     await expect(
       cliente.orders.create({
-        items: [{ productId: produtos[0].id, quantityGrams: 1000 }],
+        items: [{ productId: produtos[0].id, quantity: 1000 }],
         customerName: "Cliente Teste",
         customerPhone: "11999999999",
         deliveryAddress: "Rua de Teste, 100 - Centro",

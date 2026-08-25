@@ -39,7 +39,8 @@ export async function seedCatalog(): Promise<void> {
       name: product.name,
       description: product.description,
       categoryId: categoryIds.get(product.category),
-      pricePerKg: product.pricePerKg,
+      price: product.price,
+      unit: (product.unit ?? "kg") as "kg" | "un",
       stockKg: product.stockKg,
       available: true,
     });
