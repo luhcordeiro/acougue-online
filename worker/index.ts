@@ -141,6 +141,16 @@ export default {
 
     const url = new URL(request.url);
 
+    // Uma única versão do site.
+    //
+    // Servir www e domínio raiz ao mesmo tempo criaria dois endereços com
+    // cookies separados: quem entrasse no painel por um teria de entrar de
+    // novo pelo outro. O redirecionamento resolve antes de virar problema.
+    if (url.hostname.startsWith("www.")) {
+      url.hostname = url.hostname.slice(4);
+      return Response.redirect(url.toString(), 301);
+    }
+
     // Fila de impressão: consumida pelo agente do balcão, não pelo navegador.
     // Fica fora do tRPC porque o agente é um script simples, sem sessão de
     // admin — ele se identifica por um token próprio.

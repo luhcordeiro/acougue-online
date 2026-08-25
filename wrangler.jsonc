@@ -30,6 +30,17 @@
     }
   ],
 
+  // Domínio próprio. DESATIVADO até os nameservers de texasbifedelivery.com
+  // apontarem para a Cloudflare: publicar com uma rota cujo domínio não está
+  // na conta faz o deploy inteiro falhar.
+  //
+  // Quando o painel mostrar o site como "Ativo", basta descomentar e publicar.
+  // A Cloudflare cria os registros DNS e o certificado sozinha.
+  // "routes": [
+  //   { "pattern": "texasbifedelivery.com", "custom_domain": true },
+  //   { "pattern": "www.texasbifedelivery.com", "custom_domain": true }
+  // ],
+
   "observability": {
     "enabled": true
   },
