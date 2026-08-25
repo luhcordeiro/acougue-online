@@ -113,7 +113,9 @@ describe("limites no servidor", () => {
       items: [{ productId: produto.id, quantity }],
       customerName: "Cliente Teste",
       customerPhone: "11999999999",
-      deliveryAddress: "Rua de Teste, 100 - Centro",
+      deliveryStreet: "Rua de Teste",
+      deliveryNumber: "100",
+      deliveryNeighborhood: "Centro",
       paymentMethod: "pix",
     });
   };
@@ -157,7 +159,9 @@ describe("limites no servidor", () => {
       items: [{ productId: id!, quantity: 3 }],
       customerName: "Cliente Teste",
       customerPhone: "11999999999",
-      deliveryAddress: "Rua de Teste, 100 - Centro",
+      deliveryStreet: "Rua de Teste",
+      deliveryNumber: "100",
+      deliveryNeighborhood: "Centro",
       paymentMethod: "pix",
     });
 
@@ -186,7 +190,9 @@ describe("limites no servidor", () => {
         items: [{ productId: id!, quantity: MAX_ITEM_UNITS + 1 }],
         customerName: "Cliente Teste",
         customerPhone: "11999999999",
-        deliveryAddress: "Rua de Teste, 100 - Centro",
+        deliveryStreet: "Rua de Teste",
+      deliveryNumber: "100",
+      deliveryNeighborhood: "Centro",
         paymentMethod: "pix",
       })
     ).rejects.toThrow(/quantidade deve estar entre/);
@@ -208,7 +214,9 @@ describe("limites no servidor", () => {
       items: [{ productId: id!, quantity: MIN_ITEM_UNITS }],
       customerName: "Cliente Teste",
       customerPhone: "11999999999",
-      deliveryAddress: "Rua de Teste, 100 - Centro",
+      deliveryStreet: "Rua de Teste",
+      deliveryNumber: "100",
+      deliveryNeighborhood: "Centro",
       paymentMethod: "pix",
     });
 
@@ -232,7 +240,9 @@ describe("limites no servidor", () => {
       items: [{ productId: id!, quantity: 2 }], // sem cutTypeName
       customerName: "Cliente Teste",
       customerPhone: "11999999999",
-      deliveryAddress: "Rua de Teste, 100 - Centro",
+      deliveryStreet: "Rua de Teste",
+      deliveryNumber: "100",
+      deliveryNeighborhood: "Centro",
       paymentMethod: "pix",
     });
 
@@ -249,7 +259,9 @@ describe("limites no servidor", () => {
       items: [{ productId: produto.id, quantity: 1350 }],
       customerName: "Cliente Teste",
       customerPhone: "11999999999",
-      deliveryAddress: "Rua de Teste, 100 - Centro",
+      deliveryStreet: "Rua de Teste",
+      deliveryNumber: "100",
+      deliveryNeighborhood: "Centro",
       paymentMethod: "pix",
     });
 

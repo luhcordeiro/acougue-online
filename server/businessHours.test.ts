@@ -176,7 +176,9 @@ describe("rotas de horário", () => {
         items: [{ productId: produtos[0].id, quantity: 1000 }],
         customerName: "Cliente Teste",
         customerPhone: "11999999999",
-        deliveryAddress: "Rua de Teste, 100 - Centro",
+        deliveryStreet: "Rua de Teste",
+      deliveryNumber: "100",
+      deliveryNeighborhood: "Centro",
         paymentMethod: "pix",
       })
     ).rejects.toThrow(/fechada/);

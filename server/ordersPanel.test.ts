@@ -30,7 +30,9 @@ async function criarPedidos(quantidade: number): Promise<number[]> {
       items: [{ productId: produto.id, quantity: 1000 }],
       customerName: `Cliente ${i + 1}`,
       customerPhone: "11999999999",
-      deliveryAddress: "Rua de Teste, 100 - Centro",
+      deliveryStreet: "Rua de Teste",
+      deliveryNumber: "100",
+      deliveryNeighborhood: "Centro",
       paymentMethod: "pix",
     });
     ids.push(orderId);

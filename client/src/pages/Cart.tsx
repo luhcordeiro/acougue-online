@@ -23,7 +23,9 @@ export default function Cart() {
   // Estados do formulário de checkout
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
-  const [deliveryAddress, setDeliveryAddress] = useState("");
+  const [deliveryStreet, setDeliveryStreet] = useState("");
+  const [deliveryNumber, setDeliveryNumber] = useState("");
+  const [deliveryNeighborhood, setDeliveryNeighborhood] = useState("");
   const [notes, setNotes] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("pix");
   const [changeFor, setChangeFor] = useState("");
@@ -77,8 +79,18 @@ export default function Cart() {
       return;
     }
     
-    if (!deliveryAddress.trim()) {
-      toast.error("Por favor, informe o endereço de entrega");
+    if (!deliveryStreet.trim()) {
+      toast.error("Por favor, informe o endereço");
+      return;
+    }
+
+    if (!deliveryNumber.trim()) {
+      toast.error("Por favor, informe o número (use S/N se não houver)");
+      return;
+    }
+
+    if (!deliveryNeighborhood.trim()) {
+      toast.error("Por favor, informe o bairro");
       return;
     }
 
@@ -102,7 +114,9 @@ export default function Cart() {
       })),
       customerName: customerName.trim(),
       customerPhone: customerPhone.trim(),
-      deliveryAddress: deliveryAddress.trim(),
+      deliveryStreet: deliveryStreet.trim(),
+      deliveryNumber: deliveryNumber.trim(),
+      deliveryNeighborhood: deliveryNeighborhood.trim(),
       notes: notes.trim() || undefined,
       paymentMethod,
       changeFor: changeForValue,
@@ -275,20 +289,61 @@ export default function Cart() {
                   />
                 </div>
 
-                {/* Endereço */}
-                <div className="space-y-2">
-                  <Label htmlFor="deliveryAddress" className="flex items-center gap-2">
+                {/* Endereço em partes: num campo único o número era esquecido */}
+                <div className="space-y-3">
+                  <Label className="flex items-center gap-2">
                     <MapPin className="h-4 w-4" />
                     Endereço de Entrega *
                   </Label>
-                  <Textarea
-                    id="deliveryAddress"
-                    placeholder="Rua, número, complemento, bairro, cidade - UF, CEP"
-                    value={deliveryAddress}
-                    onChange={(e) => setDeliveryAddress(e.target.value)}
-                    rows={3}
-                    className="text-base resize-none"
-                  />
+
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="col-span-2 space-y-1">
+                      <Label htmlFor="deliveryStreet" className="text-xs text-muted-foreground">
+                        Endereço
+                      </Label>
+                      <Input
+                        id="deliveryStreet"
+                        placeholder="Rua das Flores"
+                        value={deliveryStreet}
+                        onChange={(e) => setDeliveryStreet(e.target.value)}
+                        className="h-12 text-base"
+                        autoComplete="address-line1"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <Label htmlFor="deliveryNumber" className="text-xs text-muted-foreground">
+                        Número
+                      </Label>
+                      <Input
+                        id="deliveryNumber"
+                        placeholder="123"
+                        value={deliveryNumber}
+                        onChange={(e) => setDeliveryNumber(e.target.value)}
+                        className="h-12 text-base"
+                        inputMode="numeric"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label htmlFor="deliveryNeighborhood" className="text-xs text-muted-foreground">
+                      Bairro
+                    </Label>
+                    <Input
+                      id="deliveryNeighborhood"
+                      placeholder="Centro"
+                      value={deliveryNeighborhood}
+                      onChange={(e) => setDeliveryNeighborhood(e.target.value)}
+                      className="h-12 text-base"
+                      autoComplete="address-level3"
+                    />
+                  </div>
+
+                  <p className="text-xs text-muted-foreground">
+                    Complemento, ponto de referência e outras instruções podem
+                    ir em Observações, abaixo.
+                  </p>
                 </div>
 
                 {/* Forma de Pagamento */}

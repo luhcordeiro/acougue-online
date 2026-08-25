@@ -105,7 +105,9 @@ describe("enfileiramento automático", () => {
       items: [{ productId: produto.id, quantity: 1000, cutTypeName: "Bifes" }],
       customerName: "Cliente Teste",
       customerPhone: "18991363710",
-      deliveryAddress: "Rua de Teste, 100 - Centro",
+      deliveryStreet: "Rua de Teste",
+      deliveryNumber: "100",
+      deliveryNeighborhood: "Centro",
       paymentMethod: "pix",
     });
   }

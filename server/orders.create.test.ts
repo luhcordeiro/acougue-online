@@ -25,7 +25,9 @@ describe('Orders - Create Order', () => {
       }],
       customerName: 'João Silva Teste',
       customerPhone: '(11) 98765-4321',
-      deliveryAddress: 'Rua das Flores, 123, Apto 45, Centro, São Paulo - SP, CEP 01234-567',
+      deliveryStreet: 'Rua das Flores',
+      deliveryNumber: '123',
+      deliveryNeighborhood: 'Centro',
       notes: 'Teste de criação de pedido',
       paymentMethod: 'pix',
     });

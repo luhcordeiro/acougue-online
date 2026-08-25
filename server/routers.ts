@@ -5,6 +5,7 @@ import {
 } from "./_core/adminAuth";
 import { hashPassword, verifyPassword } from "./_core/password";
 import { publicProcedure, adminProcedure, router, zin } from "./_core/trpc";
+import { formatAddress } from "@shared/address";
 import { buildReceipt } from "@shared/receipt";
 import {
   getStoreStatus,
@@ -243,7 +244,23 @@ export const appRouter = router({
         customerName: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
         customerPhone: z.string().min(10, 'Telefone deve ter pelo menos 10 dígitos'),
         notes: z.string().optional(),
-        deliveryAddress: z.string().min(10, 'Endereço deve ter pelo menos 10 caracteres'),
+        // Endereço em partes: entregador precisa de rua, número e bairro
+        // separados, e um campo único deixava o cliente esquecer o número.
+        deliveryStreet: z
+          .string()
+          .trim()
+          .min(3, 'Informe o endereço (rua, avenida...)')
+          .max(200, 'Endereço muito longo'),
+        deliveryNumber: z
+          .string()
+          .trim()
+          .min(1, 'Informe o número (use S/N se não houver)')
+          .max(20, 'Número muito longo'),
+        deliveryNeighborhood: z
+          .string()
+          .trim()
+          .min(2, 'Informe o bairro')
+          .max(100, 'Bairro muito longo'),
         paymentMethod: z.enum(['card', 'pix', 'cash']),
         changeFor: z.number().optional(), // Valor em centavos para troco (apenas para pagamento em dinheiro)
       }))
@@ -309,7 +326,10 @@ export const appRouter = router({
           totalAmount: totalWithDelivery,
           notes: input.notes,
           deliveryDate: null,
-          deliveryAddress: input.deliveryAddress,
+          deliveryAddress: formatAddress(input),
+          deliveryStreet: input.deliveryStreet,
+          deliveryNumber: input.deliveryNumber,
+          deliveryNeighborhood: input.deliveryNeighborhood,
           paymentMethod: input.paymentMethod,
           changeFor: input.paymentMethod === 'cash' ? input.changeFor : null,
         };

@@ -32,6 +32,10 @@ export type ReceiptOrder = {
   customerName: string;
   customerPhone: string;
   deliveryAddress: string;
+  /** Partes do endereço; nulas nos pedidos anteriores à separação. */
+  deliveryStreet?: string | null;
+  deliveryNumber?: string | null;
+  deliveryNeighborhood?: string | null;
   paymentMethod: "card" | "pix" | "cash";
   changeFor?: number | null;
   notes?: string | null;
@@ -190,8 +194,22 @@ export function buildReceipt(
   }
   linhas.push(`FONE: ${formatPhone(order.customerPhone)}`);
   linhas.push("ENDERECO:");
-  for (const linha of wrap(order.deliveryAddress, w - 2)) {
-    linhas.push(`  ${linha}`);
+
+  // Com as partes separadas o bairro ganha linha própria: é o que o entregador
+  // lê primeiro para decidir a rota. Pedido antigo só tem o endereço montado.
+  if (order.deliveryStreet && order.deliveryNumber) {
+    const rua = `${order.deliveryStreet}, ${order.deliveryNumber}`;
+    for (const linha of wrap(rua, w - 2)) linhas.push(`  ${linha}`);
+
+    if (order.deliveryNeighborhood) {
+      for (const linha of wrap(`BAIRRO: ${order.deliveryNeighborhood.toUpperCase()}`, w - 2)) {
+        linhas.push(`  ${linha}`);
+      }
+    }
+  } else {
+    for (const linha of wrap(order.deliveryAddress, w - 2)) {
+      linhas.push(`  ${linha}`);
+    }
   }
 
   if (order.notes) {

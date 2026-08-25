@@ -25,7 +25,9 @@ describe('Payment Method', () => {
       }],
       customerName: 'Cliente Teste PIX',
       customerPhone: '11999999999',
-      deliveryAddress: 'Rua Teste, 123, Centro, São Paulo - SP',
+      deliveryStreet: 'Rua Teste',
+      deliveryNumber: '123',
+      deliveryNeighborhood: 'Centro',
       paymentMethod: 'pix',
     });
 
@@ -60,7 +62,9 @@ describe('Payment Method', () => {
       }],
       customerName: 'Cliente Teste Cartão',
       customerPhone: '11988888888',
-      deliveryAddress: 'Rua Cartão, 456, Centro, São Paulo - SP',
+      deliveryStreet: 'Rua Cartao',
+      deliveryNumber: '456',
+      deliveryNeighborhood: 'Centro',
       paymentMethod: 'card',
     });
 
@@ -95,7 +99,9 @@ describe('Payment Method', () => {
       }],
       customerName: 'Cliente Teste Dinheiro',
       customerPhone: '11977777777',
-      deliveryAddress: 'Rua Dinheiro, 789, Centro, São Paulo - SP',
+      deliveryStreet: 'Rua Dinheiro',
+      deliveryNumber: '789',
+      deliveryNeighborhood: 'Centro',
       paymentMethod: 'cash',
       changeFor: 10000, // R$ 100,00 em centavos
     });
@@ -131,7 +137,9 @@ describe('Payment Method', () => {
       }],
       customerName: 'Cliente Teste Sem Troco',
       customerPhone: '11966666666',
-      deliveryAddress: 'Rua Sem Troco, 101, Centro, São Paulo - SP',
+      deliveryStreet: 'Rua Sem Troco',
+      deliveryNumber: '101',
+      deliveryNeighborhood: 'Centro',
       paymentMethod: 'cash',
     });
 

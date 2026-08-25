@@ -96,7 +96,18 @@ export const orders = sqliteTable(
 
     // Entrega
     deliveryDate: integer("deliveryDate", { mode: "timestamp" }),
+    /**
+     * Endereço montado ("Rua X, 123 - Centro").
+     *
+     * Continua sendo a fonte para exibir e imprimir: pedidos antigos só têm
+     * este campo, e depender das partes exigiria um "se tem, senão" em cada
+     * tela e no cupom.
+     */
     deliveryAddress: text("deliveryAddress").notNull(),
+    /** Partes do endereço. Nulas nos pedidos anteriores à separação. */
+    deliveryStreet: text("deliveryStreet"),
+    deliveryNumber: text("deliveryNumber"),
+    deliveryNeighborhood: text("deliveryNeighborhood"),
 
     // Pagamento
     paymentMethod: text("paymentMethod", { enum: ["card", "pix", "cash"] })
