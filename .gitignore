@@ -112,3 +112,6 @@ temp/
 
 # SQL de seed gerado (contem hash de senha)
 seed.generated.sql
+
+# Configuracao local do agente de impressao
+agent/.env

@@ -10,7 +10,12 @@
 
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import { drizzle } from "drizzle-orm/d1";
-import { setDb } from "../server/db";
+import {
+  markPrintJobDone,
+  markPrintJobFailed,
+  nextPrintJobs,
+  setDb,
+} from "../server/db";
 import { setStorage } from "../server/storage";
 import { createContextFrom } from "../server/_core/context";
 import { setEnv } from "../server/_core/env";
@@ -27,6 +32,8 @@ export interface Env {
   BUCKET?: R2Bucket;
 
   JWT_SECRET: string;
+  /** Token do agente de impressão do balcão. Sem ele, a fila fica fechada. */
+  PRINT_AGENT_TOKEN?: string;
   /** Domínio público do bucket, usado para montar a URL das imagens. */
   R2_PUBLIC_URL?: string;
 }
@@ -65,6 +72,67 @@ function ensureStorage(env: Env) {
   });
 }
 
+const json = (data: unknown, status = 200) =>
+  new Response(JSON.stringify(data), {
+    status,
+    headers: { "content-type": "application/json" },
+  });
+
+/**
+ * Endpoints do agente de impressão.
+ *
+ * GET  /api/print/jobs  -> cupons pendentes
+ * POST /api/print/ack   -> confirma impressão ou registra falha
+ */
+async function handlePrintApi(
+  request: Request,
+  env: Env,
+  url: URL
+): Promise<Response> {
+  const esperado = env.PRINT_AGENT_TOKEN;
+  if (!esperado) {
+    return json({ error: "Agente de impressão não configurado" }, 503);
+  }
+
+  const autorizacao = request.headers.get("authorization") ?? "";
+  const token = autorizacao.replace(/^Bearer\s+/i, "");
+
+  // comparação simples: o token é aleatório e longo, e a fila não expõe
+  // nada além dos cupons já visíveis para quem está no balcão
+  if (token !== esperado) {
+    return json({ error: "Token inválido" }, 401);
+  }
+
+  if (url.pathname === "/api/print/jobs" && request.method === "GET") {
+    const jobs = await nextPrintJobs(5);
+    return json({
+      jobs: jobs.map(j => ({ id: j.id, orderId: j.orderId, content: j.content })),
+    });
+  }
+
+  if (url.pathname === "/api/print/ack" && request.method === "POST") {
+    const body = (await request.json().catch(() => null)) as {
+      id?: number;
+      ok?: boolean;
+      error?: string;
+    } | null;
+
+    if (!body || typeof body.id !== "number") {
+      return json({ error: "Informe o id do cupom" }, 400);
+    }
+
+    if (body.ok) {
+      await markPrintJobDone(body.id);
+    } else {
+      await markPrintJobFailed(body.id, body.error ?? "erro desconhecido");
+    }
+
+    return json({ success: true });
+  }
+
+  return json({ error: "Rota não encontrada" }, 404);
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     setEnv(env as unknown as Record<string, string | undefined>);
@@ -72,6 +140,13 @@ export default {
     ensureStorage(env);
 
     const url = new URL(request.url);
+
+    // Fila de impressão: consumida pelo agente do balcão, não pelo navegador.
+    // Fica fora do tRPC porque o agente é um script simples, sem sessão de
+    // admin — ele se identifica por um token próprio.
+    if (url.pathname.startsWith("/api/print/")) {
+      return handlePrintApi(request, env, url);
+    }
 
     if (url.pathname.startsWith("/api/trpc")) {
       const cookies: string[] = [];

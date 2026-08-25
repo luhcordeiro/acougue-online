@@ -15,6 +15,13 @@
       "when": 1787665772688,
       "tag": "0001_unidade_de_venda",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1787665772689,
+      "tag": "0002_fila_de_impressao",
+      "breakpoints": true
     }
   ]
 }

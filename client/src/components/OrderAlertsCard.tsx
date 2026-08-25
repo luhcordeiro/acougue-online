@@ -70,6 +70,18 @@ export default function OrderAlertsCard() {
     if (data) setAlerts(data);
   }, [data]);
 
+  const { data: fila } = trpc.settings.getPrintQueue.useQuery(undefined, {
+    refetchInterval: 15_000,
+  });
+
+  const retryMutation = trpc.settings.retryPrintQueue.useMutation({
+    onSuccess: result => {
+      toast.success(`${result.reenfileirados} cupom(ns) devolvido(s) à fila`);
+      utils.settings.getPrintQueue.invalidate();
+    },
+    onError: error => toast.error(error.message),
+  });
+
   const saveMutation = trpc.settings.setOrderAlerts.useMutation({
     onSuccess: () => {
       toast.success("Preferências de pedidos atualizadas!");
@@ -145,11 +157,42 @@ export default function OrderAlertsCard() {
             </div>
 
             {alerts.autoPrint && (
-              <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800">
-                O navegador abre a janela de impressão a cada pedido. Para
-                imprimir direto, sem confirmar, abra o Chrome com a opção{" "}
-                <code className="font-mono text-xs">--kiosk-printing</code>.
-              </p>
+              <div className="space-y-2 rounded-md bg-muted px-3 py-2 text-sm">
+                <p className="font-medium">Fila de impressão</p>
+
+                {fila && (fila.pending > 0 || fila.failed > 0) ? (
+                  <div className="space-y-2">
+                    <p>
+                      {fila.pending > 0 && `${fila.pending} aguardando impressão. `}
+                      {fila.failed > 0 && (
+                        <span className="text-destructive">
+                          {fila.failed} falhou(ram) após várias tentativas.
+                        </span>
+                      )}
+                    </p>
+                    {fila.failed > 0 && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => retryMutation.mutate()}
+                        disabled={retryMutation.isPending}
+                      >
+                        Tentar imprimir de novo
+                      </Button>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground">
+                    Nenhum cupom pendente.
+                  </p>
+                )}
+
+                <p className="text-xs text-muted-foreground">
+                  Com o agente de impressão instalado no PC do balcão, o cupom
+                  sai sozinho mesmo com o navegador fechado. Sem ele, o cupom
+                  fica nesta fila esperando.
+                </p>
+              </div>
             )}
 
             <div className="space-y-2">

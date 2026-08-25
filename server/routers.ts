@@ -5,6 +5,7 @@ import {
 } from "./_core/adminAuth";
 import { hashPassword, verifyPassword } from "./_core/password";
 import { publicProcedure, adminProcedure, router, zin } from "./_core/trpc";
+import { buildReceipt } from "@shared/receipt";
 import {
   getStoreStatus,
   WEEKDAY_NAMES,
@@ -315,9 +316,31 @@ export const appRouter = router({
         
         const orderId = await db.createOrderWithItems(orderData, orderItemsData);
         
-        // O painel admin detecta novos pedidos via orders.countPending (polling
-        // a cada 10s, com badge e toast). Não há mais notificação externa.
         console.log(`[Orders] Novo pedido #${orderId} - ${input.customerName} - R$ ${(totalWithDelivery / 100).toFixed(2)}`);
+
+        // Enfileira o cupom para o agente do balcão imprimir.
+        // Best-effort: o pedido já está gravado, e falhar a impressão não pode
+        // derrubar o checkout do cliente.
+        try {
+          const alerts = await db.getOrderAlerts();
+          if (alerts.autoPrint) {
+            const pedido = await db.getOrderById(orderId);
+            const itens = await db.getOrderItems(orderId);
+
+            if (pedido) {
+              await db.enqueuePrintJob(
+                orderId,
+                buildReceipt(pedido, itens, {
+                  storeName: await db.getStoreName(),
+                  width: alerts.receiptWidth,
+                  deliveryFee,
+                })
+              );
+            }
+          }
+        } catch (error) {
+          console.warn('[Orders] Falha ao enfileirar impressão:', error);
+        }
         
         return { success: true, orderId };
       }),
@@ -490,6 +513,14 @@ export const appRouter = router({
         await db.setDeliveryFee(input.feeInCents);
         return { success: true };
       }),
+    // Situação da fila de impressão, para o painel avisar quando travar
+    getPrintQueue: adminProcedure.query(async () => {
+      return await db.getPrintQueueStatus();
+    }),
+    retryPrintQueue: adminProcedure.mutation(async () => {
+      const reenfileirados = await db.retryFailedPrintJobs();
+      return { success: true, reenfileirados };
+    }),
     // Alertas de novo pedido: só o painel usa, então exige sessão
     getOrderAlerts: adminProcedure.query(async () => {
       return await db.getOrderAlerts();

@@ -245,6 +245,38 @@ export type SystemSetting = typeof systemSettings.$inferSelect;
 export type InsertSystemSetting = typeof systemSettings.$inferInsert;
 
 /**
+ * Fila de impressão dos cupons.
+ *
+ * O cupom é gravado aqui e o agente de impressão do balcão busca e imprime.
+ * Uma fila em vez de impressão direta porque a impressora pode estar sem
+ * papel, o PC desligado ou o agente parado: assim o pedido não se perde, sai
+ * quando a impressora voltar.
+ */
+export const printJobs = sqliteTable(
+  "printJobs",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    orderId: integer("orderId").references(() => orders.id),
+    /** Cupom em texto puro; o agente converte para ESC/POS. */
+    content: text("content").notNull(),
+    status: text("status", { enum: ["pending", "done", "failed"] })
+      .default("pending")
+      .notNull(),
+    attempts: integer("attempts").default(0).notNull(),
+    lastError: text("lastError"),
+    createdAt: createdAt(),
+    printedAt: integer("printedAt", { mode: "timestamp" }),
+  },
+  table => [
+    // o agente pergunta "tem trabalho?" a cada poucos segundos
+    index("printJobs_status_idx").on(table.status, table.id),
+  ]
+);
+
+export type PrintJob = typeof printJobs.$inferSelect;
+export type InsertPrintJob = typeof printJobs.$inferInsert;
+
+/**
  * Usuários do painel administrativo
  * Autenticação própria (usuário/senha), independente de qualquer OAuth
  */

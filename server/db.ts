@@ -5,7 +5,7 @@ import {
   normalizeBusinessHours,
   type BusinessHours,
 } from "@shared/businessHours";
-import { categories, InsertCategory, products, InsertProduct, orders, InsertOrder, orderItems, InsertOrderItem, cutTypes, InsertCutType, productCutTypes, quickQuantities, InsertQuickQuantity, productQuickQuantities, systemSettings, adminUsers, InsertAdminUser, AdminUser } from "../drizzle/schema";
+import { categories, InsertCategory, products, InsertProduct, orders, InsertOrder, orderItems, InsertOrderItem, cutTypes, InsertCutType, productCutTypes, quickQuantities, InsertQuickQuantity, productQuickQuantities, systemSettings, printJobs, adminUsers, InsertAdminUser, AdminUser } from "../drizzle/schema";
 
 /**
  * O driver é injetado pelo entrypoint (worker/index.ts), que liga o Drizzle
@@ -528,6 +528,17 @@ export async function clearHeroImage(): Promise<void> {
   await setSystemSetting(HERO_IMAGE_KEY_KEY, "", "Chave da foto da fachada no R2");
 }
 
+const STORE_NAME_KEY = "store_name";
+
+/** Nome impresso no topo do cupom. */
+export async function getStoreName(): Promise<string> {
+  return (await getSystemSetting(STORE_NAME_KEY)) || "Acougue Online";
+}
+
+export async function setStoreName(name: string): Promise<void> {
+  await setSystemSetting(STORE_NAME_KEY, name, "Nome exibido no cupom");
+}
+
 const ORDER_ALERTS_KEY = "order_alerts";
 
 export type OrderAlerts = {
@@ -604,6 +615,113 @@ export async function setDeliveryFee(feeInCents: number): Promise<void> {
   await setSystemSetting("delivery_fee", feeInCents.toString(), "Taxa de entrega em centavos");
 }
 
+
+// ==================== FILA DE IMPRESSAO ====================
+
+export async function enqueuePrintJob(
+  orderId: number | null,
+  content: string
+): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const [row] = await db
+    .insert(printJobs)
+    .values({ orderId, content })
+    .returning({ id: printJobs.id });
+
+  return row.id;
+}
+
+/** Próximos cupons a imprimir, do mais antigo para o mais novo. */
+export async function nextPrintJobs(limit = 5) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db
+    .select()
+    .from(printJobs)
+    .where(eq(printJobs.status, "pending"))
+    .orderBy(printJobs.id)
+    .limit(limit);
+}
+
+export async function markPrintJobDone(id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db
+    .update(printJobs)
+    .set({ status: "done", printedAt: new Date() })
+    .where(eq(printJobs.id, id));
+}
+
+/**
+ * Registra a falha e devolve o cupom para a fila até certo limite.
+ *
+ * Sem o teto, um cupom que a impressora nunca aceita ficaria travando a fila
+ * para sempre e nenhum pedido seguinte sairia.
+ */
+export async function markPrintJobFailed(
+  id: number,
+  error: string,
+  maxAttempts = 5
+): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const [job] = await db.select().from(printJobs).where(eq(printJobs.id, id)).limit(1);
+  if (!job) return;
+
+  const attempts = job.attempts + 1;
+
+  await db
+    .update(printJobs)
+    .set({
+      attempts,
+      lastError: error.slice(0, 500),
+      status: attempts >= maxAttempts ? "failed" : "pending",
+    })
+    .where(eq(printJobs.id, id));
+}
+
+/** Situação da fila, para o painel mostrar quando algo travou. */
+export async function getPrintQueueStatus(): Promise<{
+  pending: number;
+  failed: number;
+}> {
+  const db = await getDb();
+  if (!db) return { pending: 0, failed: 0 };
+
+  const linhas = await db
+    .select({ status: printJobs.status })
+    .from(printJobs)
+    .where(inArray(printJobs.status, ["pending", "failed"]));
+
+  return {
+    pending: linhas.filter(l => l.status === "pending").length,
+    failed: linhas.filter(l => l.status === "failed").length,
+  };
+}
+
+export async function retryFailedPrintJobs(): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const falhos = await db
+    .select({ id: printJobs.id })
+    .from(printJobs)
+    .where(eq(printJobs.status, "failed"));
+
+  if (falhos.length === 0) return 0;
+
+  await db
+    .update(printJobs)
+    .set({ status: "pending", attempts: 0, lastError: null })
+    .where(eq(printJobs.status, "failed"));
+
+  return falhos.length;
+}
 
 // ==================== ADMIN USERS ====================
 
