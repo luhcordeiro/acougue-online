@@ -94,16 +94,19 @@ export default function ProductDetail() {
       return;
     }
 
-    if (!selectedCutType) {
+    if (!isUnit && cutTypes.length > 0 && !selectedCutType) {
       toast.error("Por favor, selecione o tipo de corte");
       return;
     }
+
+    // produto por unidade não leva corte
+    const cutTypeName = isUnit ? undefined : selectedCutType || undefined;
 
     const cart = readCart();
     
     // Verificar se já existe item com mesmo produto E mesmo corte
     const existingItemIndex = cart.findIndex(
-      item => item.productId === productId && item.cutTypeName === selectedCutType
+      item => item.productId === productId && item.cutTypeName === cutTypeName
     );
     
     if (existingItemIndex >= 0) {
@@ -118,13 +121,17 @@ export default function ProductDetail() {
         unit,
         quantity: quantityValue,
         imageUrl: product!.imageUrl,
-        cutTypeName: selectedCutType,
+        cutTypeName,
       });
     }
     
     writeCart(cart);
     
-    toast.success(`${formatQuantity(quantityValue, unit)} de ${product?.name} (${selectedCutType}) adicionado ao carrinho!`);
+    toast.success(
+      cutTypeName
+        ? `${formatQuantity(quantityValue, unit)} de ${product?.name} (${cutTypeName}) adicionado ao carrinho!`
+        : `${formatQuantity(quantityValue, unit)} de ${product?.name} adicionado ao carrinho!`
+    );
     
     // Voltar para o catálogo após adicionar
     setTimeout(() => {
@@ -201,7 +208,8 @@ export default function ProductDetail() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Seleção de Tipo de Corte - Botões */}
+                {/* Corte só faz sentido a peso: mercearia não se corta */}
+                {!isUnit && (
                 <div className="space-y-2">
                   <Label>Tipo de Corte *</Label>
                   <div className="grid grid-cols-2 gap-2">
@@ -224,6 +232,7 @@ export default function ProductDetail() {
                     )}
                   </div>
                 </div>
+                )}
 
                 {/* Campo livre: o cliente pode pedir qualquer quantidade */}
                 <div className="space-y-2">
@@ -321,7 +330,11 @@ export default function ProductDetail() {
                 <Button 
                   className="w-full h-12 sm:h-14 text-base sm:text-lg" 
                   onClick={handleAddToCart}
-                  disabled={!selectedCutType || quantityValue < min || quantityValue > max}
+                  disabled={
+                    (!isUnit && cutTypes.length > 0 && !selectedCutType) ||
+                    quantityValue < min ||
+                    quantityValue > max
+                  }
                 >
                   <ShoppingCart className="mr-2 h-5 w-5" />
                   Adicionar ao Carrinho

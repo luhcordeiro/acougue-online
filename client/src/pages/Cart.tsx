@@ -97,7 +97,8 @@ export default function Cart() {
       items: cart.map((item) => ({
         productId: item.productId,
         quantity: item.quantity,
-        cutTypeName: item.cutTypeName || "Não especificado",
+        // produto de mercearia não tem corte; não inventar "Não especificado"
+        cutTypeName: item.cutTypeName || undefined,
       })),
       customerName: customerName.trim(),
       customerPhone: customerPhone.trim(),

@@ -447,6 +447,9 @@ export default function AdminProducts() {
                 </div>
               </div>
 
+              {/* Corte e quantidades rápidas não se aplicam a item por peça */}
+              {formData.unit === "kg" && (
+              <>
               <div>
                 <Label className="flex items-center gap-2">
                   <Scissors className="h-4 w-4" />
@@ -524,6 +527,8 @@ export default function AdminProducts() {
                   </p>
                 )}
               </div>
+              </>
+              )}
 
               <div>
                 <Label htmlFor="image">Imagem do Produto</Label>

@@ -215,6 +215,32 @@ describe("limites no servidor", () => {
     expect(orderId).toBeGreaterThan(0);
   });
 
+  it("aceita pedido de item por unidade sem tipo de corte", async () => {
+    // mercearia não se corta: exigir corte aqui travaria o checkout
+    const admin = appRouter.createCaller(adminCtx());
+    const cliente = appRouter.createCaller(publicCtx());
+
+    const { id } = await admin.products.create({
+      name: "Detergente Teste 500ml",
+      price: 250,
+      unit: "un",
+      available: true,
+      stockKg: 0,
+    });
+
+    const { orderId } = await cliente.orders.create({
+      items: [{ productId: id!, quantity: 2 }], // sem cutTypeName
+      customerName: "Cliente Teste",
+      customerPhone: "11999999999",
+      deliveryAddress: "Rua de Teste, 100 - Centro",
+      paymentMethod: "pix",
+    });
+
+    const { items } = await cliente.orders.getById({ id: orderId });
+    expect(items[0].cutTypeName).toBeNull();
+    expect(items[0].subtotal).toBe(500);
+  });
+
   it("cobra proporcional à quantidade digitada", async () => {
     const caller = appRouter.createCaller(publicCtx());
     const produto = await produtoAPeso();
