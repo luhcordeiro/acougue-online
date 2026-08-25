@@ -5,9 +5,20 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Eye, CreditCard, QrCode, Banknote, ArrowLeft, ClipboardList, Printer } from "lucide-react";
+import { Eye, CreditCard, QrCode, Banknote, ArrowLeft, ClipboardList, Printer, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import ReceiptDialog from "@/components/ReceiptDialog";
 import OrderAlertBell from "@/components/OrderAlertBell";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { playOrderAlert, printReceipt, showOrderNotification } from "@/lib/print";
 import { buildReceipt } from "@shared/receipt";
 import { APP_TITLE } from "@/const";
@@ -60,29 +71,43 @@ export default function AdminOrders() {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState<"20" | "50" | "100">("20");
+  const [selecionados, setSelecionados] = useState<Set<number>>(new Set());
 
   const utils = trpc.useUtils();
+
+  // trocar filtro ou tamanho de página com a página 5 aberta mostraria vazio
+  useEffect(() => {
+    setPage(1);
+    setSelecionados(new Set());
+  }, [selectedCategory, selectedStatus, pageSize]);
   const { data: alerts } = trpc.settings.getOrderAlerts.useQuery();
   const { data: deliveryFee = 0 } = trpc.settings.getDeliveryFee.useQuery();
 
-  const { data: allOrders = [], isLoading: isLoadingAll } = trpc.orders.listAll.useQuery(
-    undefined,
-    // o painel fica aberto no balcão: precisa perceber o pedido sem F5
-    { refetchInterval: 10_000 }
-  );
-  const { data: filteredOrdersByCategory = [], isLoading: isLoadingFiltered } = trpc.orders.listByCategory.useQuery(
-    { categoryId: parseInt(selectedCategory) },
-    { enabled: selectedCategory !== "all" }
-  );
   const { data: categories = [] } = trpc.categories.list.useQuery();
-  
-  let orders = selectedCategory === "all" ? allOrders : filteredOrdersByCategory;
-  
-  // Filtrar por status se selecionado
-  if (selectedStatus !== "all") {
-    orders = orders.filter(order => order.status === selectedStatus);
-  }
-  const isLoading = selectedCategory === "all" ? isLoadingAll : isLoadingFiltered;
+
+  const { data: pagina, isLoading } = trpc.orders.list.useQuery({
+    page,
+    pageSize,
+    status: selectedStatus === "all" ? undefined : (selectedStatus as never),
+    categoryId: selectedCategory === "all" ? undefined : parseInt(selectedCategory),
+  });
+
+  const orders = pagina?.items ?? [];
+  const totalPedidos = pagina?.total ?? 0;
+  const totalPaginas = pagina?.totalPages ?? 1;
+
+  /**
+   * Resumo leve só para detectar pedido novo.
+   *
+   * A lista é paginada: se o painel estiver na página 3, um pedido novo não
+   * apareceria nela e passaria despercebido. Este resumo vê todos.
+   */
+  const { data: resumo } = trpc.orders.summary.useQuery(undefined, {
+    refetchInterval: 10_000,
+  });
+
   const { data: orderDetails } = trpc.orders.getById.useQuery(
     { id: selectedOrderId! },
     { enabled: !!selectedOrderId }
@@ -91,7 +116,8 @@ export default function AdminOrders() {
   const updateStatusMutation = trpc.orders.updateStatus.useMutation({
     onSuccess: () => {
       toast.success("Status atualizado com sucesso!");
-      utils.orders.listAll.invalidate();
+      utils.orders.list.invalidate();
+      utils.orders.summary.invalidate();
       if (selectedOrderId) {
         utils.orders.getById.invalidate({ id: selectedOrderId });
       }
@@ -103,7 +129,7 @@ export default function AdminOrders() {
 
 
   const larguraCupom = alerts?.receiptWidth ?? "80mm";
-  const pendentes = allOrders.filter(o => o.status === "pending").length;
+  const pendentes = resumo?.pendingCount ?? 0;
 
   /** Monta o cupom buscando os itens do pedido. */
   const gerarCupom = useCallback(
@@ -118,8 +144,74 @@ export default function AdminOrders() {
     [utils, larguraCupom, deliveryFee]
   );
 
+  const markPrintedMutation = trpc.orders.markPrinted.useMutation({
+    onSuccess: result => {
+      if (result.changed) {
+        utils.orders.list.invalidate();
+        utils.orders.summary.invalidate();
+      }
+    },
+  });
+
+  /**
+   * Imprime e confirma o pedido.
+   *
+   * Imprimir é o momento em que o pedido entra na produção, então o status
+   * pendente vira confirmado. Quem já passou de pendente não volta.
+   */
+  const imprimirPedido = useCallback(
+    async (orderId: number) => {
+      const texto = await gerarCupom(orderId);
+      printReceipt(texto, larguraCupom);
+      await markPrintedMutation.mutateAsync({ id: orderId });
+    },
+    [gerarCupom, larguraCupom, markPrintedMutation]
+  );
+
+  const todosSelecionados =
+    orders.length > 0 && orders.every(o => selecionados.has(o.id));
+
+  const alternarTodos = () => {
+    setSelecionados(anterior => {
+      const novo = new Set(anterior);
+      if (todosSelecionados) {
+        orders.forEach(o => novo.delete(o.id));
+      } else {
+        orders.forEach(o => novo.add(o.id));
+      }
+      return novo;
+    });
+  };
+
+  const alternarUm = (id: number) => {
+    setSelecionados(anterior => {
+      const novo = new Set(anterior);
+      if (novo.has(id)) novo.delete(id);
+      else novo.add(id);
+      return novo;
+    });
+  };
+
+  const [confirmarExclusao, setConfirmarExclusao] = useState(false);
+
+  const deleteMutation = trpc.orders.delete.useMutation({
+    onSuccess: result => {
+      toast.success(
+        `${result.removidos} pedido${result.removidos > 1 ? "s" : ""} excluído${result.removidos > 1 ? "s" : ""}`
+      );
+      setSelecionados(new Set());
+      setConfirmarExclusao(false);
+      utils.orders.list.invalidate();
+      utils.orders.summary.invalidate();
+    },
+    onError: error => toast.error(error.message),
+  });
+
+  const [pedidoDoCupom, setPedidoDoCupom] = useState<number | null>(null);
+
   const handleVerCupom = async (orderId: number) => {
     setReceipt(null);
+    setPedidoDoCupom(orderId);
     setIsReceiptOpen(true);
     try {
       setReceipt(await gerarCupom(orderId));
@@ -129,35 +221,56 @@ export default function AdminOrders() {
     }
   };
 
+  /** Imprimir pela prévia também confirma o pedido. */
+  const handleImprimirDoDialogo = () => {
+    if (!receipt || pedidoDoCupom === null) return;
+
+    printReceipt(receipt, larguraCupom);
+    markPrintedMutation.mutate(
+      { id: pedidoDoCupom },
+      {
+        onSuccess: result => {
+          if (result.changed) toast.success("Pedido confirmado");
+        },
+      }
+    );
+    setIsReceiptOpen(false);
+  };
+
   /**
    * Avisa (e imprime) quando entra pedido novo.
    *
    * O ref começa indefinido e só é preenchido na primeira carga: sem isso,
    * abrir o painel dispararia alerta para todos os pedidos já existentes.
    */
-  const pedidosConhecidos = useRef<Set<number> | null>(null);
+  const ultimoIdConhecido = useRef<number | null>(null);
 
   useEffect(() => {
-    if (allOrders.length === 0 && pedidosConhecidos.current === null) return;
+    if (!resumo) return;
 
-    const idsAtuais = new Set(allOrders.map(o => o.id));
-
-    if (pedidosConhecidos.current === null) {
-      pedidosConhecidos.current = idsAtuais;
+    // primeira carga só registra: sem isso, abrir o painel dispararia alerta
+    // e impressão para todos os pedidos que já existiam
+    if (ultimoIdConhecido.current === null) {
+      ultimoIdConhecido.current = resumo.lastOrderId;
       return;
     }
 
-    const novos = allOrders.filter(o => !pedidosConhecidos.current!.has(o.id));
-    pedidosConhecidos.current = idsAtuais;
+    const anterior = ultimoIdConhecido.current;
+    if (resumo.lastOrderId <= anterior) return;
 
-    if (novos.length === 0) return;
+    ultimoIdConhecido.current = resumo.lastOrderId;
+
+    // ids criados desde a última verificação
+    const novos: number[] = [];
+    for (let id = anterior + 1; id <= resumo.lastOrderId; id++) novos.push(id);
+
+    utils.orders.list.invalidate();
 
     if (alerts?.notify !== false) {
       playOrderAlert();
-      const primeiro = novos[0];
       showOrderNotification(
         novos.length === 1 ? "Novo pedido recebido" : `${novos.length} novos pedidos`,
-        `#${primeiro.id} - ${primeiro.customerName} - R$ ${(primeiro.totalAmount / 100).toFixed(2)}`
+        `Pedido #${resumo.lastOrderId}`
       );
       toast.success(
         `🔔 ${novos.length} novo${novos.length > 1 ? "s" : ""} pedido${novos.length > 1 ? "s" : ""}!`
@@ -165,14 +278,14 @@ export default function AdminOrders() {
     }
 
     if (alerts?.autoPrint) {
-      // imprime do mais antigo para o mais novo, na ordem de chegada
-      [...novos].reverse().forEach(pedido => {
-        gerarCupom(pedido.id)
-          .then(texto => printReceipt(texto, larguraCupom))
-          .catch(() => toast.error(`Falha ao imprimir o pedido #${pedido.id}`));
+      // do mais antigo para o mais novo, na ordem de chegada
+      novos.forEach(id => {
+        imprimirPedido(id).catch(() =>
+          toast.error(`Falha ao imprimir o pedido #${id}`)
+        );
       });
     }
-  }, [allOrders, alerts, gerarCupom, larguraCupom]);
+  }, [resumo, alerts, utils, imprimirPedido]);
 
   const handleViewDetails = (orderId: number) => {
     setSelectedOrderId(orderId);
@@ -264,10 +377,42 @@ export default function AdminOrders() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Pedidos Recebidos</CardTitle>
-          <CardDescription>
-            {orders.length} pedido(s) no total
-          </CardDescription>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <CardTitle>Pedidos Recebidos</CardTitle>
+              <CardDescription>
+                {totalPedidos} pedido(s){" "}
+                {totalPaginas > 1 && `- página ${page} de ${totalPaginas}`}
+              </CardDescription>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {selecionados.size > 0 && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setConfirmarExclusao(true)}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Excluir {selecionados.size}
+                </Button>
+              )}
+
+              <Select
+                value={pageSize}
+                onValueChange={value => setPageSize(value as "20" | "50" | "100")}
+              >
+                <SelectTrigger className="w-36">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="20">20 por página</SelectItem>
+                  <SelectItem value="50">50 por página</SelectItem>
+                  <SelectItem value="100">100 por página</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -280,6 +425,13 @@ export default function AdminOrders() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10">
+                    <Checkbox
+                      checked={todosSelecionados}
+                      onCheckedChange={alternarTodos}
+                      aria-label="Selecionar todos os pedidos da página"
+                    />
+                  </TableHead>
                   <TableHead>ID</TableHead>
                   <TableHead>Cliente</TableHead>
                   <TableHead>Total</TableHead>
@@ -291,7 +443,17 @@ export default function AdminOrders() {
               </TableHeader>
               <TableBody>
                 {orders.map((order) => (
-                  <TableRow key={order.id}>
+                  <TableRow
+                    key={order.id}
+                    data-state={selecionados.has(order.id) ? "selected" : undefined}
+                  >
+                    <TableCell>
+                      <Checkbox
+                        checked={selecionados.has(order.id)}
+                        onCheckedChange={() => alternarUm(order.id)}
+                        aria-label={`Selecionar pedido ${order.id}`}
+                      />
+                    </TableCell>
                     <TableCell className="font-medium">#{order.id}</TableCell>
                     <TableCell>{order.customerName}</TableCell>
                     <TableCell>R$ {(order.totalAmount / 100).toFixed(2)}</TableCell>
@@ -358,14 +520,75 @@ export default function AdminOrders() {
               </TableBody>
             </Table>
           )}
+
+          {totalPaginas > 1 && (
+            <div className="mt-4 flex items-center justify-between gap-3 border-t pt-4">
+              <p className="text-sm text-muted-foreground">
+                Mostrando {orders.length} de {totalPedidos} pedidos
+              </p>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page <= 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Anterior
+                </Button>
+
+                <span className="text-sm font-medium">
+                  {page} / {totalPaginas}
+                </span>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(p => Math.min(totalPaginas, p + 1))}
+                  disabled={page >= totalPaginas}
+                >
+                  Próxima
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      <AlertDialog open={confirmarExclusao} onOpenChange={setConfirmarExclusao}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Excluir {selecionados.size} pedido{selecionados.size > 1 ? "s" : ""}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Os pedidos e seus itens serão apagados definitivamente. Não há
+              como desfazer, e o histórico de venda desses pedidos se perde.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() =>
+                deleteMutation.mutate({ ids: Array.from(selecionados) })
+              }
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? "Excluindo..." : "Excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <ReceiptDialog
         open={isReceiptOpen}
         onOpenChange={setIsReceiptOpen}
         receipt={receipt}
         width={larguraCupom}
+        onPrint={handleImprimirDoDialogo}
       />
 
       <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>

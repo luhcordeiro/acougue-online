@@ -153,13 +153,71 @@ export const appRouter = router({
 
   // ========== Orders ==========
   orders: router({
-    listAll: adminProcedure.query(async () => {
-      return await db.getAllOrders();
-    }),
-    listByCategory: adminProcedure
-      .input(zin({ categoryId: z.number() }))
+    /** Página de pedidos com os filtros do painel. */
+    list: adminProcedure
+      .input(zin({
+        page: z.number().int().min(1).default(1),
+        pageSize: z.enum(['20', '50', '100']).default('20'),
+        status: z
+          .enum(['pending', 'confirmed', 'preparing', 'ready', 'delivered', 'cancelled'])
+          .optional(),
+        categoryId: z.number().int().positive().optional(),
+      }))
       .query(async ({ input }) => {
-        return await db.getOrdersByCategory(input.categoryId);
+        const pageSize = Number(input.pageSize);
+        const filters = { status: input.status, categoryId: input.categoryId };
+
+        const total = await db.countOrders(filters);
+        const totalPages = Math.max(1, Math.ceil(total / pageSize));
+        // pedido apagado ou filtro trocado pode deixar a página fora do fim
+        const page = Math.min(input.page, totalPages);
+
+        const items = await db.listOrders({
+          ...filters,
+          limit: pageSize,
+          offset: (page - 1) * pageSize,
+        });
+
+        return { items, total, page, pageSize, totalPages };
+      }),
+
+    /** Resumo leve, para detectar pedido novo sem baixar a lista inteira. */
+    summary: adminProcedure.query(async () => {
+      return await db.getOrdersSummary();
+    }),
+
+    delete: adminProcedure
+      .input(zin({
+        ids: z
+          .array(z.number().int().positive())
+          .min(1, 'Selecione ao menos um pedido')
+          .max(100, 'Apague no máximo 100 pedidos por vez'),
+      }))
+      .mutation(async ({ input }) => {
+        const removidos = await db.deleteOrders(input.ids);
+        return { success: true, removidos };
+      }),
+
+    /**
+     * Marca como confirmado depois de imprimir.
+     *
+     * Só promove pedido pendente: reimprimir um pedido que já saiu para
+     * entrega não pode fazer o status andar para trás.
+     */
+    markPrinted: adminProcedure
+      .input(zin({ id: z.number().int().positive() }))
+      .mutation(async ({ input }) => {
+        const pedido = await db.getOrderById(input.id);
+        if (!pedido) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Pedido não encontrado' });
+        }
+
+        if (pedido.status !== 'pending') {
+          return { success: true, changed: false, status: pedido.status };
+        }
+
+        await db.updateOrderStatus(input.id, 'confirmed');
+        return { success: true, changed: true, status: 'confirmed' as const };
       }),
     getById: publicProcedure
       .input(zin({ id: z.number() }))

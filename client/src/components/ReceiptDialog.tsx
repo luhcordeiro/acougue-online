@@ -6,7 +6,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { printReceipt } from "@/lib/print";
 import { Printer } from "lucide-react";
 
 export default function ReceiptDialog({
@@ -14,11 +13,14 @@ export default function ReceiptDialog({
   onOpenChange,
   receipt,
   width,
+  onPrint,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   receipt: string | null;
   width: "58mm" | "80mm";
+  /** Quem chama decide o que fazer além de imprimir (confirmar o pedido). */
+  onPrint: () => void;
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -43,7 +45,7 @@ export default function ReceiptDialog({
               </Button>
               <Button
                 className="bg-red-600 hover:bg-red-700"
-                onClick={() => printReceipt(receipt, width)}
+                onClick={onPrint}
               >
                 <Printer className="mr-2 h-4 w-4" />
                 Imprimir

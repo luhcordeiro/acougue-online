@@ -101,27 +101,100 @@ export async function bulkUpdateProductAvailability(productIds: number[], availa
 
 // ========== Orders ==========
 
-export async function getAllOrders() {
-  const db = await getDb();
-  if (!db) return [];
-  return await db.select().from(orders).orderBy(desc(orders.createdAt));
+export type OrderFilters = {
+  status?: "pending" | "confirmed" | "preparing" | "ready" | "delivered" | "cancelled";
+  categoryId?: number;
+};
+
+/**
+ * Monta o filtro de pedidos.
+ *
+ * Filtrar por categoria exige juntar com os itens, porque a categoria é do
+ * produto, não do pedido. O selectDistinct evita repetir o pedido que tem
+ * vários itens da mesma categoria.
+ */
+function ordersQuery(db: Database, { status, categoryId }: OrderFilters) {
+  const base = categoryId
+    ? db
+        .selectDistinct(getTableColumns(orders))
+        .from(orders)
+        .innerJoin(orderItems, eq(orders.id, orderItems.orderId))
+        .innerJoin(products, eq(orderItems.productId, products.id))
+        .$dynamic()
+    : db.select(getTableColumns(orders)).from(orders).$dynamic();
+
+  const filtros = [
+    categoryId ? eq(products.categoryId, categoryId) : undefined,
+    status ? eq(orders.status, status) : undefined,
+  ].filter(Boolean);
+
+  return filtros.length > 0 ? base.where(and(...(filtros as any))) : base;
 }
 
-export async function getOrdersByCategory(categoryId: number) {
+/** Página de pedidos, do mais novo para o mais antigo. */
+export async function listOrders(
+  filters: OrderFilters & { limit: number; offset: number }
+) {
   const db = await getDb();
   if (!db) return [];
-  
-  // Buscar pedidos que contenham produtos da categoria especificada
-  const ordersWithCategory = await db
-    .selectDistinct(getTableColumns(orders))
-    .from(orders)
-    .innerJoin(orderItems, eq(orders.id, orderItems.orderId))
-    .innerJoin(products, eq(orderItems.productId, products.id))
-    .where(eq(products.categoryId, categoryId))
-    .orderBy(desc(orders.createdAt));
-  
-  return ordersWithCategory;
+
+  const { limit, offset, ...rest } = filters;
+
+  return await ordersQuery(db, rest)
+    .orderBy(desc(orders.createdAt), desc(orders.id))
+    .limit(limit)
+    .offset(offset);
 }
+
+/** Total com os mesmos filtros, para o paginador saber quantas páginas há. */
+export async function countOrders(filters: OrderFilters): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+
+  // sem paginação: só as linhas que casam, contadas em memória
+  const linhas = await ordersQuery(db, filters);
+  return linhas.length;
+}
+
+/** Info leve para o painel detectar pedido novo sem baixar a lista toda. */
+export async function getOrdersSummary(): Promise<{
+  lastOrderId: number;
+  pendingCount: number;
+}> {
+  const db = await getDb();
+  if (!db) return { lastOrderId: 0, pendingCount: 0 };
+
+  const [ultimo] = await db
+    .select({ id: orders.id })
+    .from(orders)
+    .orderBy(desc(orders.id))
+    .limit(1);
+
+  const pendentes = await db
+    .select({ id: orders.id })
+    .from(orders)
+    .where(eq(orders.status, "pending"));
+
+  return { lastOrderId: ultimo?.id ?? 0, pendingCount: pendentes.length };
+}
+
+/**
+ * Apaga pedidos e seus itens.
+ *
+ * Os itens saem primeiro por causa da foreign key: o SQLite recusaria apagar
+ * o pedido ainda referenciado.
+ */
+export async function deleteOrders(ids: number[]): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  if (ids.length === 0) return 0;
+
+  await db.delete(orderItems).where(inArray(orderItems.orderId, ids));
+  await db.delete(orders).where(inArray(orders.id, ids));
+
+  return ids.length;
+}
+
 
 export async function getOrderById(id: number) {
   const db = await getDb();

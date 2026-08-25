@@ -11,7 +11,7 @@ export default function AdminDashboard() {
   const [, setLocation] = useLocation();
   
   const { data: products = [] } = trpc.products.list.useQuery();
-  const { data: orders = [] } = trpc.orders.listAll.useQuery();
+  const { data: resumoPedidos } = trpc.orders.summary.useQuery();
   const { data: categories = [] } = trpc.categories.list.useQuery();
   
   // Contador de pedidos pendentes com polling
@@ -41,7 +41,7 @@ export default function AdminDashboard() {
     previousCountRef.current = pendingOrdersCount;
   }, [pendingOrdersCount, setLocation]);
 
-  const pendingOrders = orders.filter(o => o.status === 'pending').length;
+  const pendingOrders = resumoPedidos?.pendingCount ?? 0;
 
   const utils = trpc.useUtils();
   const logoutMutation = trpc.adminAuth.logout.useMutation({
@@ -101,7 +101,7 @@ export default function AdminDashboard() {
             <CardContent>
               <div className="text-2xl font-bold">{pendingOrders}</div>
               <p className="text-xs text-muted-foreground">
-                {orders.length} pedidos no total
+                {resumoPedidos ? `último: #${resumoPedidos.lastOrderId}` : ""}
               </p>
             </CardContent>
           </Card>

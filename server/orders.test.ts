@@ -58,21 +58,23 @@ describe("orders.create", () => {
   });
 });
 
-describe("orders.listAll", () => {
-  it("permite que admin liste todos os pedidos", async () => {
+describe("orders.list", () => {
+  it("permite que admin liste os pedidos", async () => {
     const ctx = createAdminContext();
     const caller = appRouter.createCaller(ctx);
 
-    const orders = await caller.orders.listAll();
+    const { items } = await caller.orders.list({ page: 1, pageSize: "20" });
 
-    expect(Array.isArray(orders)).toBe(true);
+    expect(Array.isArray(items)).toBe(true);
   });
 
-  it("bloqueia usuários não-admin de listar todos os pedidos", async () => {
+  it("bloqueia usuários não-admin de listar os pedidos", async () => {
     const ctx = createUserContext();
     const caller = appRouter.createCaller(ctx);
 
-    await expect(caller.orders.listAll()).rejects.toThrow(NOT_ADMIN_ERR_MSG);
+    await expect(
+      caller.orders.list({ page: 1, pageSize: "20" })
+    ).rejects.toThrow(NOT_ADMIN_ERR_MSG);
   });
 });
 
