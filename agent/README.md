@@ -20,7 +20,27 @@ Imprime e confirma
 Se a impressora estiver sem papel, o PC desligado ou a internet cair, o cupom
 **fica na fila** e sai quando tudo voltar. Nada se perde.
 
-## Instalação
+## Instalação rápida
+
+1. Instale o **Node.js** (versão LTS) em https://nodejs.org
+2. Compartilhe a impressora no Windows com o nome **`ELGIN`**
+   (Painel de Controle → Dispositivos e Impressoras → botão direito na Elgin i9
+   → Propriedades da impressora → aba **Compartilhamento**)
+3. Dê **duplo clique em `INSTALAR.bat`**
+
+O instalador pergunta o nome do compartilhamento e o token, testa a impressora
+e configura o início automático com o Windows.
+
+Depois disso, o agente sobe sozinho toda vez que o PC ligar. Para iniciar na
+mão, use `INICIAR.bat`.
+
+> `INICIAR.bat` reinicia o agente sozinho se ele travar. Um agente parado
+> significa pedido que entrou e não imprimiu — e ninguém no balcão repara nisso
+> até o cliente ligar cobrando.
+
+---
+
+## Instalação passo a passo (manual)
 
 ### 1. Instalar o Node.js
 
