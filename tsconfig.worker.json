@@ -1,0 +1,19 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "worker-configuration.d.ts","worker/**/*", "server/**/*", "shared/**/*", "drizzle/**/*"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.test.ts",
+    "server/test-setup.ts",
+    "server/_core/vite.ts",
+    "server/_core/static.ts",
+    "server/_core/index.ts",
+    "server/_core/db.node.ts"
+  ],
+  "compilerOptions": {
+    "types": ["@cloudflare/workers-types"],
+    "lib": ["esnext"]
+  }
+}

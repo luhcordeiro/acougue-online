@@ -1,154 +1,120 @@
-# Guia Rápido - Sistema Açougue Online
+# Guia Rápido — Açougue Online
 
-## Início Rápido (5 minutos)
+Aplicação de pedidos rodando em **Cloudflare Workers** com banco **D1** (SQLite)
+e imagens em **R2**. Não depende de nenhuma plataforma externa.
 
-### 1. Instalar Docker
+## Stack
 
-Se ainda não tem Docker instalado:
+| Camada    | Tecnologia                                            |
+| --------- | ----------------------------------------------------- |
+| Frontend  | React 19 + Vite + Tailwind + wouter (SPA)             |
+| API       | tRPC 11 sobre o runtime de Workers (adaptador fetch)  |
+| Banco     | Cloudflare D1 (SQLite) + Drizzle ORM                  |
+| Imagens   | Cloudflare R2 (binding nativo)                        |
+| Sessão    | JWT assinado (jose) em cookie httpOnly                |
 
-**Windows/Mac:**
-- Baixe e instale o Docker Desktop: https://www.docker.com/products/docker-desktop
-
-**Linux (Ubuntu/Debian):**
-```bash
-curl -fsSL https://get.docker.com | sh
-sudo usermod -aG docker $USER
-# Faça logout e login novamente
-```
-
-### 2. Obter o Projeto
+## Rodando localmente
 
 ```bash
-# Clone ou extraia os arquivos do projeto
-cd acougue_online
+pnpm install
+pnpm db:migrate:local   # cria o schema no D1 local
+pnpm db:seed:local      # catálogo + usuário admin
+pnpm dev                # build do cliente + wrangler dev
 ```
 
-### 3. Configurar (IMPORTANTE!)
+Acesse **http://localhost:8787**
+Painel: **/admin/login** — usuário `admin`, senha `admin123`
+(troque a senha em *Usuários* no primeiro acesso)
 
-Edite o arquivo `docker-compose.yml` e altere:
+O `wrangler dev` roda o **mesmo runtime da produção** com um D1 local em
+`.wrangler/state`. Não existe servidor Node separado: o que funciona aqui
+funciona no Cloudflare.
 
-```yaml
-# Linha ~15: Altere a senha do banco
-MYSQL_ROOT_PASSWORD: SUA_SENHA_SEGURA_AQUI
-MYSQL_PASSWORD: SUA_SENHA_USUARIO_AQUI
+### Segredos locais
 
-# Linha ~35: Altere o JWT_SECRET
-JWT_SECRET: GERE_UM_VALOR_ALEATORIO_AQUI
+Ficam em `.dev.vars` (fora do Git):
+
+```
+JWT_SECRET=<valor aleatório>
+R2_PUBLIC_URL=<domínio público do bucket>
 ```
 
-**Para gerar JWT_SECRET seguro:**
-```bash
-openssl rand -base64 32
-```
-
-### 4. Iniciar o Sistema
-
-```bash
-docker-compose up -d
-```
-
-Aguarde cerca de 1 minuto para o sistema inicializar completamente.
-
-### 5. Acessar
-
-Abra seu navegador em: **http://localhost:3000**
-
-### 6. Popular com Dados de Exemplo (Opcional)
+Gerar um `JWT_SECRET`:
 
 ```bash
-docker exec -i acougue_app node seed.mjs
+node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 ```
 
-Isso criará:
-- 4 categorias (Carnes Bovinas, Suínas, Aves, Especiais)
-- 12 produtos de exemplo com preços e estoques
+## Comandos
 
-### 7. Primeiro Login (Admin)
-
-O primeiro usuário que fizer login será automaticamente o administrador. Para acessar o painel admin, clique em "Painel Admin" no menu superior.
-
----
-
-## Comandos Úteis
-
-### Ver logs
 ```bash
-docker-compose logs -f
+pnpm dev                 # desenvolvimento (wrangler dev)
+pnpm test                # testes dentro do workerd, com D1 real
+pnpm check               # typecheck (app + worker + testes)
+pnpm build               # build do cliente
+pnpm deploy              # build + wrangler deploy
+
+pnpm db:generate         # gera migração a partir de drizzle/schema.ts
+pnpm db:migrate:local    # aplica migrações no D1 local
+pnpm db:migrate:remote   # aplica migrações no D1 de produção
+pnpm db:seed:local       # popula o D1 local
+pnpm db:seed:remote      # popula o D1 de produção
 ```
 
-### Parar o sistema
+## Deploy
+
+Uma vez por conta:
+
 ```bash
-docker-compose stop
+npx wrangler login
+npx wrangler r2 bucket create acougue-online-imagens
+npx wrangler secret put JWT_SECRET
+npx wrangler secret put R2_PUBLIC_URL
 ```
 
-### Reiniciar
+Depois, a cada publicação:
+
 ```bash
-docker-compose restart
+pnpm db:migrate:remote   # só quando o schema mudar
+pnpm deploy
 ```
 
-### Parar e remover tudo
+## Autenticação do painel
+
+O login usuário/senha emite um **cookie httpOnly assinado (JWT, 12h)**. Quem
+autoriza é o servidor: todas as rotas administrativas usam `adminProcedure`,
+que valida esse cookie. O `sessionStorage` do frontend é apenas cache de UI e
+**não** dá acesso a nada.
+
+Sem sessão válida, as rotas admin respondem `401`:
+
 ```bash
-docker-compose down
+curl http://localhost:8787/api/trpc/products.list
+# {"error":{"json":{"message":"You do not have required permission (10002)",...
 ```
 
-### Backup do banco
-```bash
-docker exec acougue_db mysqldump -u acougue_user -pacougue_password acougue_online > backup.sql
+Senhas usam **PBKDF2-SHA256 via Web Crypto** (`server/_core/password.ts`).
+bcrypt não é viável aqui: em JavaScript puro gasta ~100ms de CPU por
+verificação e estouraria o limite por requisição do Workers.
+
+## Estrutura
+
+```
+worker/index.ts        entrypoint do Cloudflare (tRPC + assets + bindings)
+server/routers.ts      todas as rotas da API
+server/db.ts           acesso ao banco (driver injetado pelo entrypoint)
+server/seed.ts         catálogo inicial, compartilhado com os testes
+server/_core/          sessão do admin, senha, contexto tRPC, env
+drizzle/schema.ts      schema do D1
+drizzle/migrations/    migrações aplicadas pelo wrangler
+drizzle/_mysql-legacy/ histórico do schema MySQL (não é usado)
+client/src/            SPA React
 ```
 
----
+## Observações
 
-## Estrutura do Sistema
-
-### Interface do Cliente
-- **Página Inicial**: Catálogo de produtos
-- **Detalhes do Produto**: Visualização e seleção de quantidade em kg
-- **Carrinho**: Revisão e finalização de pedidos
-- **Meus Pedidos**: Histórico de compras
-
-### Interface do Proprietário (Admin)
-- **Dashboard**: Visão geral do sistema
-- **Gerenciar Produtos**: Cadastro, edição e exclusão
-- **Gerenciar Pedidos**: Visualização e atualização de status
-- **Gerenciar Categorias**: Organização de produtos
-
----
-
-## Fluxo de Uso
-
-### Como Cliente:
-1. Navegue pelos produtos
-2. Clique em um produto para ver detalhes
-3. Escolha a quantidade em kg
-4. Adicione ao carrinho
-5. Revise o carrinho e finalize o pedido
-6. Acompanhe em "Meus Pedidos"
-
-### Como Proprietário:
-1. Acesse "Painel Admin"
-2. Cadastre categorias
-3. Cadastre produtos (nome, preço/kg, estoque, imagem)
-4. Receba pedidos automaticamente
-5. Atualize o status conforme prepara/entrega
-
----
-
-## Próximos Passos
-
-Após validar o sistema localmente:
-
-1. **Configurar domínio próprio** (ex: acougue.com.br)
-2. **Configurar SSL/HTTPS** com Certbot
-3. **Ajustar senhas** para valores seguros
-4. **Fazer backup** regular do banco de dados
-5. **Personalizar** cores, logo e textos conforme sua marca
-
-Para mais detalhes, consulte:
-- `README.md` - Documentação completa
-- `README_DOCKER.md` - Guia de implantação detalhado
-
----
-
-## Suporte
-
-Para dúvidas técnicas ou problemas, consulte a documentação completa ou entre em contato com o desenvolvedor.
+- **Migrações são aplicadas pelo `wrangler`**, não pelo drizzle-kit. O
+  drizzle-kit só gera o SQL (`pnpm db:generate`).
+- **Os testes rodam no workerd** com um D1 de verdade e o mesmo seed da
+  produção — não há mock de banco.
+- O seed é **idempotente**: rodar de novo não duplica nada.

@@ -2,21 +2,13 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { Package, ShoppingBag, Tag, ArrowLeft, Scissors, Scale, Settings, Users } from "lucide-react";
+import { Package, ShoppingBag, Tag, ArrowLeft, Scissors, Scale, Settings, Users, LogOut } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
+import { clearAdminSessionCache } from "@/components/AdminGuard";
 
 export default function AdminDashboard() {
   const [, setLocation] = useLocation();
-  
-  // Verificar autenticação com senha
-  const isAdminAuthenticated = sessionStorage.getItem("adminAuthenticated") === "true";
-  
-  // Redirecionar para login do admin se não estiver autenticado com senha
-  if (!isAdminAuthenticated) {
-    setLocation("/admin/login");
-    return null;
-  }
   
   const { data: products = [] } = trpc.products.list.useQuery();
   const { data: orders = [] } = trpc.orders.listAll.useQuery();
@@ -51,15 +43,35 @@ export default function AdminDashboard() {
 
   const pendingOrders = orders.filter(o => o.status === 'pending').length;
 
+  const utils = trpc.useUtils();
+  const logoutMutation = trpc.adminAuth.logout.useMutation({
+    onSettled: () => {
+      // Invalida a sessão em cache para o AdminGuard não reaproveitá-la
+      clearAdminSessionCache();
+      utils.adminAuth.me.setData(undefined, null);
+      setLocation("/admin/login");
+    },
+  });
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container py-8">
-        <Link href="/">
-          <Button variant="outline" className="mb-6">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Voltar para a loja
+        <div className="mb-6 flex items-center justify-between gap-2">
+          <Link href="/">
+            <Button variant="outline">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Voltar para a loja
+            </Button>
+          </Link>
+          <Button
+            variant="ghost"
+            onClick={() => logoutMutation.mutate()}
+            disabled={logoutMutation.isPending}
+          >
+            <LogOut className="mr-2 h-4 w-4" />
+            Sair
           </Button>
-        </Link>
+        </div>
 
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Painel Administrativo</h1>

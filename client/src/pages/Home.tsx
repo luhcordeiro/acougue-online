@@ -25,8 +25,12 @@ export default function Home() {
   const [cartItemCount, setCartItemCount] = useState(0);
   const [cartTotal, setCartTotal] = useState(0);
   
-  // Verificar se está autenticado como admin
-  const isAdminAuthenticated = sessionStorage.getItem("adminAuthenticated") === "true";
+  // Sessão de admin confirmada pelo servidor (cookie httpOnly), não sessionStorage
+  const { data: adminSession } = trpc.adminAuth.me.useQuery(undefined, {
+    retry: false,
+    staleTime: 60_000,
+  });
+  const isAdminAuthenticated = Boolean(adminSession);
   
   // Contador de pedidos pendentes (apenas para admin autenticado)
   const { data: pendingOrdersCount = 0 } = trpc.orders.countPending.useQuery(

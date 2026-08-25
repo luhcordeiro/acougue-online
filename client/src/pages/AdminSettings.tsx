@@ -12,14 +12,6 @@ export default function AdminSettings() {
   const [, setLocation] = useLocation();
   const [deliveryFee, setDeliveryFee] = useState("");
   
-  // Verificar autenticação
-  useEffect(() => {
-    const isAuthenticated = sessionStorage.getItem("adminAuthenticated");
-    if (!isAuthenticated) {
-      setLocation("/admin/login");
-    }
-  }, [setLocation]);
-
   const { data: currentFee, isLoading } = trpc.settings.getDeliveryFee.useQuery();
   
   const updateFeeMutation = trpc.settings.setDeliveryFee.useMutation({

@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "worker-configuration.d.ts","server/**/*", "shared/**/*", "drizzle/**/*"],
+  "exclude": ["node_modules", "dist"],
+  "compilerOptions": {
+    "types": ["@cloudflare/workers-types", "@cloudflare/vitest-plugin/types"],
+    "lib": ["esnext"]
+  }
+}

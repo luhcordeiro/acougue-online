@@ -21,14 +21,6 @@ export default function AdminUsers() {
     email: "",
   });
 
-  // Verificar autenticação
-  const isAdminAuthenticated = sessionStorage.getItem("adminAuthenticated") === "true";
-  
-  if (!isAdminAuthenticated) {
-    setLocation("/admin/login");
-    return null;
-  }
-
   const { data: users = [], refetch } = trpc.adminUsers.list.useQuery();
   
   const createMutation = trpc.adminUsers.create.useMutation({

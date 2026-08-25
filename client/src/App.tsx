@@ -2,6 +2,8 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
+import type { ComponentType } from "react";
+import AdminGuard from "./components/AdminGuard";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
@@ -18,6 +20,23 @@ import AdminLogin from "./pages/AdminLogin";
 import AdminUsers from "./pages/AdminUsers";
 import OrderConfirmation from "./pages/OrderConfirmation";
 
+/** Rota do painel: só renderiza depois que o servidor confirma a sessão. */
+function AdminRoute({
+  path,
+  component: Component,
+}: {
+  path: string;
+  component: ComponentType;
+}) {
+  return (
+    <Route path={path}>
+      <AdminGuard>
+        <Component />
+      </AdminGuard>
+    </Route>
+  );
+}
+
 function Router() {
   return (
     <Switch>
@@ -27,14 +46,14 @@ function Router() {
       <Route path="/order/confirmation/:id" component={OrderConfirmation} />
 
       <Route path="/admin/login" component={AdminLogin} />
-      <Route path="/admin" component={AdminDashboard} />
-      <Route path="/admin/products" component={AdminProducts} />
-      <Route path="/admin/orders" component={AdminOrders} />
-      <Route path="/admin/categories" component={AdminCategories} />
-      <Route path="/admin/cut-types" component={AdminCutTypes} />
-      <Route path="/admin/quick-quantities" component={AdminQuickQuantities} />
-      <Route path="/admin/settings" component={AdminSettings} />
-      <Route path="/admin/users" component={AdminUsers} />
+      <AdminRoute path="/admin" component={AdminDashboard} />
+      <AdminRoute path="/admin/products" component={AdminProducts} />
+      <AdminRoute path="/admin/orders" component={AdminOrders} />
+      <AdminRoute path="/admin/categories" component={AdminCategories} />
+      <AdminRoute path="/admin/cut-types" component={AdminCutTypes} />
+      <AdminRoute path="/admin/quick-quantities" component={AdminQuickQuantities} />
+      <AdminRoute path="/admin/settings" component={AdminSettings} />
+      <AdminRoute path="/admin/users" component={AdminUsers} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>

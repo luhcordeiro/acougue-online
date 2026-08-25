@@ -1,92 +1,24 @@
-import { eq, desc, and, inArray } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, categories, InsertCategory, products, InsertProduct, orders, InsertOrder, orderItems, InsertOrderItem, addresses, InsertAddress, cutTypes, InsertCutType, productCutTypes, InsertProductCutType, quickQuantities, InsertQuickQuantity, productQuickQuantities, InsertProductQuickQuantity, systemSettings, InsertSystemSetting, adminUsers, InsertAdminUser, AdminUser } from "../drizzle/schema";
-import { ENV } from './_core/env';
+import { eq, desc, and, inArray, getTableColumns } from "drizzle-orm";
+import type { BaseSQLiteDatabase } from "drizzle-orm/sqlite-core";
+import { categories, InsertCategory, products, InsertProduct, orders, InsertOrder, orderItems, InsertOrderItem, cutTypes, InsertCutType, productCutTypes, quickQuantities, InsertQuickQuantity, productQuickQuantities, systemSettings, adminUsers, InsertAdminUser, AdminUser } from "../drizzle/schema";
 
-let _db: ReturnType<typeof drizzle> | null = null;
+/**
+ * O driver é injetado pelo entrypoint (worker/index.ts), que liga o Drizzle
+ * ao binding D1 daquela requisição. Os testes injetam um SQLite local.
+ */
+type Database = BaseSQLiteDatabase<any, any, any, any>;
 
-export async function getDb() {
-  if (!_db && process.env.DATABASE_URL) {
-    try {
-      _db = drizzle(process.env.DATABASE_URL);
-    } catch (error) {
-      console.warn("[Database] Failed to connect:", error);
-      _db = null;
-    }
-  }
+let _db: Database | null = null;
+
+export function setDb(db: Database | null): void {
+  _db = db;
+}
+
+export async function getDb(): Promise<Database | null> {
   return _db;
 }
 
-export async function upsertUser(user: InsertUser): Promise<void> {
-  if (!user.openId) {
-    throw new Error("User openId is required for upsert");
-  }
 
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot upsert user: database not available");
-    return;
-  }
-
-  try {
-    const values: InsertUser = {
-      openId: user.openId,
-    };
-    const updateSet: Record<string, unknown> = {};
-
-    const textFields = ["name", "email", "loginMethod"] as const;
-    type TextField = (typeof textFields)[number];
-
-    const assignNullable = (field: TextField) => {
-      const value = user[field];
-      if (value === undefined) return;
-      const normalized = value ?? null;
-      values[field] = normalized;
-      updateSet[field] = normalized;
-    };
-
-    textFields.forEach(assignNullable);
-
-    if (user.lastSignedIn !== undefined) {
-      values.lastSignedIn = user.lastSignedIn;
-      updateSet.lastSignedIn = user.lastSignedIn;
-    }
-    if (user.role !== undefined) {
-      values.role = user.role;
-      updateSet.role = user.role;
-    } else if (user.openId === ENV.ownerOpenId) {
-      values.role = 'admin';
-      updateSet.role = 'admin';
-    }
-
-    if (!values.lastSignedIn) {
-      values.lastSignedIn = new Date();
-    }
-
-    if (Object.keys(updateSet).length === 0) {
-      updateSet.lastSignedIn = new Date();
-    }
-
-    await db.insert(users).values(values).onDuplicateKeyUpdate({
-      set: updateSet,
-    });
-  } catch (error) {
-    console.error("[Database] Failed to upsert user:", error);
-    throw error;
-  }
-}
-
-export async function getUserByOpenId(openId: string) {
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot get user: database not available");
-    return undefined;
-  }
-
-  const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
-
-  return result.length > 0 ? result[0] : undefined;
-}
 
 // ========== Categories ==========
 
@@ -139,10 +71,8 @@ export async function getProductById(id: number) {
 export async function createProduct(data: InsertProduct) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const result = await db.insert(products).values(data);
-  // Buscar o último produto inserido para obter o id
-  const [lastProduct] = await db.select({ id: products.id }).from(products).orderBy(desc(products.id)).limit(1);
-  return { ...result, insertId: lastProduct?.id };
+  const [row] = await db.insert(products).values(data).returning({ id: products.id });
+  return { insertId: row.id };
 }
 
 export async function updateProduct(id: number, data: Partial<InsertProduct>) {
@@ -172,29 +102,13 @@ export async function getAllOrders() {
   return await db.select().from(orders).orderBy(desc(orders.createdAt));
 }
 
-export async function getOrdersByUserId(userId: number) {
-  const db = await getDb();
-  if (!db) return [];
-  return await db.select().from(orders).where(eq(orders.userId, userId)).orderBy(desc(orders.createdAt));
-}
-
 export async function getOrdersByCategory(categoryId: number) {
   const db = await getDb();
   if (!db) return [];
   
   // Buscar pedidos que contenham produtos da categoria especificada
   const ordersWithCategory = await db
-    .selectDistinct({ 
-      id: orders.id,
-      userId: orders.userId,
-      status: orders.status,
-      totalAmount: orders.totalAmount,
-      notes: orders.notes,
-      deliveryDate: orders.deliveryDate,
-      deliveryAddress: orders.deliveryAddress,
-      createdAt: orders.createdAt,
-      updatedAt: orders.updatedAt,
-    })
+    .selectDistinct(getTableColumns(orders))
     .from(orders)
     .innerJoin(orderItems, eq(orders.id, orderItems.orderId))
     .innerJoin(products, eq(orderItems.productId, products.id))
@@ -251,8 +165,8 @@ export async function createOrderWithItems(orderData: InsertOrder, items: Insert
   if (!db) throw new Error("Database not available");
   
   // Inserir o pedido
-  const orderResult = await db.insert(orders).values(orderData);
-  const orderId = Number(orderResult[0].insertId);
+  const [order] = await db.insert(orders).values(orderData).returning({ id: orders.id });
+  const orderId = order.id;
   
   // Inserir os itens do pedido
   const itemsWithOrderId = items.map(item => ({
@@ -265,81 +179,6 @@ export async function createOrderWithItems(orderData: InsertOrder, items: Insert
   }
   
   return orderId;
-}
-
-// ============================================
-// ADDRESS MANAGEMENT
-// ============================================
-
-export async function getUserAddresses(userId: number) {
-  const db = await getDb();
-  if (!db) return [];
-  
-  return await db
-    .select()
-    .from(addresses)
-    .where(eq(addresses.userId, userId))
-    .orderBy(desc(addresses.isDefault), desc(addresses.createdAt));
-}
-
-export async function getAddressById(id: number) {
-  const db = await getDb();
-  if (!db) return null;
-  
-  const result = await db
-    .select()
-    .from(addresses)
-    .where(eq(addresses.id, id))
-    .limit(1);
-  
-  return result[0] || null;
-}
-
-export async function createAddress(data: InsertAddress) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  // Se este endereço for marcado como padrão, desmarcar outros
-  if (data.isDefault) {
-    await db
-      .update(addresses)
-      .set({ isDefault: false })
-      .where(eq(addresses.userId, data.userId));
-  }
-  
-  const result = await db.insert(addresses).values(data);
-  return { success: true, addressId: Number(result[0].insertId) };
-}
-
-export async function updateAddress(id: number, userId: number, data: Partial<InsertAddress>) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  // Se este endereço for marcado como padrão, desmarcar outros
-  if (data.isDefault) {
-    await db
-      .update(addresses)
-      .set({ isDefault: false })
-      .where(eq(addresses.userId, userId));
-  }
-  
-  await db
-    .update(addresses)
-    .set(data)
-    .where(and(eq(addresses.id, id), eq(addresses.userId, userId)));
-  
-  return { success: true };
-}
-
-export async function deleteAddress(id: number, userId: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  await db
-    .delete(addresses)
-    .where(and(eq(addresses.id, id), eq(addresses.userId, userId)));
-  
-  return { success: true };
 }
 
 // ========================================
@@ -365,8 +204,8 @@ export async function createCutType(data: InsertCutType) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  const result = await db.insert(cutTypes).values(data);
-  return { success: true, cutTypeId: Number(result[0].insertId) };
+  const [row] = await db.insert(cutTypes).values(data).returning({ id: cutTypes.id });
+  return { success: true, cutTypeId: row.id };
 }
 
 export async function updateCutType(id: number, data: Partial<InsertCutType>) {
@@ -470,8 +309,8 @@ export async function createQuickQuantity(data: InsertQuickQuantity) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  const result = await db.insert(quickQuantities).values(data);
-  return { success: true, quickQuantityId: Number(result[0].insertId) };
+  const [row] = await db.insert(quickQuantities).values(data).returning({ id: quickQuantities.id });
+  return { success: true, quickQuantityId: row.id };
 }
 
 export async function updateQuickQuantity(id: number, data: Partial<InsertQuickQuantity>) {
@@ -606,9 +445,8 @@ export async function createAdminUser(data: InsertAdminUser): Promise<AdminUser>
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  const result = await db.insert(adminUsers).values(data);
-  const newUser = await db.select().from(adminUsers).where(eq(adminUsers.id, Number(result[0].insertId))).limit(1);
-  return newUser[0];
+  const [newUser] = await db.insert(adminUsers).values(data).returning();
+  return newUser;
 }
 
 export async function getAdminUserByUsername(username: string): Promise<AdminUser | null> {

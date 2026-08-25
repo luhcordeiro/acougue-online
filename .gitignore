@@ -105,3 +105,10 @@ temp/
 *.db
 *.sqlite
 *.sqlite3
+
+# Cloudflare Workers (segredos locais)
+.dev.vars
+.wrangler/
+
+# SQL de seed gerado (contem hash de senha)
+seed.generated.sql

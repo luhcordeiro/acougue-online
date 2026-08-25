@@ -5,9 +5,10 @@ import * as db from './db';
 describe('Payment Method', () => {
   it('should create order with PIX payment method', async () => {
     const caller = appRouter.createCaller({
-      req: {} as any,
-      res: {} as any,
-      user: null,
+      admin: null,
+      secure: true,
+      pendingCookies: [],
+      setCookie: () => {},
     });
 
     // Get available products
@@ -39,9 +40,10 @@ describe('Payment Method', () => {
 
   it('should create order with card payment method', async () => {
     const caller = appRouter.createCaller({
-      req: {} as any,
-      res: {} as any,
-      user: null,
+      admin: null,
+      secure: true,
+      pendingCookies: [],
+      setCookie: () => {},
     });
 
     // Get available products
@@ -73,9 +75,10 @@ describe('Payment Method', () => {
 
   it('should create order with cash payment and change', async () => {
     const caller = appRouter.createCaller({
-      req: {} as any,
-      res: {} as any,
-      user: null,
+      admin: null,
+      secure: true,
+      pendingCookies: [],
+      setCookie: () => {},
     });
 
     // Get available products
@@ -108,9 +111,10 @@ describe('Payment Method', () => {
 
   it('should create order with cash payment without change', async () => {
     const caller = appRouter.createCaller({
-      req: {} as any,
-      res: {} as any,
-      user: null,
+      admin: null,
+      secure: true,
+      pendingCookies: [],
+      setCookie: () => {},
     });
 
     // Get available products

@@ -1,230 +1,64 @@
-# Açougue Online - Sistema de Pedidos
+# Açougue Online — Sistema de Pedidos
 
-Sistema completo de gerenciamento de pedidos para açougue, com interface administrativa para cadastro de produtos e interface de cliente para realização de pedidos com seleção de quantidade em kg.
+Sistema de pedidos para açougue: catálogo com preço por quilo, checkout sem
+cadastro e painel administrativo para gerenciar produtos e pedidos.
+
+Roda inteiramente na infraestrutura da Cloudflare — Workers, D1 e R2.
 
 ## Funcionalidades
 
-### Interface do Proprietário (Admin)
-- Dashboard administrativo com estatísticas
-- Cadastro e gerenciamento de categorias de produtos
-- Cadastro e gerenciamento de produtos (nome, descrição, preço/kg, imagem, estoque)
-- Visualização e gerenciamento de pedidos
-- Atualização de status dos pedidos
-- Upload de imagens para produtos
+### Loja (cliente)
 
-### Interface do Cliente
-- Catálogo de produtos disponíveis
-- Visualização detalhada de produtos
-- Seleção de quantidade em kg
-- Carrinho de compras com cálculo automático de preços
-- Finalização de pedidos
-- Histórico de pedidos
-- Sistema de autenticação
+- Catálogo de produtos com filtro por categoria e busca
+- Detalhe do produto com escolha de quantidade e tipo de corte
+- Quantidades rápidas configuráveis (500g, 1kg, 2kg…)
+- Carrinho com cálculo automático por peso
+- **Checkout sem cadastro**: nome, telefone e endereço no próprio pedido
+- Pagamento em PIX, cartão ou dinheiro (com troco)
+- Interface otimizada para celular
 
-## Tecnologias Utilizadas
+### Painel administrativo
 
-- **Frontend**: React 19 + TypeScript + Tailwind CSS 4
-- **Backend**: Node.js + Express + tRPC 11
-- **Banco de Dados**: MySQL 8.0
-- **Autenticação**: Manus OAuth
-- **ORM**: Drizzle ORM
-- **Containerização**: Docker + Docker Compose
+- Dashboard com estatísticas
+- CRUD de produtos, categorias, tipos de corte e quantidades rápidas
+- Upload de imagens dos produtos (Cloudflare R2)
+- Gestão de pedidos com filtro por categoria e status
+- Aviso de novos pedidos (badge + toast, atualizado a cada 10s)
+- Taxa de entrega configurável
+- Gestão de usuários do painel
 
-## Pré-requisitos
+## Tecnologias
 
-- Docker (versão 20.10 ou superior)
-- Docker Compose (versão 2.0 ou superior)
+- **Frontend**: React 19 + TypeScript + Tailwind CSS 4 + Vite
+- **API**: tRPC 11 no runtime do Cloudflare Workers
+- **Banco**: Cloudflare D1 (SQLite) + Drizzle ORM
+- **Imagens**: Cloudflare R2
+- **Autenticação**: usuário/senha próprio, com JWT em cookie httpOnly
+- **Testes**: Vitest rodando dentro do workerd, com D1 real
 
-## Instalação e Execução com Docker
+## Começando
 
-### 1. Clone o repositório
-
-```bash
-git clone <url-do-repositorio>
-cd acougue_online
-```
-
-### 2. Configure as variáveis de ambiente
-
-Crie um arquivo `.env` na raiz do projeto com as seguintes variáveis:
-
-```env
-# Database
-DATABASE_URL=mysql://acougue_user:acougue_password@db:3306/acougue_online
-
-# JWT Secret (GERE UM VALOR ALEATÓRIO SEGURO!)
-JWT_SECRET=sua-chave-secreta-muito-segura-aqui
-
-# OAuth (obtenha em https://manus.im)
-OAUTH_SERVER_URL=https://api.manus.im
-VITE_OAUTH_PORTAL_URL=https://login.manus.im
-VITE_APP_ID=seu-app-id-aqui
-
-# Owner (primeiro admin do sistema)
-OWNER_OPEN_ID=seu-openid-aqui
-OWNER_NAME=Nome do Administrador
-
-# App Config
-VITE_APP_TITLE=Açougue Online - Sistema de Pedidos
-VITE_APP_LOGO=
-```
-
-### 3. Inicie os containers
-
-```bash
-docker-compose up -d
-```
-
-Este comando irá:
-- Baixar as imagens necessárias
-- Criar o container do banco de dados MySQL
-- Construir e iniciar o container da aplicação
-- Aplicar as migrações do banco de dados automaticamente
-
-### 4. Acesse a aplicação
-
-Abra seu navegador e acesse: `http://localhost:3000`
-
-### 5. Primeiro acesso (Admin)
-
-O primeiro usuário que fizer login com o `OWNER_OPEN_ID` configurado será automaticamente promovido a administrador e terá acesso ao painel administrativo.
-
-## Comandos Úteis
-
-### Ver logs da aplicação
-```bash
-docker-compose logs -f app
-```
-
-### Ver logs do banco de dados
-```bash
-docker-compose logs -f db
-```
-
-### Parar os containers
-```bash
-docker-compose down
-```
-
-### Parar e remover volumes (CUIDADO: apaga o banco de dados)
-```bash
-docker-compose down -v
-```
-
-### Reconstruir a aplicação após mudanças no código
-```bash
-docker-compose up -d --build app
-```
-
-### Acessar o shell do container da aplicação
-```bash
-docker exec -it acougue_app sh
-```
-
-### Acessar o MySQL diretamente
-```bash
-docker exec -it acougue_db mysql -u acougue_user -p acougue_online
-# Senha: acougue_password
-```
-
-## Desenvolvimento Local (sem Docker)
-
-Se preferir executar localmente para desenvolvimento:
-
-### 1. Instale as dependências
 ```bash
 pnpm install
-```
-
-### 2. Configure o banco de dados MySQL local
-
-Crie um banco de dados MySQL e configure a `DATABASE_URL` no arquivo `.env`:
-
-```env
-DATABASE_URL=mysql://usuario:senha@localhost:3306/acougue_online
-```
-
-### 3. Execute as migrações
-```bash
-pnpm db:push
-```
-
-### 4. Inicie o servidor de desenvolvimento
-```bash
+pnpm db:migrate:local
+pnpm db:seed:local
 pnpm dev
 ```
 
-A aplicação estará disponível em `http://localhost:3000`
+Aplicação em **http://localhost:8787** — painel em `/admin/login`
+(`admin` / `admin123`, troque no primeiro acesso).
 
-## Estrutura do Projeto
-
-```
-acougue_online/
-├── client/                 # Frontend React
-│   ├── public/            # Arquivos estáticos
-│   └── src/
-│       ├── pages/         # Páginas da aplicação
-│       ├── components/    # Componentes reutilizáveis
-│       └── lib/           # Configurações (tRPC, etc)
-├── server/                # Backend Express + tRPC
-│   ├── routers.ts         # Definição das rotas tRPC
-│   ├── db.ts              # Funções de banco de dados
-│   └── storage.ts         # Gerenciamento de arquivos S3
-├── drizzle/               # Schema e migrações do banco
-│   └── schema.ts          # Definição das tabelas
-├── Dockerfile             # Configuração Docker
-├── docker-compose.yml     # Orquestração de containers
-└── README.md              # Este arquivo
-```
-
-## Fluxo de Uso
-
-### Para o Proprietário (Admin)
-
-1. Faça login com a conta de administrador
-2. Acesse o "Painel Admin" no menu superior
-3. Cadastre categorias em "Gerenciar Categorias"
-4. Cadastre produtos em "Gerenciar Produtos" (nome, preço/kg, estoque, imagem)
-5. Acompanhe os pedidos em "Gerenciar Pedidos"
-6. Atualize o status dos pedidos conforme o andamento
-
-### Para o Cliente
-
-1. Acesse a loja e navegue pelos produtos disponíveis
-2. Clique em um produto para ver detalhes
-3. Selecione a quantidade desejada em kg
-4. Adicione ao carrinho
-5. Revise o carrinho e finalize o pedido
-6. Acompanhe seus pedidos em "Meus Pedidos"
-
-## Modelo de Dados
-
-### Tabelas Principais
-
-- **users**: Usuários do sistema (clientes e admins)
-- **categories**: Categorias de produtos
-- **products**: Produtos do açougue (preço em centavos/kg, estoque em gramas)
-- **orders**: Pedidos realizados (total em centavos)
-- **orderItems**: Itens de cada pedido (quantidade em gramas)
-
-### Observações sobre Armazenamento
-
-- **Preços**: Armazenados em centavos para evitar problemas de precisão decimal
-- **Quantidades**: Armazenadas em gramas (1 kg = 1000 gramas)
-- **Imagens**: Armazenadas em S3 (URLs e chaves salvas no banco)
+O passo a passo completo, incluindo deploy, está no
+[GUIA_RAPIDO.md](GUIA_RAPIDO.md).
 
 ## Segurança
 
-- Autenticação via Manus OAuth
-- Senhas e tokens gerenciados de forma segura
-- Controle de acesso baseado em roles (admin/user)
-- Validação de dados no backend
-- Proteção contra SQL injection (via ORM)
-
-## Suporte
-
-Para dúvidas ou problemas, entre em contato com o desenvolvedor.
+- Todas as rotas administrativas são validadas **no servidor** (`adminProcedure`),
+  não no frontend
+- Senhas com PBKDF2-SHA256 (Web Crypto)
+- Cookie de sessão `httpOnly` + `SameSite=Lax`, expira em 12h
+- Segredos ficam em `wrangler secret`, nunca no repositório
 
 ## Licença
 
-Todos os direitos reservados © 2025
+MIT

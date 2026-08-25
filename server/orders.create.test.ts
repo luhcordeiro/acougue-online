@@ -5,9 +5,10 @@ import * as db from './db';
 describe('Orders - Create Order', () => {
   it('should create an order successfully', async () => {
     const caller = appRouter.createCaller({
-      req: {} as any,
-      res: {} as any,
-      user: null,
+      admin: null,
+      secure: true,
+      pendingCookies: [],
+      setCookie: () => {},
     });
 
     // Verificar se há produtos disponíveis

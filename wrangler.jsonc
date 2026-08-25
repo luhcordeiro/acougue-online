@@ -1,0 +1,42 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "acougue-online",
+  "main": "worker/index.ts",
+  "compatibility_date": "2025-05-01",
+  "compatibility_flags": ["nodejs_compat"],
+
+  "assets": {
+    // build do Vite; o Worker serve tudo que não for /api/trpc
+    "directory": "./dist/public",
+    "binding": "ASSETS",
+    // SPA client-side: rotas como /admin/produtos devolvem index.html
+    "not_found_handling": "single-page-application"
+  },
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "acougue-online",
+      "database_id": "62956d6f-e954-409b-9db7-3563bbc4c155",
+      "migrations_dir": "drizzle/migrations"
+    }
+  ],
+
+  // Imagens dos produtos. Crie com: wrangler r2 bucket create acougue-online-imagens
+  "r2_buckets": [
+    {
+      "binding": "BUCKET",
+      "bucket_name": "acougue-online-imagens"
+    }
+  ],
+
+  "observability": {
+    "enabled": true
+  },
+
+  // Somente valores NÃO sensíveis. Segredos (JWT_SECRET, R2_PUBLIC_URL)
+  // vão por `wrangler secret put`, nunca aqui.
+  "vars": {
+    "NODE_ENV": "production"
+  }
+}

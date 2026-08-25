@@ -2,28 +2,16 @@ import { describe, expect, it } from "vitest";
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
 
-type AuthenticatedUser = NonNullable<TrpcContext["user"]>;
-
 function createAdminContext(): TrpcContext {
-  const adminUser: AuthenticatedUser = {
-    id: 1,
-    openId: "admin-user",
-    email: "admin@example.com",
-    name: "Admin User",
-    loginMethod: "manus",
-    role: "admin",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    lastSignedIn: new Date(),
-  };
-
   return {
-    user: adminUser,
-    req: {
-      protocol: "https",
-      headers: {},
-    } as TrpcContext["req"],
-    res: {} as TrpcContext["res"],
+    admin: {
+      adminId: 1,
+      username: "admin",
+      name: "Administrador",
+    },
+    secure: true,
+    pendingCookies: [],
+    setCookie: () => {},
   };
 }
 

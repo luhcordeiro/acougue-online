@@ -1,57 +1,27 @@
 import { describe, expect, it, beforeAll } from "vitest";
+import { NOT_ADMIN_ERR_MSG } from "@shared/const";
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
-import { upsertUser } from "./db";
-
-type AuthenticatedUser = NonNullable<TrpcContext["user"]>;
 
 function createUserContext(userId: number = 2): TrpcContext {
-  const user: AuthenticatedUser = {
-    id: userId,
-    openId: `user-${userId}`,
-    email: `user${userId}@example.com`,
-    name: `User ${userId}`,
-    loginMethod: "manus",
-    role: "user",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    lastSignedIn: new Date(),
-  };
-
   return {
-    user,
-    req: {
-      protocol: "https",
-      headers: {},
-    } as TrpcContext["req"],
-    res: {
-      clearCookie: () => {},
-    } as TrpcContext["res"],
+    admin: null,
+    secure: true,
+    pendingCookies: [],
+    setCookie: () => {},
   };
 }
 
 function createAdminContext(): TrpcContext {
-  const user: AuthenticatedUser = {
-    id: 1,
-    openId: "admin-user",
-    email: "admin@example.com",
-    name: "Admin User",
-    loginMethod: "manus",
-    role: "admin",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    lastSignedIn: new Date(),
-  };
-
   return {
-    user,
-    req: {
-      protocol: "https",
-      headers: {},
-    } as TrpcContext["req"],
-    res: {
-      clearCookie: () => {},
-    } as TrpcContext["res"],
+    admin: {
+      adminId: 1,
+      username: "admin",
+      name: "Administrador",
+    },
+    secure: true,
+    pendingCookies: [],
+    setCookie: () => {},
   };
 }
 
@@ -88,17 +58,6 @@ describe("orders.create", () => {
   });
 });
 
-describe("orders.myOrders", () => {
-  it("retorna array de pedidos", async () => {
-    const ctx = createUserContext(1); // Usar ID 1 que existe (owner)
-    const caller = appRouter.createCaller(ctx);
-
-    const orders = await caller.orders.myOrders();
-
-    expect(Array.isArray(orders)).toBe(true);
-  });
-});
-
 describe("orders.listAll", () => {
   it("permite que admin liste todos os pedidos", async () => {
     const ctx = createAdminContext();
@@ -113,7 +72,7 @@ describe("orders.listAll", () => {
     const ctx = createUserContext();
     const caller = appRouter.createCaller(ctx);
 
-    await expect(caller.orders.listAll()).rejects.toThrow(/Acesso negado/);
+    await expect(caller.orders.listAll()).rejects.toThrow(NOT_ADMIN_ERR_MSG);
   });
 });
 

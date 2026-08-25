@@ -1,62 +1,33 @@
 import { describe, expect, it } from "vitest";
+import { NOT_ADMIN_ERR_MSG } from "@shared/const";
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
 
-type AuthenticatedUser = NonNullable<TrpcContext["user"]>;
-
 function createAdminContext(): TrpcContext {
-  const user: AuthenticatedUser = {
-    id: 1,
-    openId: "admin-user",
-    email: "admin@example.com",
-    name: "Admin User",
-    loginMethod: "manus",
-    role: "admin",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    lastSignedIn: new Date(),
-  };
-
   return {
-    user,
-    req: {
-      protocol: "https",
-      headers: {},
-    } as TrpcContext["req"],
-    res: {
-      clearCookie: () => {},
-    } as TrpcContext["res"],
+    admin: {
+      adminId: 1,
+      username: "admin",
+      name: "Administrador",
+    },
+    secure: true,
+    pendingCookies: [],
+    setCookie: () => {},
   };
 }
 
 function createUserContext(): TrpcContext {
-  const user: AuthenticatedUser = {
-    id: 2,
-    openId: "regular-user",
-    email: "user@example.com",
-    name: "Regular User",
-    loginMethod: "manus",
-    role: "user",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    lastSignedIn: new Date(),
-  };
-
   return {
-    user,
-    req: {
-      protocol: "https",
-      headers: {},
-    } as TrpcContext["req"],
-    res: {
-      clearCookie: () => {},
-    } as TrpcContext["res"],
+    admin: null,
+    secure: true,
+    pendingCookies: [],
+    setCookie: () => {},
   };
 }
 
 describe("products.list", () => {
-  it("retorna lista de produtos para qualquer usuário", async () => {
-    const ctx = createUserContext();
+  it("retorna a lista completa para o admin", async () => {
+    const ctx = createAdminContext();
     const caller = appRouter.createCaller(ctx);
 
     const products = await caller.products.list();
@@ -64,6 +35,13 @@ describe("products.list", () => {
     expect(Array.isArray(products)).toBe(true);
     // Deve ter produtos do seed
     expect(products.length).toBeGreaterThan(0);
+  });
+
+  it("bloqueia quem não tem sessão de admin", async () => {
+    const ctx = createUserContext();
+    const caller = appRouter.createCaller(ctx);
+
+    await expect(caller.products.list()).rejects.toThrow(NOT_ADMIN_ERR_MSG);
   });
 });
 
@@ -109,7 +87,7 @@ describe("products.create", () => {
         stockKg: 10000,
         available: true,
       })
-    ).rejects.toThrow(/Acesso negado/);
+    ).rejects.toThrow(NOT_ADMIN_ERR_MSG);
   });
 });
 

@@ -17,15 +17,6 @@ import { useLocation } from "wouter";
 export default function AdminProducts() {
   const [, setLocation] = useLocation();
   
-  // Verificar autenticação com senha
-  const isAdminAuthenticated = sessionStorage.getItem("adminAuthenticated") === "true";
-  
-  // Redirecionar para login do admin se não estiver autenticado com senha
-  if (!isAdminAuthenticated) {
-    setLocation("/admin/login");
-    return null;
-  }
-  
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<number | null>(null);
   const [formData, setFormData] = useState({

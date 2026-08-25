@@ -14,15 +14,6 @@ import { useLocation } from "wouter";
 export default function AdminCutTypes() {
   const [, setLocation] = useLocation();
   
-  // Verificar autenticação com senha
-  const isAdminAuthenticated = sessionStorage.getItem("adminAuthenticated") === "true";
-  
-  // Redirecionar para login do admin se não estiver autenticado com senha
-  if (!isAdminAuthenticated) {
-    setLocation("/admin/login");
-    return null;
-  }
-  
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCutType, setEditingCutType] = useState<any>(null);
   const [formData, setFormData] = useState({

@@ -49,21 +49,6 @@ export default function AdminOrders() {
   const [, setLocation] = useLocation();
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
   
-  // Verificar autenticação com senha
-  const isAdminAuthenticated = sessionStorage.getItem("adminAuthenticated") === "true";
-  
-  // Redirecionar para login do admin se não estiver autenticado com senha
-  useEffect(() => {
-    if (!isAdminAuthenticated) {
-      setLocation("/admin/login");
-    }
-  }, [isAdminAuthenticated, setLocation]);
-  
-  // Não renderizar enquanto não estiver autenticado
-  if (!isAdminAuthenticated) {
-    return null;
-  }
-  
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
@@ -214,7 +199,7 @@ export default function AdminOrders() {
                 {orders.map((order) => (
                   <TableRow key={order.id}>
                     <TableCell className="font-medium">#{order.id}</TableCell>
-                    <TableCell>{(order as any).customerName || `Cliente ID: ${order.userId}`}</TableCell>
+                    <TableCell>{order.customerName}</TableCell>
                     <TableCell>R$ {(order.totalAmount / 100).toFixed(2)}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
@@ -298,12 +283,12 @@ export default function AdminOrders() {
                 </div>
 <div>
                                   <p className="text-sm text-muted-foreground">Cliente</p>
-                                  <p className="font-medium">{(orderDetails.order as any).customerName || `ID: ${orderDetails.order.userId}`}</p>
+                                  <p className="font-medium">{orderDetails.order.customerName}</p>
                                 </div>
-                                {(orderDetails.order as any).customerPhone && (
+                                {orderDetails.order.customerPhone && (
                                   <div>
                                     <p className="text-sm text-muted-foreground">Telefone</p>
-                                    <p className="font-medium">{(orderDetails.order as any).customerPhone}</p>
+                                    <p className="font-medium">{orderDetails.order.customerPhone}</p>
                                   </div>
                                 )}
               </div>
