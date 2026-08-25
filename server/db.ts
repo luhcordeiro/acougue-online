@@ -434,6 +434,27 @@ export async function getAllSystemSettings(): Promise<{ key: string; value: stri
   return result;
 }
 
+const HERO_IMAGE_URL_KEY = "hero_image_url";
+const HERO_IMAGE_KEY_KEY = "hero_image_key";
+
+/** Foto da fachada exibida como fundo da home. */
+export async function getHeroImage(): Promise<{ url: string | null; key: string | null }> {
+  return {
+    url: await getSystemSetting(HERO_IMAGE_URL_KEY),
+    key: await getSystemSetting(HERO_IMAGE_KEY_KEY),
+  };
+}
+
+export async function setHeroImage(url: string, key: string): Promise<void> {
+  await setSystemSetting(HERO_IMAGE_URL_KEY, url, "URL da foto da fachada");
+  await setSystemSetting(HERO_IMAGE_KEY_KEY, key, "Chave da foto da fachada no R2");
+}
+
+export async function clearHeroImage(): Promise<void> {
+  await setSystemSetting(HERO_IMAGE_URL_KEY, "", "URL da foto da fachada");
+  await setSystemSetting(HERO_IMAGE_KEY_KEY, "", "Chave da foto da fachada no R2");
+}
+
 const BUSINESS_HOURS_KEY = "business_hours";
 
 export async function getBusinessHours(): Promise<BusinessHours> {

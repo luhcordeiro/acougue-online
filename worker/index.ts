@@ -59,6 +59,9 @@ function ensureStorage(env: Env) {
         httpMetadata: { contentType },
       });
     },
+    async delete(key) {
+      await bucket.delete(key);
+    },
   });
 }
 

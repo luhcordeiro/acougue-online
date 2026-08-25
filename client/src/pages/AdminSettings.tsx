@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { ArrowLeft, Settings, Truck, Save } from "lucide-react";
 import { toast } from "sonner";
 import BusinessHoursCard from "@/components/BusinessHoursCard";
+import HeroImageCard from "@/components/HeroImageCard";
 
 export default function AdminSettings() {
   const [, setLocation] = useLocation();
@@ -115,6 +116,8 @@ export default function AdminSettings() {
           </Card>
 
           <BusinessHoursCard />
+
+          <HeroImageCard />
         </div>
       </main>
     </div>

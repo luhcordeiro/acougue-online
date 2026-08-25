@@ -14,6 +14,7 @@ import { ENV } from "./_core/env";
 
 export type StorageDriver = {
   put(key: string, data: Uint8Array, contentType: string): Promise<void>;
+  delete(key: string): Promise<void>;
 };
 
 let _driver: StorageDriver | null = null;
@@ -60,6 +61,12 @@ export async function storagePut(
   await _driver.put(key, bytes, contentType);
 
   return { key, url: buildPublicUrl(key) };
+}
+
+/** Remove o objeto. Usado ao trocar a foto da fachada, para não acumular lixo. */
+export async function storageDelete(relKey: string): Promise<void> {
+  if (!_driver) return;
+  await _driver.delete(normalizeKey(relKey));
 }
 
 export async function storageGet(

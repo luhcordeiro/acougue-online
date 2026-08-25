@@ -23,7 +23,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import * as db from "./db";
 import { InsertOrder, InsertOrderItem } from "../drizzle/schema";
-import { storagePut } from "./storage";
+import { storageDelete, storagePut } from "./storage";
 
 /** Decodifica base64 sem depender de Buffer, que não existe no Workers. */
 function base64ToBytes(base64: string): Uint8Array {
@@ -432,6 +432,47 @@ export const appRouter = router({
         await db.setDeliveryFee(input.feeInCents);
         return { success: true };
       }),
+    // Foto da fachada: pública porque a home precisa dela sem login
+    getHeroImage: publicProcedure.query(async () => {
+      const { url } = await db.getHeroImage();
+      return { url: url || null };
+    }),
+    uploadHeroImage: adminProcedure
+      .input(zin({
+        fileName: z.string().min(1),
+        fileData: z.string().min(1), // Base64
+        mimeType: z.string().regex(/^image\//, 'O arquivo precisa ser uma imagem'),
+      }))
+      .mutation(async ({ input }) => {
+        const bytes = base64ToBytes(input.fileData);
+        const sufixo = Math.random().toString(36).substring(2, 15);
+        const fileKey = `site/fachada-${sufixo}`;
+
+        const { url } = await storagePut(fileKey, bytes, input.mimeType);
+
+        // Remove a anterior para não acumular lixo no bucket a cada troca
+        const anterior = await db.getHeroImage();
+        await db.setHeroImage(url, fileKey);
+        if (anterior.key) {
+          await storageDelete(anterior.key).catch(error =>
+            console.warn('[Settings] Falha ao remover fachada anterior:', error)
+          );
+        }
+
+        return { url };
+      }),
+    removeHeroImage: adminProcedure.mutation(async () => {
+      const atual = await db.getHeroImage();
+      await db.clearHeroImage();
+
+      if (atual.key) {
+        await storageDelete(atual.key).catch(error =>
+          console.warn('[Settings] Falha ao remover fachada:', error)
+        );
+      }
+
+      return { success: true };
+    }),
     getAll: adminProcedure.query(async () => {
       return await db.getAllSystemSettings();
     }),

@@ -14,6 +14,8 @@ import { Badge } from "@/components/ui/badge";
 export default function Home() {
   const { data: products = [], isLoading } = trpc.products.available.useQuery();
   const { data: categories = [] } = trpc.categories.list.useQuery();
+  const { data: hero } = trpc.settings.getHeroImage.useQuery();
+  const heroImage = hero?.url ?? null;
   
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -96,12 +98,30 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Hero Section - Compacto para mobile */}
-      <section className="bg-gradient-to-r from-red-600 to-red-800 text-white py-6 sm:py-12">
-        <div className="container">
+      {/* Hero Section - foto da fachada quando houver, senão o vermelho padrão */}
+      <section
+        className="relative overflow-hidden bg-gradient-to-r from-red-600 to-red-800 text-white py-6 sm:py-12"
+        style={
+          heroImage
+            ? {
+                backgroundImage: `url(${heroImage})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+              }
+            : undefined
+        }
+      >
+        {/* Sem este escurecimento, o texto branco some numa foto clara */}
+        {heroImage && (
+          <div
+            className="absolute inset-0 bg-gradient-to-r from-red-900/85 to-red-800/70"
+            aria-hidden="true"
+          />
+        )}
+        <div className="container relative">
           <div className="text-center">
-            <h2 className="text-xl sm:text-3xl font-bold mb-2 sm:mb-3">Carnes Frescas Direto na Sua Casa</h2>
-            <p className="text-sm sm:text-lg text-red-50">
+            <h2 className="text-xl sm:text-3xl font-bold mb-2 sm:mb-3 drop-shadow">Carnes Frescas Direto na Sua Casa</h2>
+            <p className="text-sm sm:text-lg text-red-50 drop-shadow">
               Escolha os melhores cortes e receba com qualidade garantida.
             </p>
           </div>
