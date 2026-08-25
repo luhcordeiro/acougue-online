@@ -537,6 +537,58 @@ export const appRouter = router({
     getPrintQueue: adminProcedure.query(async () => {
       return await db.getPrintQueueStatus();
     }),
+    /**
+     * Enfileira um cupom de teste.
+     *
+     * Percorre o caminho real (loja -> fila -> agente -> impressora), que é o
+     * que interessa validar. Imprimir pelo navegador testaria outro caminho e
+     * daria falsa confiança.
+     */
+    enqueueTestPrint: adminProcedure.mutation(async () => {
+      const alerts = await db.getOrderAlerts();
+
+      const cupom = buildReceipt(
+        {
+          id: 0,
+          createdAt: new Date(),
+          customerName: 'Cliente de Teste',
+          customerPhone: '18991363710',
+          deliveryAddress: 'Rua de Teste, 123 - Centro',
+          deliveryStreet: 'Rua de Teste',
+          deliveryNumber: '123',
+          deliveryNeighborhood: 'Centro',
+          paymentMethod: 'cash',
+          changeFor: 10000,
+          notes: 'Impressao de teste - nao preparar',
+          totalAmount: 7497,
+        },
+        [
+          {
+            productName: 'Acem',
+            cutTypeName: 'Bifes',
+            quantity: 1500,
+            unit: 'kg',
+            price: 3198,
+            subtotal: 4797,
+          },
+          {
+            productName: 'Achocolatado 370gr',
+            quantity: 2,
+            unit: 'un',
+            price: 1100,
+            subtotal: 2200,
+          },
+        ],
+        {
+          storeName: await db.getStoreName(),
+          width: alerts.receiptWidth,
+          deliveryFee: 500,
+        }
+      );
+
+      const id = await db.enqueuePrintJob(null, cupom);
+      return { success: true, id };
+    }),
     retryPrintQueue: adminProcedure.mutation(async () => {
       const reenfileirados = await db.retryFailedPrintJobs();
       return { success: true, reenfileirados };

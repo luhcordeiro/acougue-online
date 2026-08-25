@@ -74,6 +74,14 @@ export default function OrderAlertsCard() {
     refetchInterval: 15_000,
   });
 
+  const testePelaFilaMutation = trpc.settings.enqueueTestPrint.useMutation({
+    onSuccess: () => {
+      toast.success("Cupom de teste enviado - deve sair na impressora do balcão");
+      utils.settings.getPrintQueue.invalidate();
+    },
+    onError: error => toast.error(error.message),
+  });
+
   const retryMutation = trpc.settings.retryPrintQueue.useMutation({
     onSuccess: result => {
       toast.success(`${result.reenfileirados} cupom(ns) devolvido(s) à fila`);
@@ -230,10 +238,21 @@ export default function OrderAlertsCard() {
 
               <Button
                 variant="outline"
-                onClick={() => printReceipt(CUPOM_TESTE, alerts.receiptWidth)}
+                onClick={() => testePelaFilaMutation.mutate()}
+                disabled={testePelaFilaMutation.isPending}
+                title="Manda um cupom pela fila, como um pedido de verdade"
               >
                 <Printer className="mr-2 h-4 w-4" />
-                Testar impressão
+                {testePelaFilaMutation.isPending ? "Enviando..." : "Testar impressora do balcão"}
+              </Button>
+
+              <Button
+                variant="ghost"
+                onClick={() => printReceipt(CUPOM_TESTE, alerts.receiptWidth)}
+                title="Imprime por este navegador, sem passar pelo agente"
+              >
+                <Printer className="mr-2 h-4 w-4" />
+                Imprimir por aqui
               </Button>
             </div>
           </>
