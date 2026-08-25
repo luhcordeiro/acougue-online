@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from "@/components/ui/button";
 import { Eye, CreditCard, QrCode, Banknote, ArrowLeft, ClipboardList, Printer } from "lucide-react";
 import ReceiptDialog from "@/components/ReceiptDialog";
+import OrderAlertBell from "@/components/OrderAlertBell";
 import { playOrderAlert, printReceipt, showOrderNotification } from "@/lib/print";
 import { buildReceipt } from "@shared/receipt";
 import { APP_TITLE } from "@/const";
@@ -102,6 +103,7 @@ export default function AdminOrders() {
 
 
   const larguraCupom = alerts?.receiptWidth ?? "80mm";
+  const pendentes = allOrders.filter(o => o.status === "pending").length;
 
   /** Monta o cupom buscando os itens do pedido. */
   const gerarCupom = useCallback(
@@ -204,6 +206,12 @@ export default function AdminOrders() {
             <div className="flex items-center gap-2">
               <ClipboardList className="h-6 w-6" />
               <h1 className="text-xl font-bold">Gerenciar Pedidos</h1>
+            </div>
+            <div className="ml-auto rounded-md bg-white/95 px-2 py-1">
+              <OrderAlertBell
+                enabled={alerts?.notify !== false}
+                pendingCount={pendentes}
+              />
             </div>
           </div>
         </div>

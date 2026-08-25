@@ -75,6 +75,60 @@ export function printReceipt(text: string, width: PrintWidth = "80mm"): void {
 }
 
 /**
+ * Contexto de áudio compartilhado.
+ *
+ * O navegador cria o AudioContext em estado "suspended" e só libera depois de
+ * um clique do usuário. Como o alerta toca sozinho, sem clique, seria comum o
+ * bipe falhar em silêncio justamente no cenário real: painel aberto no balcão,
+ * ninguém tocando na tela. Por isso guardamos um contexto só e o destravamos
+ * na primeira interação.
+ */
+let audioCtx: AudioContext | null = null;
+
+function getAudioContext(): AudioContext | null {
+  const AudioCtx =
+    window.AudioContext ??
+    (window as unknown as { webkitAudioContext?: typeof AudioContext })
+      .webkitAudioContext;
+  if (!AudioCtx) return null;
+
+  if (!audioCtx) audioCtx = new AudioCtx();
+  return audioCtx;
+}
+
+/** true quando o navegador ainda não liberou o som. */
+export function isAudioBlocked(): boolean {
+  return audioCtx !== null && audioCtx.state === "suspended";
+}
+
+/**
+ * Destrava o áudio. Precisa ser chamado a partir de um gesto do usuário —
+ * um clique qualquer na página serve.
+ */
+export function unlockAudio(): void {
+  const ctx = getAudioContext();
+  if (ctx && ctx.state === "suspended") {
+    ctx.resume().catch(() => {});
+  }
+}
+
+function beep(ctx: AudioContext, atraso: number): void {
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+
+  osc.type = "sine";
+  osc.frequency.value = 880;
+  gain.gain.setValueAtTime(0.0001, ctx.currentTime + atraso);
+  gain.gain.exponentialRampToValueAtTime(0.3, ctx.currentTime + atraso + 0.02);
+  gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + atraso + 0.18);
+
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start(ctx.currentTime + atraso);
+  osc.stop(ctx.currentTime + atraso + 0.2);
+}
+
+/**
  * Bipe de aviso de pedido novo.
  *
  * Gerado por Web Audio em vez de arquivo de som: não depende de asset, toca
@@ -82,32 +136,20 @@ export function printReceipt(text: string, width: PrintWidth = "80mm"): void {
  */
 export function playOrderAlert(): void {
   try {
-    const AudioCtx =
-      window.AudioContext ??
-      (window as unknown as { webkitAudioContext?: typeof AudioContext })
-        .webkitAudioContext;
-    if (!AudioCtx) return;
+    const ctx = getAudioContext();
+    if (!ctx) return;
 
-    const ctx = new AudioCtx();
+    const tocar = () => {
+      // três bipes: um açougue é barulhento, e um só passa despercebido
+      [0, 0.25, 0.5].forEach(atraso => beep(ctx, atraso));
+    };
 
-    // dois bipes curtos: mais perceptível que um só num açougue barulhento
-    [0, 0.25].forEach(atraso => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
+    if (ctx.state === "suspended") {
+      ctx.resume().then(tocar).catch(() => {});
+      return;
+    }
 
-      osc.type = "sine";
-      osc.frequency.value = 880;
-      gain.gain.setValueAtTime(0.0001, ctx.currentTime + atraso);
-      gain.gain.exponentialRampToValueAtTime(0.3, ctx.currentTime + atraso + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + atraso + 0.18);
-
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start(ctx.currentTime + atraso);
-      osc.stop(ctx.currentTime + atraso + 0.2);
-    });
-
-    setTimeout(() => ctx.close().catch(() => {}), 1000);
+    tocar();
   } catch {
     // som é conveniência; falhar aqui não pode atrapalhar o pedido
   }
