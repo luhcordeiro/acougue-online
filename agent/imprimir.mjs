@@ -52,6 +52,15 @@ export async function enviarParaImpressora(bytes, printer) {
     );
 
     return stdout.trim() || `${bytes.length} bytes enviados`;
+  } catch (error) {
+    // O execFile joga a linha de comando inteira na mensagem, escondendo o
+    // motivo real. O raw-print.ps1 escreve o erro limpo no stderr.
+    const motivo = String(error.stderr ?? "")
+      .split(/\r?\n/)
+      .map(l => l.trim())
+      .find(Boolean);
+
+    throw new Error(motivo || `falha ao imprimir em "${printer}"`);
   } finally {
     try {
       unlinkSync(arquivo);

@@ -105,6 +105,12 @@ node agent\print-agent.mjs
 Aperte `Win + R`, digite `shell:startup` e coloque um atalho do `.bat` na pasta
 que abrir. O agente passa a subir sozinho quando o PC liga.
 
+## Quando algo não funciona
+
+Rode o **`DIAGNOSTICO.bat`**. Ele testa cada elo separadamente — configuração,
+conexão com a loja, token e impressora — e diz em qual deles está o problema,
+em vez de deixar "não imprime" como única informação.
+
 ## Verificando se está funcionando
 
 No painel: **Configurações → Novos Pedidos → Fila de impressão**. Ali aparece

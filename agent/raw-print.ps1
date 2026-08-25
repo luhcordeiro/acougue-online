@@ -109,5 +109,18 @@ public class RawPrinter
 "@
 
 $bytes = [System.IO.File]::ReadAllBytes($File)
-[RawPrinter]::Send($Printer, $bytes)
-Write-Output "OK - $($bytes.Length) bytes enviados para '$Printer'"
+
+try {
+    [RawPrinter]::Send($Printer, $bytes)
+    Write-Output "OK - $($bytes.Length) bytes enviados para '$Printer'"
+}
+catch {
+    # O PowerShell embrulha a excecao em varias linhas ("Excecao ao chamar
+    # Send com 2 argumentos...", posicao no script, CategoryInfo). Quem
+    # precisa aparecer para quem esta instalando e so o motivo.
+    $motivo = $_.Exception.InnerException
+    if ($null -eq $motivo) { $motivo = $_.Exception }
+
+    [Console]::Error.WriteLine($motivo.Message)
+    exit 1
+}

@@ -6,40 +6,18 @@
  * depender de o navegador estar aberto na aba certa.
  *
  * Uso:
- *   node agent/print-agent.mjs
+ *   node print-agent.mjs
  *
- * Configuração por variáveis de ambiente (ou agent/.env):
+ * Configuração por variáveis de ambiente (ou .env na mesma pasta):
  *   LOJA_URL      endereço da loja (ex: https://acougue-online...workers.dev)
  *   AGENT_TOKEN   mesmo valor do secret PRINT_AGENT_TOKEN no Cloudflare
- *   PRINTER       nome do compartilhamento da impressora (ex: ELGIN)
+ *   PRINTER       nome da impressora no Windows (ex: "ELGIN i9(USB)")
  *   INTERVALO_MS  intervalo entre verificações (padrão 3000)
  */
 
-import { readFileSync } from "node:fs";
+import { carregarEnv, primeiraLinha } from "./config.mjs";
 import { buildEscPos } from "./escpos.mjs";
-import { enviarParaImpressora, listarImpressoras } from "./imprimir.mjs";
-
-// ------------------------------------------------------------------ config
-
-function carregarEnv() {
-  try {
-    const conteudo = readFileSync(new URL("./.env", import.meta.url), "utf-8");
-    for (const linha of conteudo.split("\n")) {
-      const limpa = linha.trim();
-      if (!limpa || limpa.startsWith("#")) continue;
-
-      const igual = limpa.indexOf("=");
-      if (igual < 0) continue;
-
-      const chave = limpa.slice(0, igual).trim();
-      if (!process.env[chave]) {
-        process.env[chave] = limpa.slice(igual + 1).trim();
-      }
-    }
-  } catch {
-    // sem .env: usa só as variáveis do sistema
-  }
-}
+import { enviarParaImpressora } from "./imprimir.mjs";
 
 carregarEnv();
 
@@ -49,20 +27,28 @@ const PRINTER = process.env.PRINTER ?? "";
 const INTERVALO_MS = Number(process.env.INTERVALO_MS ?? 3000);
 
 if (!LOJA_URL || !AGENT_TOKEN || !PRINTER) {
-  console.error("Configuração incompleta. Defina LOJA_URL, AGENT_TOKEN e PRINTER");
-  console.error("em agent/.env (veja agent/.env.example).");
+  console.error("Configuracao incompleta. Defina LOJA_URL, AGENT_TOKEN e PRINTER");
+  console.error("no arquivo .env (veja .env.example), ou rode INSTALAR.bat.");
   process.exit(1);
 }
 
 const log = (...args) =>
   console.log(new Date().toLocaleTimeString("pt-BR"), ...args);
 
-// ------------------------------------------------------------------- fila
+// -------------------------------------------------------------------- fila
 
 async function buscarCupons() {
   const resposta = await fetch(`${LOJA_URL}/api/print/jobs`, {
     headers: { authorization: `Bearer ${AGENT_TOKEN}` },
   });
+
+  if (resposta.status === 401) {
+    throw new Error("token recusado pela loja - confira AGENT_TOKEN no .env");
+  }
+
+  if (resposta.status === 503) {
+    throw new Error("a loja ainda nao tem o agente configurado (secret ausente)");
+  }
 
   if (!resposta.ok) {
     throw new Error(`loja respondeu ${resposta.status}`);
@@ -92,13 +78,13 @@ async function ciclo() {
     cupons = await buscarCupons();
 
     if (offline) {
-      log("conexão com a loja restabelecida");
+      log("conexao com a loja restabelecida");
       offline = false;
     }
   } catch (error) {
-    // só avisa na transição, senão a tela vira um muro de erros
+    // só avisa na transição, senão a tela vira um muro de erros repetidos
     if (!offline) {
-      log("sem conexão com a loja:", error.message);
+      log("sem conexao com a loja:", primeiraLinha(error.message));
       offline = true;
     }
     return;
@@ -111,17 +97,16 @@ async function ciclo() {
       log(`cupom #${cupom.id} impresso (pedido #${cupom.orderId ?? "-"}) ${detalhe}`);
     } catch (error) {
       // devolve para a fila: a loja reenvia até o limite de tentativas
-      const motivo = error.message.split("
-")[0];
+      const motivo = primeiraLinha(error.message);
       await confirmar(cupom.id, false, motivo).catch(() => {});
-      log(`falha ao imprimir cupom #${cupom.id}:`, motivo);
+      log(`falha ao imprimir cupom #${cupom.id}: ${motivo}`);
     }
   }
 }
 
 // -------------------------------------------------------------------- main
 
-log("agente de impressão iniciado");
+log("agente de impressao iniciado");
 log(`  loja.......: ${LOJA_URL}`);
 log(`  impressora.: ${PRINTER}`);
 log(`  verificando a cada ${INTERVALO_MS / 1000}s`);

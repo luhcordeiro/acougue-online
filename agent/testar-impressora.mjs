@@ -7,25 +7,11 @@
  * Uso: node testar-impressora.mjs
  */
 
-import { readFileSync } from "node:fs";
+import { carregarEnv, primeiraLinha } from "./config.mjs";
 import { buildEscPos } from "./escpos.mjs";
 import { enviarParaImpressora, listarImpressoras } from "./imprimir.mjs";
 
-try {
-  const env = readFileSync(new URL("./.env", import.meta.url), "utf-8");
-  for (const linha of env.split("\n")) {
-    const limpa = linha.trim();
-    if (!limpa || limpa.startsWith("#")) continue;
-
-    const igual = limpa.indexOf("=");
-    if (igual < 0) continue;
-
-    const chave = limpa.slice(0, igual).trim();
-    if (!process.env[chave]) process.env[chave] = limpa.slice(igual + 1).trim();
-  }
-} catch {
-  // sem .env: usa as variáveis do sistema
-}
+carregarEnv();
 
 const PRINTER = process.env.PRINTER ?? "";
 
@@ -57,7 +43,7 @@ try {
   console.log("Confira se o cupom saiu e se o papel foi cortado.");
 } catch (error) {
   console.error("");
-  console.error("FALHOU:", error.message.split("\n")[0]);
+  console.error("FALHOU:", primeiraLinha(error.message));
   console.error("");
 
   const impressoras = await listarImpressoras();
