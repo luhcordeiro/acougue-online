@@ -1,5 +1,10 @@
 import { eq, desc, and, inArray, getTableColumns } from "drizzle-orm";
 import type { BaseSQLiteDatabase } from "drizzle-orm/sqlite-core";
+import {
+  DEFAULT_BUSINESS_HOURS,
+  normalizeBusinessHours,
+  type BusinessHours,
+} from "@shared/businessHours";
 import { categories, InsertCategory, products, InsertProduct, orders, InsertOrder, orderItems, InsertOrderItem, cutTypes, InsertCutType, productCutTypes, quickQuantities, InsertQuickQuantity, productQuickQuantities, systemSettings, adminUsers, InsertAdminUser, AdminUser } from "../drizzle/schema";
 
 /**
@@ -427,6 +432,29 @@ export async function getAllSystemSettings(): Promise<{ key: string; value: stri
   }).from(systemSettings);
   
   return result;
+}
+
+const BUSINESS_HOURS_KEY = "business_hours";
+
+export async function getBusinessHours(): Promise<BusinessHours> {
+  const raw = await getSystemSetting(BUSINESS_HOURS_KEY);
+  if (!raw) return DEFAULT_BUSINESS_HOURS;
+
+  try {
+    return normalizeBusinessHours(JSON.parse(raw));
+  } catch (error) {
+    // Valor corrompido não pode derrubar a loja: cai no padrão.
+    console.warn("[Settings] business_hours inválido, usando padrão:", error);
+    return DEFAULT_BUSINESS_HOURS;
+  }
+}
+
+export async function setBusinessHours(hours: BusinessHours): Promise<void> {
+  await setSystemSetting(
+    BUSINESS_HOURS_KEY,
+    JSON.stringify(hours),
+    "Horário de funcionamento por dia da semana"
+  );
 }
 
 export async function getDeliveryFee(): Promise<number> {

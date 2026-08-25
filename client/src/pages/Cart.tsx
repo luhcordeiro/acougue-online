@@ -10,6 +10,7 @@ import { ArrowLeft, Trash2, ShoppingCart, User, Phone, MapPin, Truck, CreditCard
 import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
+import StoreStatusBanner from "@/components/StoreStatusBanner";
 
 type CartItem = {
   productId: number;
@@ -66,7 +67,19 @@ export default function Cart() {
     }, 0);
   };
 
+  // Loja fechada bloqueia o checkout; o servidor recusa de qualquer forma,
+  // mas avisar antes evita o cliente preencher tudo à toa.
+  const { data: businessHours } = trpc.settings.getBusinessHours.useQuery(undefined, {
+    refetchInterval: 60_000,
+  });
+  const isStoreOpen = businessHours?.status.isOpen ?? true;
+
   const handleCheckout = () => {
+    if (!isStoreOpen) {
+      toast.error("A loja está fechada no momento e não pode receber pedidos");
+      return;
+    }
+
     if (!customerName.trim()) {
       toast.error("Por favor, informe seu nome");
       return;
@@ -370,13 +383,18 @@ export default function Cart() {
                   />
                 </div>
               </CardContent>
-              <CardFooter>
+              <CardFooter className="flex-col gap-3">
+                {!isStoreOpen && <StoreStatusBanner className="w-full" />}
                 <Button
                   className="w-full text-lg py-6"
                   onClick={handleCheckout}
-                  disabled={createOrderMutation.isPending}
+                  disabled={createOrderMutation.isPending || !isStoreOpen}
                 >
-                  {createOrderMutation.isPending ? "Processando..." : `Finalizar Pedido - R$ ${(total / 100).toFixed(2)}`}
+                  {createOrderMutation.isPending
+                    ? "Processando..."
+                    : !isStoreOpen
+                      ? "Loja fechada"
+                      : `Finalizar Pedido - R$ ${(total / 100).toFixed(2)}`}
                 </Button>
               </CardFooter>
             </Card>

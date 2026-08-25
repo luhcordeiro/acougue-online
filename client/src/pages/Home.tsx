@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { APP_LOGO, APP_TITLE } from "@/const";
 import { trpc } from "@/lib/trpc";
+import StoreStatusBanner from "@/components/StoreStatusBanner";
 import { ShoppingCart, Search, ChevronRight, Bell } from "lucide-react";
 import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
@@ -126,6 +127,11 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Aberto/fechado: o cliente precisa saber antes de montar o carrinho */}
+      <div className="container -mt-3 sm:-mt-5 relative z-10">
+        <StoreStatusBanner className="shadow-md" />
+      </div>
 
       {/* Products Section */}
       <section id="produtos" className="py-6 sm:py-8 bg-background flex-1">

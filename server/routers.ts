@@ -5,6 +5,13 @@ import {
 } from "./_core/adminAuth";
 import { hashPassword, verifyPassword } from "./_core/password";
 import { publicProcedure, adminProcedure, router } from "./_core/trpc";
+import {
+  getStoreStatus,
+  WEEKDAY_NAMES,
+  isValidDayHours,
+  isValidTime,
+  type BusinessHours,
+} from "@shared/businessHours";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import * as db from "./db";
@@ -171,6 +178,18 @@ export const appRouter = router({
         changeFor: z.number().optional(), // Valor em centavos para troco (apenas para pagamento em dinheiro)
       }))
       .mutation(async ({ input }) => {
+        // A loja fechada precisa recusar aqui, não só na tela: o frontend
+        // pode estar desatualizado ou ser contornado.
+        const status = getStoreStatus(await db.getBusinessHours());
+        if (!status.isOpen) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: status.nextOpening
+              ? `A loja está fechada no momento. Abrimos ${WEEKDAY_NAMES[status.nextOpening.weekday]} às ${status.nextOpening.time}.`
+              : 'A loja está fechada no momento.',
+          });
+        }
+
         // Validar e calcular totais
         let totalAmount = 0;
         const orderItemsData: InsertOrderItem[] = [];
@@ -351,6 +370,38 @@ export const appRouter = router({
     getDeliveryFee: publicProcedure.query(async () => {
       return await db.getDeliveryFee();
     }),
+    // Horário de funcionamento + se a loja está aberta agora.
+    // O cálculo é do servidor: o relógio do cliente não é confiável.
+    getBusinessHours: publicProcedure.query(async () => {
+      const hours = await db.getBusinessHours();
+      return { hours, status: getStoreStatus(hours) };
+    }),
+    setBusinessHours: adminProcedure
+      .input(
+        z.object({
+          hours: z
+            .array(
+              z.object({
+                open: z.boolean(),
+                from: z.string().refine(isValidTime, 'Horário inválido (use HH:MM)'),
+                to: z.string().refine(isValidTime, 'Horário inválido (use HH:MM)'),
+              })
+            )
+            .length(7, 'É preciso informar os sete dias da semana'),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const invalido = input.hours.findIndex(day => !isValidDayHours(day));
+        if (invalido >= 0) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: `O horário de fechamento deve ser depois do de abertura (${WEEKDAY_NAMES[invalido]})`,
+          });
+        }
+
+        await db.setBusinessHours(input.hours as BusinessHours);
+        return { success: true };
+      }),
     setDeliveryFee: adminProcedure
       .input(z.object({
         feeInCents: z.number().min(0),

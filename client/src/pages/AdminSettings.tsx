@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, Settings, Truck, Save } from "lucide-react";
 import { toast } from "sonner";
+import BusinessHoursCard from "@/components/BusinessHoursCard";
 
 export default function AdminSettings() {
   const [, setLocation] = useLocation();
@@ -64,7 +65,7 @@ export default function AdminSettings() {
       </header>
 
       <main className="container py-8">
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-2xl mx-auto space-y-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -112,6 +113,8 @@ export default function AdminSettings() {
               )}
             </CardContent>
           </Card>
+
+          <BusinessHoursCard />
         </div>
       </main>
     </div>
