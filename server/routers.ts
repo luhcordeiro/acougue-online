@@ -432,6 +432,20 @@ export const appRouter = router({
         await db.setDeliveryFee(input.feeInCents);
         return { success: true };
       }),
+    // Alertas de novo pedido: só o painel usa, então exige sessão
+    getOrderAlerts: adminProcedure.query(async () => {
+      return await db.getOrderAlerts();
+    }),
+    setOrderAlerts: adminProcedure
+      .input(zin({
+        notify: z.boolean(),
+        autoPrint: z.boolean(),
+        receiptWidth: z.enum(['58mm', '80mm']),
+      }))
+      .mutation(async ({ input }) => {
+        await db.setOrderAlerts(input);
+        return { success: true };
+      }),
     // Foto da fachada: pública porque a home precisa dela sem login
     getHeroImage: publicProcedure.query(async () => {
       const { url } = await db.getHeroImage();

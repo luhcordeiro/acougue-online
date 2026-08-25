@@ -455,6 +455,50 @@ export async function clearHeroImage(): Promise<void> {
   await setSystemSetting(HERO_IMAGE_KEY_KEY, "", "Chave da foto da fachada no R2");
 }
 
+const ORDER_ALERTS_KEY = "order_alerts";
+
+export type OrderAlerts = {
+  /** Toca som e mostra aviso quando entra pedido novo. */
+  notify: boolean;
+  /** Manda o cupom para a impressora sozinho. */
+  autoPrint: boolean;
+  /** Largura da bobina da impressora térmica. */
+  receiptWidth: "58mm" | "80mm";
+};
+
+export const DEFAULT_ORDER_ALERTS: OrderAlerts = {
+  notify: true,
+  autoPrint: false,
+  receiptWidth: "80mm",
+};
+
+export async function getOrderAlerts(): Promise<OrderAlerts> {
+  const raw = await getSystemSetting(ORDER_ALERTS_KEY);
+  if (!raw) return DEFAULT_ORDER_ALERTS;
+
+  try {
+    const parsed = JSON.parse(raw) as Partial<OrderAlerts>;
+    return {
+      notify: parsed.notify ?? DEFAULT_ORDER_ALERTS.notify,
+      autoPrint: parsed.autoPrint ?? DEFAULT_ORDER_ALERTS.autoPrint,
+      receiptWidth:
+        parsed.receiptWidth === "58mm" ? "58mm" : DEFAULT_ORDER_ALERTS.receiptWidth,
+    };
+  } catch (error) {
+    // valor corrompido não pode derrubar o painel
+    console.warn("[Settings] order_alerts inválido, usando padrão:", error);
+    return DEFAULT_ORDER_ALERTS;
+  }
+}
+
+export async function setOrderAlerts(alerts: OrderAlerts): Promise<void> {
+  await setSystemSetting(
+    ORDER_ALERTS_KEY,
+    JSON.stringify(alerts),
+    "Notificação e impressão automática de novos pedidos"
+  );
+}
+
 const BUSINESS_HOURS_KEY = "business_hours";
 
 export async function getBusinessHours(): Promise<BusinessHours> {

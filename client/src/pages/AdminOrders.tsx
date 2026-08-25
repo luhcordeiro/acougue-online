@@ -1,11 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Eye, CreditCard, QrCode, Banknote, ArrowLeft, ClipboardList } from "lucide-react";
+import { Eye, CreditCard, QrCode, Banknote, ArrowLeft, ClipboardList, Printer } from "lucide-react";
+import ReceiptDialog from "@/components/ReceiptDialog";
+import { playOrderAlert, printReceipt, showOrderNotification } from "@/lib/print";
+import { buildReceipt } from "@shared/receipt";
+import { APP_TITLE } from "@/const";
 import { toast } from "sonner";
 import { formatPrice, formatQuantity } from "@shared/quantity";
 import { useLocation } from "wouter";
@@ -49,13 +53,22 @@ const paymentMethodColors = {
 export default function AdminOrders() {
   const [, setLocation] = useLocation();
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
+  const [receipt, setReceipt] = useState<string | null>(null);
+  const [isReceiptOpen, setIsReceiptOpen] = useState(false);
   
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
 
   const utils = trpc.useUtils();
-  const { data: allOrders = [], isLoading: isLoadingAll } = trpc.orders.listAll.useQuery();
+  const { data: alerts } = trpc.settings.getOrderAlerts.useQuery();
+  const { data: deliveryFee = 0 } = trpc.settings.getDeliveryFee.useQuery();
+
+  const { data: allOrders = [], isLoading: isLoadingAll } = trpc.orders.listAll.useQuery(
+    undefined,
+    // o painel fica aberto no balcão: precisa perceber o pedido sem F5
+    { refetchInterval: 10_000 }
+  );
   const { data: filteredOrdersByCategory = [], isLoading: isLoadingFiltered } = trpc.orders.listByCategory.useQuery(
     { categoryId: parseInt(selectedCategory) },
     { enabled: selectedCategory !== "all" }
@@ -86,6 +99,78 @@ export default function AdminOrders() {
       toast.error(`Erro ao atualizar status: ${error.message}`);
     },
   });
+
+
+  const larguraCupom = alerts?.receiptWidth ?? "80mm";
+
+  /** Monta o cupom buscando os itens do pedido. */
+  const gerarCupom = useCallback(
+    async (orderId: number) => {
+      const detalhes = await utils.orders.getById.fetch({ id: orderId });
+      return buildReceipt(detalhes.order, detalhes.items, {
+        storeName: APP_TITLE,
+        width: larguraCupom,
+        deliveryFee,
+      });
+    },
+    [utils, larguraCupom, deliveryFee]
+  );
+
+  const handleVerCupom = async (orderId: number) => {
+    setReceipt(null);
+    setIsReceiptOpen(true);
+    try {
+      setReceipt(await gerarCupom(orderId));
+    } catch (error) {
+      toast.error("Não foi possível montar o cupom");
+      setIsReceiptOpen(false);
+    }
+  };
+
+  /**
+   * Avisa (e imprime) quando entra pedido novo.
+   *
+   * O ref começa indefinido e só é preenchido na primeira carga: sem isso,
+   * abrir o painel dispararia alerta para todos os pedidos já existentes.
+   */
+  const pedidosConhecidos = useRef<Set<number> | null>(null);
+
+  useEffect(() => {
+    if (allOrders.length === 0 && pedidosConhecidos.current === null) return;
+
+    const idsAtuais = new Set(allOrders.map(o => o.id));
+
+    if (pedidosConhecidos.current === null) {
+      pedidosConhecidos.current = idsAtuais;
+      return;
+    }
+
+    const novos = allOrders.filter(o => !pedidosConhecidos.current!.has(o.id));
+    pedidosConhecidos.current = idsAtuais;
+
+    if (novos.length === 0) return;
+
+    if (alerts?.notify !== false) {
+      playOrderAlert();
+      const primeiro = novos[0];
+      showOrderNotification(
+        novos.length === 1 ? "Novo pedido recebido" : `${novos.length} novos pedidos`,
+        `#${primeiro.id} - ${primeiro.customerName} - R$ ${(primeiro.totalAmount / 100).toFixed(2)}`
+      );
+      toast.success(
+        `🔔 ${novos.length} novo${novos.length > 1 ? "s" : ""} pedido${novos.length > 1 ? "s" : ""}!`
+      );
+    }
+
+    if (alerts?.autoPrint) {
+      // imprime do mais antigo para o mais novo, na ordem de chegada
+      [...novos].reverse().forEach(pedido => {
+        gerarCupom(pedido.id)
+          .then(texto => printReceipt(texto, larguraCupom))
+          .catch(() => toast.error(`Falha ao imprimir o pedido #${pedido.id}`));
+      });
+    }
+  }, [allOrders, alerts, gerarCupom, larguraCupom]);
 
   const handleViewDetails = (orderId: number) => {
     setSelectedOrderId(orderId);
@@ -241,13 +326,24 @@ export default function AdminOrders() {
                       {new Date(order.createdAt).toLocaleString('pt-BR')}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleViewDetails(order.id)}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleViewDetails(order.id)}
+                          title="Ver detalhes do pedido"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleVerCupom(order.id)}
+                          title="Ver cupom de impressão"
+                        >
+                          <Printer className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -256,6 +352,13 @@ export default function AdminOrders() {
           )}
         </CardContent>
       </Card>
+
+      <ReceiptDialog
+        open={isReceiptOpen}
+        onOpenChange={setIsReceiptOpen}
+        receipt={receipt}
+        width={larguraCupom}
+      />
 
       <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
         <DialogContent className="max-w-3xl">

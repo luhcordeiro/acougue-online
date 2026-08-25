@@ -9,6 +9,7 @@ import { ArrowLeft, Settings, Truck, Save } from "lucide-react";
 import { toast } from "sonner";
 import BusinessHoursCard from "@/components/BusinessHoursCard";
 import HeroImageCard from "@/components/HeroImageCard";
+import OrderAlertsCard from "@/components/OrderAlertsCard";
 
 export default function AdminSettings() {
   const [, setLocation] = useLocation();
@@ -114,6 +115,8 @@ export default function AdminSettings() {
               )}
             </CardContent>
           </Card>
+
+          <OrderAlertsCard />
 
           <BusinessHoursCard />
 
