@@ -153,21 +153,6 @@ export default function AdminOrders() {
     },
   });
 
-  /**
-   * Imprime e confirma o pedido.
-   *
-   * Imprimir é o momento em que o pedido entra na produção, então o status
-   * pendente vira confirmado. Quem já passou de pendente não volta.
-   */
-  const imprimirPedido = useCallback(
-    async (orderId: number) => {
-      const texto = await gerarCupom(orderId);
-      printReceipt(texto, larguraCupom);
-      await markPrintedMutation.mutateAsync({ id: orderId });
-    },
-    [gerarCupom, larguraCupom, markPrintedMutation]
-  );
-
   const todosSelecionados =
     orders.length > 0 && orders.every(o => selecionados.has(o.id));
 
@@ -277,15 +262,10 @@ export default function AdminOrders() {
       );
     }
 
-    if (alerts?.autoPrint) {
-      // do mais antigo para o mais novo, na ordem de chegada
-      novos.forEach(id => {
-        imprimirPedido(id).catch(() =>
-          toast.error(`Falha ao imprimir o pedido #${id}`)
-        );
-      });
-    }
-  }, [resumo, alerts, utils, imprimirPedido]);
+    // A impressão automática é feita pelo agente do balcão, que lê a fila no
+    // servidor. Imprimir também por aqui sairia duplicado, e ainda abriria a
+    // janela de impressão do navegador por cima do painel.
+  }, [resumo, alerts, utils]);
 
   const handleViewDetails = (orderId: number) => {
     setSelectedOrderId(orderId);
