@@ -115,3 +115,8 @@ seed.generated.sql
 
 # Configuracao local do agente de impressao
 agent/.env
+
+# Pacote do agente para copiar ao PC do balcao.
+# Contem o .env com o token: nunca versionar.
+agent.zip
+*.zip
