@@ -14,6 +14,14 @@ export type SaleUnit = "kg" | "un";
 
 export const SALE_UNITS: SaleUnit[] = ["kg", "un"];
 
+/**
+ * Quantidades oferecidas quando o açougue ainda não cadastrou nenhuma.
+ *
+ * Sem esse conjunto, desligar a quantidade livre impediria qualquer venda a
+ * quilo até alguém cadastrar as opções.
+ */
+export const DEFAULT_QUICK_QUANTITIES = [500, 1000, 1500, 2000];
+
 /** Limites por item, para evitar 0 por engano e mil quilos por dedo pesado. */
 export const MIN_ITEM_GRAMS = 100;
 export const MAX_ITEM_GRAMS = 50_000;

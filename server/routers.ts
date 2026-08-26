@@ -277,6 +277,8 @@ export const appRouter = router({
           });
         }
 
+        const checkout = await db.getCheckoutSettings();
+
         // Validar e calcular totais
         let totalAmount = 0;
         const orderItemsData: InsertOrderItem[] = [];
@@ -299,6 +301,22 @@ export const appRouter = router({
               code: 'BAD_REQUEST',
               message: `${product.name}: quantidade deve estar entre ${formatQuantity(min, unit)} e ${formatQuantity(max, unit)}`,
             });
+          }
+
+          // Com a quantidade livre desligada, o peso precisa ser uma das
+          // opções cadastradas. Checar aqui é o que vale: a tela só esconde
+          // o campo, e esconder não impede o envio.
+          if (unit === 'kg' && !checkout.allowFreeQuantity) {
+            const permitidas = await db.getAllowedQuantities(product.id);
+
+            if (!permitidas.includes(item.quantity)) {
+              throw new TRPCError({
+                code: 'BAD_REQUEST',
+                message: `${product.name}: escolha uma das quantidades disponíveis (${permitidas
+                  .map(q => formatQuantity(q, 'kg'))
+                  .join(', ')})`,
+              });
+            }
           }
 
           const subtotal = calcSubtotal(unit, product.price, item.quantity);
@@ -593,6 +611,17 @@ export const appRouter = router({
       const reenfileirados = await db.retryFailedPrintJobs();
       return { success: true, reenfileirados };
     }),
+    // Regras do checkout. Leitura é pública: a tela do produto decide o que
+    // mostrar antes de o cliente escolher a quantidade.
+    getCheckoutSettings: publicProcedure.query(async () => {
+      return await db.getCheckoutSettings();
+    }),
+    setCheckoutSettings: adminProcedure
+      .input(zin({ allowFreeQuantity: z.boolean() }))
+      .mutation(async ({ input }) => {
+        await db.setCheckoutSettings(input);
+        return { success: true };
+      }),
     // Alertas de novo pedido: só o painel usa, então exige sessão
     getOrderAlerts: adminProcedure.query(async () => {
       return await db.getOrderAlerts();

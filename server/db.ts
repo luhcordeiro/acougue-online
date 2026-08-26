@@ -1,5 +1,6 @@
 import { eq, desc, and, inArray, getTableColumns } from "drizzle-orm";
 import type { BaseSQLiteDatabase } from "drizzle-orm/sqlite-core";
+import { DEFAULT_QUICK_QUANTITIES } from "@shared/quantity";
 import {
   DEFAULT_BUSINESS_HOURS,
   normalizeBusinessHours,
@@ -537,6 +538,64 @@ export async function getStoreName(): Promise<string> {
 
 export async function setStoreName(name: string): Promise<void> {
   await setSystemSetting(STORE_NAME_KEY, name, "Nome exibido no cupom");
+}
+
+const CHECKOUT_SETTINGS_KEY = "checkout_settings";
+
+export type CheckoutSettings = {
+  /**
+   * Deixa o cliente digitar qualquer peso nos produtos vendidos a quilo.
+   *
+   * Desligado, ele escolhe entre as quantidades rápidas cadastradas — o que
+   * o açougue pede quando quer preparar pacotes padronizados. Produto vendido
+   * por peça sempre aceita escolher a quantidade, que ali é contagem.
+   */
+  allowFreeQuantity: boolean;
+};
+
+export const DEFAULT_CHECKOUT_SETTINGS: CheckoutSettings = {
+  allowFreeQuantity: false,
+};
+
+export async function getCheckoutSettings(): Promise<CheckoutSettings> {
+  const raw = await getSystemSetting(CHECKOUT_SETTINGS_KEY);
+  if (!raw) return DEFAULT_CHECKOUT_SETTINGS;
+
+  try {
+    const parsed = JSON.parse(raw) as Partial<CheckoutSettings>;
+    return {
+      allowFreeQuantity:
+        parsed.allowFreeQuantity ?? DEFAULT_CHECKOUT_SETTINGS.allowFreeQuantity,
+    };
+  } catch (error) {
+    console.warn("[Settings] checkout_settings inválido, usando padrão:", error);
+    return DEFAULT_CHECKOUT_SETTINGS;
+  }
+}
+
+export async function setCheckoutSettings(settings: CheckoutSettings): Promise<void> {
+  await setSystemSetting(
+    CHECKOUT_SETTINGS_KEY,
+    JSON.stringify(settings),
+    "Regras do checkout"
+  );
+}
+
+/**
+ * Quantidades que o cliente pode escolher para um produto a quilo.
+ *
+ * Segue a mesma regra da vitrine: as do produto, se houver; senão todas as
+ * cadastradas; e se não houver nenhuma, um conjunto padrão — sem ele o
+ * açougue ficaria impedido de vender até cadastrar quantidades.
+ */
+export async function getAllowedQuantities(productId: number): Promise<number[]> {
+  const doProduto = await getProductQuickQuantities(productId);
+  if (doProduto.length > 0) return doProduto.map(q => q.valueGrams);
+
+  const todas = await getAllQuickQuantities();
+  if (todas.length > 0) return todas.map(q => q.valueGrams);
+
+  return [...DEFAULT_QUICK_QUANTITIES];
 }
 
 const ORDER_ALERTS_KEY = "order_alerts";

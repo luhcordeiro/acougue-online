@@ -1,7 +1,7 @@
 import { applyD1Migrations, env, type D1Migration } from "cloudflare:test";
 import { drizzle } from "drizzle-orm/d1";
 import { beforeAll } from "vitest";
-import { setBusinessHours, setDb } from "./db";
+import { setBusinessHours, setCheckoutSettings, setDb } from "./db";
 import { ensureAdminUser, seedCatalog } from "./seed";
 import { setEnv } from "./_core/env";
 
@@ -36,6 +36,10 @@ beforeAll(async () => {
   // Loja aberta 24h nos testes. Sem isto, todo teste que cria pedido passaria
   // a falhar fora do horário comercial e aos domingos - o horário padrão do
   // seed é 08:00-18:00 e fecha domingo.
+  // A maioria dos testes cria pedido com peso livre; a regra restrita tem
+  // arquivo próprio, que liga e desliga o parâmetro por conta.
+  await setCheckoutSettings({ allowFreeQuantity: true });
+
   await setBusinessHours(
     Array.from({ length: 7 }, () => ({
       open: true,

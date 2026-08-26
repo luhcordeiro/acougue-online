@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import BusinessHoursCard from "@/components/BusinessHoursCard";
 import HeroImageCard from "@/components/HeroImageCard";
 import OrderAlertsCard from "@/components/OrderAlertsCard";
+import CheckoutSettingsCard from "@/components/CheckoutSettingsCard";
 
 export default function AdminSettings() {
   const [, setLocation] = useLocation();
@@ -115,6 +116,8 @@ export default function AdminSettings() {
               )}
             </CardContent>
           </Card>
+
+          <CheckoutSettingsCard />
 
           <OrderAlertsCard />
 

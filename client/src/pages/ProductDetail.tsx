@@ -10,6 +10,7 @@ import { ArrowLeft, Minus, Plus, ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
 import {
   calcSubtotal,
+  DEFAULT_QUICK_QUANTITIES,
   formatPrice,
   formatQuantity,
   maxQuantity,
@@ -51,11 +52,28 @@ export default function ProductDetail() {
   // Usar quantidades do produto se houver, senão usar todas
   const quickQuantities = productQuickQuantities.length > 0 ? productQuickQuantities : allQuickQuantities;
 
-  // Quantidades pré-definidas padrão (fallback se não houver nenhuma cadastrada)
-  const defaultQuantities = [500, 1000, 1500, 2000]; // em gramas
+  // Fallback quando nada foi cadastrado. Mesmo conjunto que o servidor aceita.
+  const defaultQuantities = DEFAULT_QUICK_QUANTITIES;
+
+  /** Pesos que o cliente pode escolher, na mesma ordem exibida. */
+  const quantidadesPermitidas =
+    quickQuantities.length > 0
+      ? quickQuantities.map(q => q.valueGrams)
+      : defaultQuantities;
+
+  const { data: checkout } = trpc.settings.getCheckoutSettings.useQuery();
 
   const unit: SaleUnit = product?.unit ?? "kg";
   const isUnit = unit === "un";
+
+  /**
+   * Campo de quantidade livre.
+   *
+   * Produto por peça sempre tem, porque ali a quantidade é contagem de itens.
+   * A peso, depende do parâmetro: com ele desligado o cliente escolhe apenas
+   * entre as quantidades cadastradas.
+   */
+  const quantidadeLivre = isUnit || (checkout?.allowFreeQuantity ?? false);
 
   // A peso o campo é em kg (o cliente pensa "1,5"); por peça é a contagem.
   const quantityNum = parseKgInput(quantity);
@@ -77,6 +95,19 @@ export default function ProductDetail() {
       isUnit ? String(proximo) : String(proximo / 1000).replace(".", ",")
     );
   };
+
+  /**
+   * Sem campo livre, a quantidade inicial (1 kg) pode não estar entre as
+   * opções — o cliente veria o botão de adicionar bloqueado sem entender por
+   * quê. Preseleciona a primeira disponível.
+   */
+  useEffect(() => {
+    if (quantidadeLivre || isUnit) return;
+    if (quantidadesPermitidas.length === 0) return;
+    if (quantidadesPermitidas.includes(quantityValue)) return;
+
+    setQuantity(String(quantidadesPermitidas[0] / 1000).replace(".", ","));
+  }, [quantidadeLivre, isUnit, quantidadesPermitidas, quantityValue]);
 
   const handleAddToCart = () => {
     if (!Number.isFinite(quantityNum) || quantityNum <= 0) {
@@ -234,7 +265,8 @@ export default function ProductDetail() {
                 </div>
                 )}
 
-                {/* Campo livre: o cliente pode pedir qualquer quantidade */}
+                {/* Campo livre: só quando permitido (ver quantidadeLivre) */}
+                {quantidadeLivre && (
                 <div className="space-y-2">
                   <Label htmlFor="quantidade">Quantidade *</Label>
                   <div className="flex items-center gap-2">
@@ -283,11 +315,14 @@ export default function ProductDetail() {
                       : `Digite a quantidade desejada (mínimo ${formatQuantity(min, unit)})`}
                   </p>
                 </div>
+                )}
 
                 {/* Quantidades rápidas só fazem sentido a peso */}
                 {!isUnit && (
                 <div className="space-y-2">
-                  <Label>Quantidades Rápidas</Label>
+                  <Label>
+                    {quantidadeLivre ? "Quantidades Rápidas" : "Escolha a Quantidade *"}
+                  </Label>
                   <div className="grid grid-cols-4 gap-2">
                     {quickQuantities.length > 0 ? (
                       quickQuantities.map((qq) => (
@@ -333,7 +368,8 @@ export default function ProductDetail() {
                   disabled={
                     (!isUnit && cutTypes.length > 0 && !selectedCutType) ||
                     quantityValue < min ||
-                    quantityValue > max
+                    quantityValue > max ||
+                    (!quantidadeLivre && !quantidadesPermitidas.includes(quantityValue))
                   }
                 >
                   <ShoppingCart className="mr-2 h-5 w-5" />
