@@ -31,7 +31,9 @@ export default function AdminGuard({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!isLoading && !admin) {
       clearAdminSessionCache();
-      setLocation("/admin/login");
+      // marca o motivo: sem isso, o usuário volta para o login sem entender
+      // o que aconteceu, e parece que o botão simplesmente não funcionou
+      setLocation("/admin/login?sessao=expirada");
     }
   }, [admin, isLoading, setLocation]);
 
