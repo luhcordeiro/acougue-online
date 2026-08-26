@@ -1,3 +1,5 @@
+import { MARK_EMPHASIS_OFF, MARK_EMPHASIS_ON } from "@shared/receipt";
+
 /**
  * Impressão do cupom em impressora térmica.
  *
@@ -20,7 +22,13 @@ function buildDocument(text: string, width: PrintWidth): string {
   const escapado = text
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+    .replace(/>/g, "&gt;")
+    // os marcadores de destaque do cupom viram negrito no HTML; sem isso
+    // apareceriam como caracteres estranhos na impressao pelo navegador
+    .split(MARK_EMPHASIS_ON)
+    .join("<b>")
+    .split(MARK_EMPHASIS_OFF)
+    .join("</b>");
 
   return `<!doctype html>
 <html>

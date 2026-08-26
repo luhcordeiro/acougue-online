@@ -6,6 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { MARK_EMPHASIS_ON, stripMarkers } from "@shared/receipt";
 import { Printer } from "lucide-react";
 
 export default function ReceiptDialog({
@@ -35,8 +36,20 @@ export default function ReceiptDialog({
         {receipt ? (
           <>
             {/* fonte monoespaçada: é o alinhamento real da bobina */}
+            {/* Reproduz o destaque da térmica: linha marcada sai em negrito e
+                maior, e os caracteres de controle não aparecem */}
             <pre className="max-h-[55vh] overflow-auto rounded-md border bg-muted/40 p-3 font-mono text-xs leading-tight">
-              {receipt}
+              {receipt.split(/\r?\n/).map((linha, i) =>
+                linha.includes(MARK_EMPHASIS_ON) ? (
+                  <span key={i} className="block text-sm font-bold">
+                    {stripMarkers(linha)}
+                  </span>
+                ) : (
+                  <span key={i} className="block">
+                    {stripMarkers(linha)}
+                  </span>
+                )
+              )}
             </pre>
 
             <div className="flex justify-end gap-2">

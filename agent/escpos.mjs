@@ -11,6 +11,25 @@ const ESC = 0x1b;
 const GS = 0x1d;
 
 /**
+ * Marcadores vindos do cupom (shared/receipt.ts).
+ *
+ * A loja manda texto puro com estes dois caracteres de controle em volta do
+ * que deve sair destacado; aqui eles viram comandos da impressora.
+ */
+const MARCA_DESTAQUE_ON = 0x01; // SOH
+const MARCA_DESTAQUE_OFF = 0x02; // STX
+
+/**
+ * ESC ! n - modo de impressão.
+ * bit 3 = negrito, bit 4 = altura dupla.
+ *
+ * Sem largura dupla de propósito: ela reduz as colunas pela metade e quebraria
+ * o alinhamento do cupom, que é montado para 48 (ou 32) caracteres.
+ */
+const DESTAQUE_LIGA = [ESC, 0x21, 0x08 | 0x10];
+const DESTAQUE_DESLIGA = [ESC, 0x21, 0x00];
+
+/**
  * A impressora não fala UTF-8: os acentos sairiam como lixo.
  * A CP850 cobre o português e é a página de código padrão da Elgin i9.
  */
@@ -28,12 +47,25 @@ const CP850 = {
   "ý": 0xec, "Ý": 0xed, "°": 0xf8, "·": 0xfa, "²": 0xfd,
 };
 
-/** Converte para CP850; o que não existir na tabela vira "?" em vez de lixo. */
+/**
+ * Converte para CP850 e troca os marcadores por comandos de destaque.
+ * O que não existir na tabela vira "?" em vez de lixo.
+ */
 export function toCp850(text) {
   const bytes = [];
 
   for (const ch of text) {
     const code = ch.codePointAt(0);
+
+    if (code === MARCA_DESTAQUE_ON) {
+      bytes.push(...DESTAQUE_LIGA);
+      continue;
+    }
+
+    if (code === MARCA_DESTAQUE_OFF) {
+      bytes.push(...DESTAQUE_DESLIGA);
+      continue;
+    }
 
     if (code < 0x80) {
       bytes.push(code);

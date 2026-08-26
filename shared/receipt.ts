@@ -12,6 +12,30 @@
 
 import { formatQuantity, type SaleUnit } from "./quantity";
 
+/**
+ * Marcadores de destaque.
+ *
+ * O cupom continua sendo texto puro — quem entende de impressora é o agente,
+ * que troca estes caracteres de controle pelos comandos ESC/POS. Assim a
+ * prévia na tela e a impressão pelo navegador seguem funcionando sem saber
+ * nada de ESC/POS.
+ *
+ * São caracteres de controle (SOH e STX) justamente por não aparecerem em
+ * nome de produto nem em endereço.
+ */
+export const MARK_EMPHASIS_ON = "";
+export const MARK_EMPHASIS_OFF = "";
+
+/** Destaca uma linha inteira: negrito e altura dupla na térmica. */
+function emphasize(text: string): string {
+  return `${MARK_EMPHASIS_ON}${text}${MARK_EMPHASIS_OFF}`;
+}
+
+/** Remove os marcadores, para exibir na tela ou medir a largura real. */
+export function stripMarkers(text: string): string {
+  return text.split(MARK_EMPHASIS_ON).join("").split(MARK_EMPHASIS_OFF).join("");
+}
+
 /** Colunas por largura de bobina: 58mm imprime 32, 80mm imprime 48. */
 export const RECEIPT_WIDTHS = { "58mm": 32, "80mm": 48 } as const;
 
@@ -151,14 +175,16 @@ export function buildReceipt(
   linhas.push(fraco);
 
   for (const item of items) {
+    // Nome e corte saem maiores e em negrito: é o que o açougueiro lê de
+    // relance ao preparar, muitas vezes com o papel na mão e sem parar.
     for (const linha of wrap(item.productName.toUpperCase(), w)) {
-      linhas.push(linha);
+      linhas.push(emphasize(linha));
     }
 
     // o corte guia o preparo: fica em linha própria, marcado
     if (item.cutTypeName) {
       for (const linha of wrap(`>> CORTE: ${item.cutTypeName.toUpperCase()}`, w - 2)) {
-        linhas.push(`  ${linha}`);
+        linhas.push(emphasize(`  ${linha}`));
       }
     }
 

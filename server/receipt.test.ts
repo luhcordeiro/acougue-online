@@ -1,7 +1,9 @@
 import {
   buildReceipt,
   formatPhone,
+  MARK_EMPHASIS_ON,
   RECEIPT_WIDTHS,
+  stripMarkers,
   wrap,
   type ReceiptItem,
   type ReceiptOrder,
@@ -106,6 +108,39 @@ describe("cupom", () => {
   });
 });
 
+describe("destaque do produto", () => {
+  const cupom = buildReceipt(pedido, itens, { deliveryFee: 500 });
+
+  it("marca o nome do produto e o corte", () => {
+    const linhas = cupom.split(String.fromCharCode(10));
+
+    const nome = linhas.find(l => stripMarkers(l).trim() === "ACEM");
+    const corte = linhas.find(l => stripMarkers(l).includes("CORTE: BIFES"));
+
+    expect(nome).toContain(MARK_EMPHASIS_ON);
+    expect(corte).toContain(MARK_EMPHASIS_ON);
+  });
+
+  it("não marca a linha de quantidade e preço", () => {
+    const linha = cupom
+      .split(String.fromCharCode(10))
+      .find(l => stripMarkers(l).includes("1,5 kg x"));
+
+    // só nome e corte saem destacados; destacar tudo tira o destaque de tudo
+    expect(linha).not.toContain(MARK_EMPHASIS_ON);
+  });
+
+  it("não marca os dados de entrega", () => {
+    const linha = cupom.split(String.fromCharCode(10)).find(l => l.includes("(18) 99136-3710"));
+    expect(linha).not.toContain(MARK_EMPHASIS_ON);
+  });
+
+  it("stripMarkers devolve o texto limpo", () => {
+    expect(stripMarkers(cupom)).not.toContain(MARK_EMPHASIS_ON);
+    expect(stripMarkers(cupom)).toContain("ACEM");
+  });
+});
+
 describe("quebra de linha", () => {
   it("quebra por palavra, não no meio dela", () => {
     expect(wrap("Rua das Flores 123 Centro", 12)).toEqual([
@@ -163,7 +198,9 @@ describe("larguras extremas", () => {
       { width: "58mm", deliveryFee: 12345 }
     );
 
-    const maior = Math.max(...texto.split(String.fromCharCode(10)).map(l => l.length));
+    const maior = Math.max(
+      ...stripMarkers(texto).split(String.fromCharCode(10)).map(l => l.length)
+    );
     expect(maior).toBeLessThanOrEqual(32);
   });
 });
