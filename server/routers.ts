@@ -334,6 +334,18 @@ export const appRouter = router({
           });
         }
         
+        // O mínimo considera só os produtos: somar a taxa deixaria o cliente
+        // atingir o valor sem levar mais mercadoria.
+        if (checkout.minOrderAmount > 0 && totalAmount < checkout.minOrderAmount) {
+          const falta = checkout.minOrderAmount - totalAmount;
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message:
+              `O pedido mínimo é de R$ ${(checkout.minOrderAmount / 100).toFixed(2).replace('.', ',')}. ` +
+              `Faltam R$ ${(falta / 100).toFixed(2).replace('.', ',')} em produtos.`,
+          });
+        }
+
         // Buscar taxa de entrega e adicionar ao total
         const deliveryFee = await db.getDeliveryFee();
         const totalWithDelivery = totalAmount + deliveryFee;
@@ -617,7 +629,14 @@ export const appRouter = router({
       return await db.getCheckoutSettings();
     }),
     setCheckoutSettings: adminProcedure
-      .input(zin({ allowFreeQuantity: z.boolean() }))
+      .input(zin({
+        allowFreeQuantity: z.boolean(),
+        minOrderAmount: z
+          .number()
+          .int('Informe o valor em centavos')
+          .min(0, 'O valor mínimo não pode ser negativo')
+          .max(100_000, 'Valor mínimo alto demais (máximo R$ 1.000)'),
+      }))
       .mutation(async ({ input }) => {
         await db.setCheckoutSettings(input);
         return { success: true };

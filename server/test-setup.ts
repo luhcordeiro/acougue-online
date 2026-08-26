@@ -38,7 +38,9 @@ beforeAll(async () => {
   // seed é 08:00-18:00 e fecha domingo.
   // A maioria dos testes cria pedido com peso livre; a regra restrita tem
   // arquivo próprio, que liga e desliga o parâmetro por conta.
-  await setCheckoutSettings({ allowFreeQuantity: true });
+  // Sem mínimo por padrão: os outros arquivos criam pedidos de poucos reais,
+  // e a regra tem arquivo próprio que a liga e desliga.
+  await setCheckoutSettings({ allowFreeQuantity: true, minOrderAmount: 0 });
 
   await setBusinessHours(
     Array.from({ length: 7 }, () => ({

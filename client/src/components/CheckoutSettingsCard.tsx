@@ -6,6 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { trpc } from "@/lib/trpc";
@@ -17,9 +18,13 @@ export default function CheckoutSettingsCard() {
   const utils = trpc.useUtils();
   const { data, isLoading } = trpc.settings.getCheckoutSettings.useQuery();
   const [allowFreeQuantity, setAllowFreeQuantity] = useState(false);
+  // em reais na tela, centavos no banco
+  const [minimo, setMinimo] = useState("");
 
   useEffect(() => {
-    if (data) setAllowFreeQuantity(data.allowFreeQuantity);
+    if (!data) return;
+    setAllowFreeQuantity(data.allowFreeQuantity);
+    setMinimo((data.minOrderAmount / 100).toFixed(2));
   }, [data]);
 
   const saveMutation = trpc.settings.setCheckoutSettings.useMutation({
@@ -30,7 +35,23 @@ export default function CheckoutSettingsCard() {
     onError: error => toast.error(error.message),
   });
 
-  const alterado = data ? data.allowFreeQuantity !== allowFreeQuantity : false;
+  const minimoEmCentavos = Math.round(
+    parseFloat(minimo.replace(",", ".") || "0") * 100
+  );
+  const minimoValido = Number.isFinite(minimoEmCentavos) && minimoEmCentavos >= 0;
+
+  const alterado = data
+    ? data.allowFreeQuantity !== allowFreeQuantity ||
+      data.minOrderAmount !== minimoEmCentavos
+    : false;
+
+  const salvar = () => {
+    if (!minimoValido) {
+      toast.error("Valor mínimo inválido");
+      return;
+    }
+    saveMutation.mutate({ allowFreeQuantity, minOrderAmount: minimoEmCentavos });
+  };
 
   return (
     <Card>
@@ -80,8 +101,33 @@ export default function CheckoutSettingsCard() {
               </p>
             )}
 
+            <div className="space-y-2 rounded-md border p-3">
+              <Label htmlFor="minOrderAmount" className="text-base">
+                Pedido mínimo
+              </Label>
+              <div className="relative w-full sm:w-48">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                  R$
+                </span>
+                <Input
+                  id="minOrderAmount"
+                  type="text"
+                  inputMode="decimal"
+                  value={minimo}
+                  onChange={e => setMinimo(e.target.value)}
+                  className="pl-10"
+                  placeholder="30.00"
+                />
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Conta apenas os produtos — a taxa de entrega fica de fora, senão
+                o cliente atingiria o mínimo sem levar mais mercadoria.
+                Use <strong>0</strong> para não exigir valor mínimo.
+              </p>
+            </div>
+
             <Button
-              onClick={() => saveMutation.mutate({ allowFreeQuantity })}
+              onClick={salvar}
               disabled={saveMutation.isPending || !alterado}
               className="bg-red-600 hover:bg-red-700"
             >

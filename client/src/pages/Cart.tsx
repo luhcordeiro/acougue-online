@@ -32,6 +32,7 @@ export default function Cart() {
 
   // Buscar taxa de entrega
   const { data: deliveryFee = 0 } = trpc.settings.getDeliveryFee.useQuery();
+  const { data: checkout } = trpc.settings.getCheckoutSettings.useQuery();
 
   const createOrderMutation = trpc.orders.create.useMutation({
     onSuccess: (data) => {
@@ -66,6 +67,13 @@ export default function Cart() {
   const handleCheckout = () => {
     if (!isStoreOpen) {
       toast.error("A loja está fechada no momento e não pode receber pedidos");
+      return;
+    }
+
+    if (!atingiuMinimo) {
+      toast.error(
+        `Faltam R$ ${(faltaParaMinimo / 100).toFixed(2)} para atingir o pedido mínimo`
+      );
       return;
     }
 
@@ -155,6 +163,11 @@ export default function Cart() {
 
   const subtotal = calculateSubtotal();
   const total = subtotal + deliveryFee;
+
+  // O mínimo considera só os produtos, sem a taxa de entrega
+  const minimoPedido = checkout?.minOrderAmount ?? 0;
+  const faltaParaMinimo = Math.max(0, minimoPedido - subtotal);
+  const atingiuMinimo = faltaParaMinimo === 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-red-50 to-white">
@@ -428,16 +441,33 @@ export default function Cart() {
               </CardContent>
               <CardFooter className="flex-col gap-3">
                 {!isStoreOpen && <StoreStatusBanner className="w-full" />}
+
+                {isStoreOpen && !atingiuMinimo && (
+                  <div className="w-full rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                    <p className="font-medium">
+                      Pedido mínimo de R$ {(minimoPedido / 100).toFixed(2)}
+                    </p>
+                    <p className="mt-0.5">
+                      Faltam <strong>R$ {(faltaParaMinimo / 100).toFixed(2)}</strong>{" "}
+                      em produtos para você finalizar.
+                    </p>
+                  </div>
+                )}
+
                 <Button
                   className="w-full text-lg py-6"
                   onClick={handleCheckout}
-                  disabled={createOrderMutation.isPending || !isStoreOpen}
+                  disabled={
+                    createOrderMutation.isPending || !isStoreOpen || !atingiuMinimo
+                  }
                 >
                   {createOrderMutation.isPending
                     ? "Processando..."
                     : !isStoreOpen
                       ? "Loja fechada"
-                      : `Finalizar Pedido - R$ ${(total / 100).toFixed(2)}`}
+                      : !atingiuMinimo
+                        ? `Faltam R$ ${(faltaParaMinimo / 100).toFixed(2)}`
+                        : `Finalizar Pedido - R$ ${(total / 100).toFixed(2)}`}
                 </Button>
               </CardFooter>
             </Card>

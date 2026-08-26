@@ -551,10 +551,19 @@ export type CheckoutSettings = {
    * por peça sempre aceita escolher a quantidade, que ali é contagem.
    */
   allowFreeQuantity: boolean;
+  /**
+   * Valor mínimo do pedido, em centavos, contando só os produtos.
+   *
+   * A taxa de entrega fica de fora: ela é custo do serviço, e somá-la deixaria
+   * o cliente atingir o mínimo sem levar mais mercadoria — o oposto do que a
+   * regra existe para fazer. Zero desliga a exigência.
+   */
+  minOrderAmount: number;
 };
 
 export const DEFAULT_CHECKOUT_SETTINGS: CheckoutSettings = {
   allowFreeQuantity: false,
+  minOrderAmount: 3000, // R$ 30,00
 };
 
 export async function getCheckoutSettings(): Promise<CheckoutSettings> {
@@ -566,6 +575,10 @@ export async function getCheckoutSettings(): Promise<CheckoutSettings> {
     return {
       allowFreeQuantity:
         parsed.allowFreeQuantity ?? DEFAULT_CHECKOUT_SETTINGS.allowFreeQuantity,
+      minOrderAmount:
+        typeof parsed.minOrderAmount === "number" && parsed.minOrderAmount >= 0
+          ? parsed.minOrderAmount
+          : DEFAULT_CHECKOUT_SETTINGS.minOrderAmount,
     };
   } catch (error) {
     console.warn("[Settings] checkout_settings inválido, usando padrão:", error);

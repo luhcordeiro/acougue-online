@@ -42,12 +42,12 @@ async function pedir(productId: number, quantity: number) {
 
 /** Os outros arquivos assumem quantidade livre; não deixar o estado vazar. */
 afterAll(async () => {
-  await setCheckoutSettings({ allowFreeQuantity: true });
+  await setCheckoutSettings({ allowFreeQuantity: true, minOrderAmount: 0 });
 });
 
 describe("quantidade livre desligada", () => {
   beforeEach(async () => {
-    await setCheckoutSettings({ allowFreeQuantity: false });
+    await setCheckoutSettings({ allowFreeQuantity: false, minOrderAmount: 0 });
   });
 
   it("aceita uma das quantidades cadastradas", async () => {
@@ -91,7 +91,7 @@ describe("quantidade livre desligada", () => {
 
 describe("quantidade livre ligada", () => {
   beforeEach(async () => {
-    await setCheckoutSettings({ allowFreeQuantity: true });
+    await setCheckoutSettings({ allowFreeQuantity: true, minOrderAmount: 0 });
   });
 
   it("aceita qualquer peso dentro dos limites", async () => {
@@ -115,15 +115,15 @@ describe("configuração", () => {
 
   it("exige sessão de admin para alterar", async () => {
     await expect(
-      cliente().settings.setCheckoutSettings({ allowFreeQuantity: true })
+      cliente().settings.setCheckoutSettings({ allowFreeQuantity: true, minOrderAmount: 0 })
     ).rejects.toThrow();
   });
 
   it("guarda o que foi salvo", async () => {
-    await admin().settings.setCheckoutSettings({ allowFreeQuantity: false });
+    await admin().settings.setCheckoutSettings({ allowFreeQuantity: false, minOrderAmount: 0 });
     expect((await cliente().settings.getCheckoutSettings()).allowFreeQuantity).toBe(false);
 
-    await admin().settings.setCheckoutSettings({ allowFreeQuantity: true });
+    await admin().settings.setCheckoutSettings({ allowFreeQuantity: true, minOrderAmount: 0 });
     expect((await cliente().settings.getCheckoutSettings()).allowFreeQuantity).toBe(true);
   });
 });
