@@ -23,8 +23,11 @@ pnpm dev                # build do cliente + wrangler dev
 ```
 
 Acesse **http://localhost:8787**
-Painel: **/admin/login** — usuário `admin`, senha `admin123`
-(troque a senha em *Usuários* no primeiro acesso)
+Painel: **/admin/login**. O seed cria o usuário `admin` com a senha definida
+em `ADMIN_PASSWORD` — defina essa variável antes de semear. Sem ela o seed usa
+uma senha padrão, que serve para a máquina local e **nunca** para produção:
+como este repositório é público, qualquer um a conhece. Em produção, crie o
+seu usuário em *Usuários* e desative o `admin`.
 
 O `wrangler dev` roda o **mesmo runtime da produção** com um D1 local em
 `.wrangler/state`. Não existe servidor Node separado: o que funciona aqui

@@ -45,8 +45,11 @@ pnpm db:seed:local
 pnpm dev
 ```
 
-Aplicação em **http://localhost:8787** — painel em `/admin/login`
-(`admin` / `admin123`, troque no primeiro acesso).
+Aplicação em **http://localhost:8787** — painel em `/admin/login`. O usuário
+inicial é `admin`, com a senha de `ADMIN_PASSWORD` (veja o
+[GUIA_RAPIDO.md](GUIA_RAPIDO.md)). A senha padrão do seed vale só para
+desenvolvimento local — em produção ela não protege nada, porque está no
+código deste repositório público.
 
 O passo a passo completo, incluindo deploy, está no
 [GUIA_RAPIDO.md](GUIA_RAPIDO.md).
