@@ -10,7 +10,11 @@
     "directory": "./dist/public",
     "binding": "ASSETS",
     // SPA client-side: rotas como /admin/produtos devolvem index.html
-    "not_found_handling": "single-page-application"
+    "not_found_handling": "single-page-application",
+    // Sem isto, um arquivo estático é entregue direto do cache sem executar o
+    // Worker — e o redirecionamento de www nunca rodaria. O custo é uma
+    // invocação por requisição, irrelevante no volume de uma loja de bairro.
+    "run_worker_first": true
   },
 
   "d1_databases": [
@@ -30,16 +34,18 @@
     }
   ],
 
-  // Domínio próprio. DESATIVADO até os nameservers de texasbifedelivery.com
-  // apontarem para a Cloudflare: publicar com uma rota cujo domínio não está
-  // na conta faz o deploy inteiro falhar.
-  //
-  // Quando o painel mostrar o site como "Ativo", basta descomentar e publicar.
-  // A Cloudflare cria os registros DNS e o certificado sozinha.
-  // "routes": [
-  //   { "pattern": "texasbifedelivery.com", "custom_domain": true },
-  //   { "pattern": "www.texasbifedelivery.com", "custom_domain": true }
-  // ],
+  // Domínio próprio. A Cloudflare cria os registros DNS e emite o certificado
+  // ao publicar. O www é redirecionado para o domínio raiz pelo Worker, para
+  // não existirem dois endereços com sessões separadas.
+  // Adicionar rotas desativa o endereco .workers.dev por padrao, e o agente de
+  // impressao do balcao aponta para ele. Mantido ligado como rede de
+  // seguranca: se o DNS do dominio falhar, a loja continua alcancavel.
+  "workers_dev": true,
+
+  "routes": [
+    { "pattern": "texasbifedelivery.com.br", "custom_domain": true },
+    { "pattern": "www.texasbifedelivery.com.br", "custom_domain": true }
+  ],
 
   "observability": {
     "enabled": true

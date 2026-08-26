@@ -64,7 +64,7 @@ Copie a pasta `agent` para o PC do balcão, por exemplo em `C:\acougue-agente`.
 Crie o arquivo `.env` dentro dela (use o `.env.example` como base):
 
 ```
-LOJA_URL=https://acougue-online.luhcordeiroo.workers.dev
+LOJA_URL=https://texasbifedelivery.com.br
 AGENT_TOKEN=<token fornecido>
 PRINTER=ELGIN
 INTERVALO_MS=3000

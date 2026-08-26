@@ -65,7 +65,7 @@ if "!TOKENVAL!"=="" (
 )
 
 echo.
-set "LOJAURL=https://acougue-online.luhcordeiroo.workers.dev"
+set "LOJAURL=https://texasbifedelivery.com.br"
 set /p LOJAURL="   Endereco da loja [%LOJAURL%]: "
 
 (
