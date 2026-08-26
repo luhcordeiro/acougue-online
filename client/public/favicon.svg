@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Boi do Texas Bife: chifres, cabeça e focinho, em vermelho da marca -->
+  <rect width="64" height="64" rx="12" fill="#c81e1e"/>
+  <g fill="#fff">
+    <!-- chifres -->
+    <path d="M12 20c-1.5-5 1-9 5-9 3 0 5 2 6 5l-3 2c-1-2-2-3-3-3-1.5 0-2.5 1.5-2 4z"/>
+    <path d="M52 20c1.5-5-1-9-5-9-3 0-5 2-6 5l3 2c1-2 2-3 3-3 1.5 0 2.5 1.5 2 4z"/>
+    <!-- cabeça -->
+    <path d="M32 16c-8 0-14 4-14 11 0 5 2 9 5 12 2 2 3 5 3 8 0 3 2 5 6 5s6-2 6-5c0-3 1-6 3-8 3-3 5-7 5-12 0-7-6-11-14-11z"/>
+  </g>
+  <!-- focinho e olhos -->
+  <ellipse cx="32" cy="45" rx="7" ry="5" fill="#c81e1e"/>
+  <circle cx="29" cy="45" r="1.4" fill="#fff"/>
+  <circle cx="35" cy="45" r="1.4" fill="#fff"/>
+  <circle cx="25" cy="31" r="2.4" fill="#c81e1e"/>
+  <circle cx="39" cy="31" r="2.4" fill="#c81e1e"/>
+</svg>

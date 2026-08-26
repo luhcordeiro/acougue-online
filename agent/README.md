@@ -119,6 +119,18 @@ novo.
 
 Se acumular cupom "aguardando", o agente está parado ou sem internet.
 
+## Atualizando o agente
+
+Quando a loja receber uma atualização que mexe no cupom, copie a pasta `agent`
+inteira por cima da que está neste computador — menos o `.env`, que guarda o
+token e o nome da impressora desta máquina.
+
+Copie os arquivos, **não abra e cole o conteúdo dentro de um editor**: colar
+pode trocar a codificação e transformar todos os acentos em "?" no cupom, sem
+dar nenhum erro. Depois de copiar, feche a janela do agente, rode
+`node testar-impressora.mjs` e confira no papel se os acentos saíram certos;
+só então abra o `INICIAR.bat` de novo.
+
 ## Problemas comuns
 
 **"Nao foi possivel abrir a impressora"** — o nome no `.env` está diferente do
@@ -128,6 +140,10 @@ impressoras instaladas para você copiar o nome certo.
 **Sai o cupom mas com símbolos estranhos no lugar dos acentos** — a impressora
 está em outra página de código. O agente usa CP850, padrão da Elgin i9; se a
 sua estiver diferente, ajuste `ESC t n` em `escpos.mjs`.
+
+**Todo acento sai como "?"** — sinal de que o `escpos.mjs` deste computador foi
+salvo em outra codificação por algum editor. Não tente consertar à mão: copie
+o arquivo do repositório por cima e rode `node testar-impressora.mjs`.
 
 **O papel não corta** — nem todo modelo aceita corte parcial. Troque
 `GS V 66 0` por `GS V 65 0` (corte total) em `escpos.mjs`.

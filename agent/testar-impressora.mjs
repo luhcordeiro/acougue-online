@@ -26,8 +26,9 @@ const texto = `================================================
 Se voce esta lendo isto, a impressora esta
 configurada corretamente.
 
-Acentuacao: acougue, linguica, picanha, pao
-Cortes....: MOIDO, BIFES, PECA INTEIRA
+Acentuacao: açougue, linguiça, pão, coração
+Cortes....: MOÍDO, BIFES, PEÇA INTEIRA
+Produtos..: ACÉM, SUÍNA, MIÚDOS
 Valores...: R$ 1.234,56
 
 ================================================
@@ -40,7 +41,10 @@ try {
   const resultado = await enviarParaImpressora(buildEscPos(texto), PRINTER);
   console.log(resultado);
   console.log("");
-  console.log("Confira se o cupom saiu e se o papel foi cortado.");
+  console.log("Confira no papel:");
+  console.log("  1. o cupom saiu inteiro");
+  console.log("  2. os acentos aparecem (acougue, MOIDO, ACEM com acento)");
+  console.log("  3. o papel foi cortado");
 } catch (error) {
   console.error("");
   console.error("FALHOU:", primeiraLinha(error.message));

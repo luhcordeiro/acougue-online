@@ -93,10 +93,15 @@ export default function HeroImageCard() {
                     alt="Fachada do açougue"
                     className="h-40 w-full object-cover"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-r from-red-900/85 to-red-800/70" />
+                  <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/5 to-black/25" />
                   <div className="absolute inset-0 flex flex-col items-center justify-center px-4 text-center text-white">
-                    <p className="text-lg font-bold">Carnes Frescas Direto na Sua Casa</p>
-                    <p className="text-xs text-red-50">
+                    <p
+                      className="text-lg font-bold"
+                      style={{ textShadow: "0 2px 6px rgba(0,0,0,.85)" }}
+                    >
+                      Carnes Frescas Direto na Sua Casa
+                    </p>
+                    <p className="text-xs text-white" style={{ textShadow: "0 2px 5px rgba(0,0,0,.85)" }}>
                       Escolha os melhores cortes e receba com qualidade garantida.
                     </p>
                   </div>

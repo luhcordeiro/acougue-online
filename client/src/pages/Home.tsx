@@ -73,7 +73,9 @@ export default function Home() {
   return (
     <div className="min-h-screen flex flex-col pb-20">
       {/* Header */}
-      <header className="bg-primary text-primary-foreground shadow-lg sticky top-0 z-50">
+      {/* Menu translúcido: deixa a foto da fachada aparecer por trás ao rolar.
+          O desfoque mantém o texto legível sobre qualquer parte da imagem. */}
+      <header className="bg-primary/80 backdrop-blur-md text-primary-foreground shadow-lg sticky top-0 z-50">
         <div className="container py-3 sm:py-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-2 sm:gap-3">
@@ -111,17 +113,26 @@ export default function Home() {
             : undefined
         }
       >
-        {/* Sem este escurecimento, o texto branco some numa foto clara */}
+        {/* Escurecimento bem leve: a foto da fachada aparece quase inteira.
+            A legibilidade do texto vem da sombra aplicada nele, não daqui. */}
         {heroImage && (
           <div
-            className="absolute inset-0 bg-gradient-to-r from-red-900/85 to-red-800/70"
+            className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/5 to-black/25"
             aria-hidden="true"
           />
         )}
         <div className="container relative">
           <div className="text-center">
-            <h2 className="text-xl sm:text-3xl font-bold mb-2 sm:mb-3 drop-shadow">Carnes Frescas Direto na Sua Casa</h2>
-            <p className="text-sm sm:text-lg text-red-50 drop-shadow">
+            <h2
+              className="text-xl sm:text-3xl font-bold mb-2 sm:mb-3"
+              style={{ textShadow: "0 2px 6px rgba(0,0,0,.85), 0 0 22px rgba(0,0,0,.5)" }}
+            >
+              Carnes Frescas Direto na Sua Casa
+            </h2>
+            <p
+              className="text-sm sm:text-lg text-white"
+              style={{ textShadow: "0 2px 5px rgba(0,0,0,.85), 0 0 18px rgba(0,0,0,.5)" }}
+            >
               Escolha os melhores cortes e receba com qualidade garantida.
             </p>
           </div>
