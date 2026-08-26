@@ -12,12 +12,26 @@ export default function AdminLogin() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [, setLocation] = useLocation();
-  
+  const utils = trpc.useUtils();
+
   const loginMutation = trpc.adminAuth.login.useMutation({
-    onSuccess: (data) => {
-      // Salvar dados do usuário no sessionStorage
+    onSuccess: async (data) => {
       sessionStorage.setItem("adminUser", JSON.stringify(data.user));
       sessionStorage.setItem("adminAuthenticated", "true");
+
+      /**
+       * A sessão acabou de mudar, mas o cache de adminAuth.me ainda guarda o
+       * null lido antes do login (a home consulta essa rota para o badge de
+       * pedidos). Sem atualizar aqui, o AdminGuard leria o valor velho e
+       * devolveria o usuário para a tela de login logo após entrar.
+       */
+      utils.adminAuth.me.setData(undefined, {
+        adminId: data.user.id,
+        username: data.user.username,
+        name: data.user.name,
+      });
+      await utils.adminAuth.me.invalidate();
+
       toast.success("Login realizado com sucesso!");
       setLocation("/admin");
     },

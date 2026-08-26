@@ -23,6 +23,9 @@ export default function AdminGuard({ children }: { children: ReactNode }) {
   const { data: admin, isLoading } = trpc.adminAuth.me.useQuery(undefined, {
     retry: false,
     staleTime: 30_000,
+    // revalida ao entrar no painel: a sessão pode ter mudado em outra aba,
+    // ou expirado enquanto a tela ficou aberta
+    refetchOnMount: "always",
   });
 
   useEffect(() => {
