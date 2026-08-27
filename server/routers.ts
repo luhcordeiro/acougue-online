@@ -523,6 +523,11 @@ export const appRouter = router({
     getDeliveryFee: publicProcedure.query(async () => {
       return await db.getDeliveryFee();
     }),
+    // Nome da loja como o cliente a conhece. Usado na mensagem de WhatsApp,
+    // onde o titulo do aplicativo ("... - PEDIDOS") soaria estranho.
+    getStoreName: publicProcedure.query(async () => {
+      return await db.getStoreName();
+    }),
     // Horário de funcionamento + se a loja está aberta agora.
     // O cálculo é do servidor: o relógio do cliente não é confiável.
     getBusinessHours: publicProcedure.query(async () => {

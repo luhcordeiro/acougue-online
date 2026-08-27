@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Eye, CreditCard, QrCode, Banknote, ArrowLeft, ClipboardList, Printer, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Eye, CreditCard, QrCode, Banknote, ArrowLeft, ClipboardList, Printer, Trash2, ChevronLeft, ChevronRight, MessageCircle } from "lucide-react";
 import ReceiptDialog from "@/components/ReceiptDialog";
 import OrderAlertBell from "@/components/OrderAlertBell";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { playOrderAlert, printReceipt, showOrderNotification } from "@/lib/print";
 import { buildReceipt } from "@shared/receipt";
+import { buildWhatsAppUrl, toWhatsAppNumber } from "@shared/whatsapp";
 import { APP_TITLE } from "@/const";
 import { toast } from "sonner";
 import { formatPrice, formatQuantity } from "@shared/quantity";
@@ -84,6 +85,7 @@ export default function AdminOrders() {
   }, [selectedCategory, selectedStatus, pageSize]);
   const { data: alerts } = trpc.settings.getOrderAlerts.useQuery();
   const { data: deliveryFee = 0 } = trpc.settings.getDeliveryFee.useQuery();
+  const { data: storeName } = trpc.settings.getStoreName.useQuery();
 
   const { data: categories = [] } = trpc.categories.list.useQuery();
 
@@ -143,6 +145,32 @@ export default function AdminOrders() {
     },
     [utils, larguraCupom, deliveryFee]
   );
+
+  /**
+   * Abre o WhatsApp com o texto pronto para o operador conferir e enviar.
+   *
+   * Nada e enviado por aqui: o wa.me so abre a conversa. Quem aperta enviar e
+   * o operador do balcao, que assim ve a mensagem antes de o cliente ver.
+   */
+  const handleWhatsApp = async (orderId: number) => {
+    try {
+      const detalhes = await utils.orders.getById.fetch({ id: orderId });
+      const url = buildWhatsAppUrl(detalhes.order, detalhes.items, {
+        storeName: storeName ?? APP_TITLE,
+        deliveryFee,
+      });
+
+      if (!url) {
+        toast.error("O telefone deste pedido nao permite abrir o WhatsApp");
+        return;
+      }
+
+      // nova aba: o painel precisa continuar aberto recebendo pedidos
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch {
+      toast.error("Nao foi possivel montar a mensagem");
+    }
+  };
 
   const markPrintedMutation = trpc.orders.markPrinted.useMutation({
     onSuccess: result => {
@@ -492,6 +520,22 @@ export default function AdminOrders() {
                           title="Ver cupom de impressão"
                         >
                           <Printer className="h-4 w-4" />
+                        </Button>
+                        {/* Desabilitado quando o telefone nao serve: melhor o
+                            botao apagado do que abrir uma conversa vazia */}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={!toWhatsAppNumber(order.customerPhone)}
+                          onClick={() => handleWhatsApp(order.id)}
+                          title={
+                            toWhatsAppNumber(order.customerPhone)
+                              ? "Enviar confirmação pelo WhatsApp"
+                              : "Telefone do cliente não permite WhatsApp"
+                          }
+                          className="text-green-600 hover:text-green-700"
+                        >
+                          <MessageCircle className="h-4 w-4" />
                         </Button>
                       </div>
                     </TableCell>
