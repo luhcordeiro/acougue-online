@@ -62,6 +62,12 @@ O passo a passo completo, incluindo deploy, está no
 - Cookie de sessão `httpOnly` + `SameSite=Lax`, expira em 12h
 - Segredos ficam em `wrangler secret`, nunca no repositório
 
+## Backup
+
+O banco tem backup diário automatico, com uma cópia cifrada fora da
+Cloudflare. Como restaurar — e o que o backup **não** cobre — está em
+[BACKUP.md](BACKUP.md).
+
 ## Licença
 
 MIT

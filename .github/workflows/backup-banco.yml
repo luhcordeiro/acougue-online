@@ -1,0 +1,154 @@
+# Backup diario do banco da loja.
+#
+# Existe por uma razao concreta: quando a loja rodava na Manus, a plataforma
+# saiu do ar e o banco da cliente foi perdido junto. Por isso o backup nao
+# fica so na Cloudflare - uma copia cifrada vai para o GitHub, que e outra
+# empresa. Perder uma das duas contas nao apaga as duas copias.
+#
+# O dump tem nome, telefone e endereco dos clientes, alem dos hashes de senha
+# do painel. Ele NUNCA e gravado no repositorio, e a copia que vai para o
+# GitHub e cifrada antes de virar artefato.
+#
+# Segredos necessarios em Settings > Secrets and variables > Actions:
+#   CLOUDFLARE_API_TOKEN  - token com permissao de ler D1 e escrever R2
+#   CLOUDFLARE_ACCOUNT_ID - id da conta Cloudflare
+#   BACKUP_PASSPHRASE     - senha que cifra a copia do GitHub
+
+name: Backup do banco
+
+on:
+  schedule:
+    # 07:00 UTC = 04:00 no horario de Brasilia, com a loja fechada.
+    # O export deixa o D1 indisponivel por alguns segundos, entao nao pode
+    # cair em horario de pedido.
+    - cron: "0 7 * * *"
+  # permite disparar na mao pela aba Actions, para testar ou antes de algo arriscado
+  workflow_dispatch:
+
+# um backup por vez: dois exports simultaneos travariam o banco a toa
+concurrency:
+  group: backup-banco
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Datas do backup
+        id: datas
+        run: |
+          echo "dia=$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+          echo "mes=$(date -u +%Y-%m)" >> "$GITHUB_OUTPUT"
+          echo "diadomes=$(date -u +%d)" >> "$GITHUB_OUTPUT"
+
+      - name: Exportar o banco
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          npx --yes wrangler@4 d1 export acougue-online \
+            --remote --output "banco-${{ steps.datas.outputs.dia }}.sql"
+
+      # Um dump vazio ou truncado tambem "termina com sucesso". Sem esta
+      # conferencia, o backup poderia falhar em silencio por meses e so se
+      # descobrir na hora de restaurar - que e tarde demais.
+      - name: Conferir que o dump tem conteudo
+        run: |
+          ARQUIVO="banco-${{ steps.datas.outputs.dia }}.sql"
+          TAMANHO=$(stat -c%s "$ARQUIVO")
+          TABELAS=$(grep -c "CREATE TABLE" "$ARQUIVO" || true)
+          PRODUTOS=$(grep -c 'INSERT INTO "products"' "$ARQUIVO" || true)
+
+          echo "tamanho: $TAMANHO bytes | tabelas: $TABELAS | produtos: $PRODUTOS"
+
+          if [ "$TAMANHO" -lt 10000 ]; then
+            echo "::error::Dump muito pequeno ($TAMANHO bytes) - backup suspeito"
+            exit 1
+          fi
+          if [ "$TABELAS" -lt 10 ]; then
+            echo "::error::So $TABELAS tabelas no dump - esperado 12 ou mais"
+            exit 1
+          fi
+          if [ "$PRODUTOS" -lt 50 ]; then
+            echo "::error::So $PRODUTOS produtos no dump - o catalogo tem centenas"
+            exit 1
+          fi
+
+      # Um dump integro ainda pode ser irrestauravel: o export grava as tabelas
+      # em ordem alfabetica e a carga morre em FOREIGN KEY se ninguem reordenar.
+      # Aqui so conferimos que o preparo funciona - descobrir isso no dia do
+      # desastre seria descobrir tarde.
+      - name: Conferir que o dump e restauravel
+        run: |
+          node scripts/preparar-restauracao.mjs "banco-${{ steps.datas.outputs.dia }}.sql" /tmp/conferencia
+
+          LINHAS=$(grep -c "^INSERT INTO" /tmp/conferencia/restaurar-2-dados.sql)
+          echo "preparo ok - $LINHAS linhas na ordem das dependencias"
+          rm -rf /tmp/conferencia
+
+      - name: Enviar para o R2
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          ARQUIVO="banco-${{ steps.datas.outputs.dia }}.sql"
+
+          npx --yes wrangler@4 r2 object put \
+            "acougue-online-backups/diario/${{ steps.datas.outputs.dia }}.sql" \
+            --file "$ARQUIVO" --remote
+
+          # No dia 1, guarda tambem a copia mensal, que fica 3 anos.
+          # As diarias somem em 90 dias; sem isso nao haveria historico longo.
+          if [ "${{ steps.datas.outputs.diadomes }}" = "01" ]; then
+            npx --yes wrangler@4 r2 object put \
+              "acougue-online-backups/mensal/${{ steps.datas.outputs.mes }}.sql" \
+              --file "$ARQUIVO" --remote
+            echo "copia mensal de ${{ steps.datas.outputs.mes }} guardada"
+          fi
+
+      # Cifrado mesmo com o repositorio privado: quem tiver acesso ao
+      # repositorio nao precisa ter acesso ao nome, telefone e endereco dos
+      # clientes. Privacidade do repositorio se troca em dois cliques; a
+      # cifragem nao depende de ninguem lembrar disso.
+      - name: Cifrar a copia de fora da Cloudflare
+        env:
+          SENHA: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          if [ -z "$SENHA" ]; then
+            echo "::error::BACKUP_PASSPHRASE nao configurado - sem ele a copia do GitHub ficaria legivel por qualquer um"
+            exit 1
+          fi
+
+          openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt \
+            -in "banco-${{ steps.datas.outputs.dia }}.sql" \
+            -out "banco-${{ steps.datas.outputs.dia }}.sql.enc" \
+            -pass env:SENHA
+
+          # o .sql em claro nao pode sobrar no runner e virar artefato
+          rm -f "banco-${{ steps.datas.outputs.dia }}.sql"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: banco-${{ steps.datas.outputs.dia }}
+          path: banco-${{ steps.datas.outputs.dia }}.sql.enc
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Resumo
+        run: |
+          {
+            echo "### Backup de ${{ steps.datas.outputs.dia }}"
+            echo ""
+            echo "- R2: \`diario/${{ steps.datas.outputs.dia }}.sql\`"
+            echo "- GitHub: artefato cifrado, 90 dias"
+            echo ""
+            echo "Para restaurar, veja [BACKUP.md](../blob/main/BACKUP.md)."
+          } >> "$GITHUB_STEP_SUMMARY"
