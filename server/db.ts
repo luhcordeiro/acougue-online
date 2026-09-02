@@ -239,24 +239,61 @@ export async function createOrderItem(data: InsertOrderItem) {
   return result;
 }
 
+/**
+ * Teto de parâmetros ligados por consulta no D1.
+ *
+ * Cada item do pedido ocupa um parâmetro por coluna, e um INSERT único com
+ * todos os itens estoura esse teto: com as colunas de hoje, a partir de 13
+ * itens. Era o que derrubava pedido grande com "too many SQL variables" —
+ * e, pior, deixava o pedido gravado sem nenhum item.
+ */
+const MAX_PARAMETROS_POR_CONSULTA = 100;
+
+/**
+ * Divide os itens em lotes que caibam no teto de parâmetros.
+ *
+ * O tamanho do lote sai do número real de colunas em vez de ser fixo: assim
+ * acrescentar uma coluna em orderItems reduz o lote sozinho, em vez de voltar
+ * a quebrar só em pedido grande, que é onde ninguém testa.
+ */
+function emLotes<T extends object>(itens: T[]): T[][] {
+  // o Drizzle monta um INSERT só, com a união das colunas de todas as linhas,
+  // então quem manda é a linha mais larga
+  const colunas = Math.max(1, ...itens.map(item => Object.keys(item).length));
+  const porLote = Math.max(1, Math.floor(MAX_PARAMETROS_POR_CONSULTA / colunas));
+
+  const lotes: T[][] = [];
+  for (let i = 0; i < itens.length; i += porLote) {
+    lotes.push(itens.slice(i, i + porLote));
+  }
+  return lotes;
+}
+
 export async function createOrderWithItems(orderData: InsertOrder, items: InsertOrderItem[]) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  
-  // Inserir o pedido
+
   const [order] = await db.insert(orders).values(orderData).returning({ id: orders.id });
   const orderId = order.id;
-  
-  // Inserir os itens do pedido
-  const itemsWithOrderId = items.map(item => ({
-    ...item,
-    orderId,
-  }));
-  
-  if (itemsWithOrderId.length > 0) {
-    await db.insert(orderItems).values(itemsWithOrderId);
+
+  const itemsWithOrderId = items.map(item => ({ ...item, orderId }));
+
+  if (itemsWithOrderId.length === 0) return orderId;
+
+  try {
+    for (const lote of emLotes(itemsWithOrderId)) {
+      await db.insert(orderItems).values(lote);
+    }
+  } catch (erro) {
+    // Pedido sem itens é pior que pedido nenhum: ele aparece no painel, sai na
+    // impressão e vira mensagem de R$ 0,00 para o cliente, sem ninguém
+    // descobrir o que ele queria. Desfazendo, o cliente vê o erro e refaz.
+    // Os itens saem primeiro: a chave estrangeira impede apagar o pedido antes.
+    await db.delete(orderItems).where(eq(orderItems.orderId, orderId));
+    await db.delete(orders).where(eq(orders.id, orderId));
+    throw erro;
   }
-  
+
   return orderId;
 }
 
