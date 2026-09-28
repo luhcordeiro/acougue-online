@@ -17,6 +17,7 @@
 
 import { carregarEnv, primeiraLinha } from "./config.mjs";
 import { buildEscPos } from "./escpos.mjs";
+import { VERSAO_AGENTE } from "./versao.mjs";
 import { enviarParaImpressora } from "./imprimir.mjs";
 
 carregarEnv();
@@ -39,7 +40,12 @@ const log = (...args) =>
 
 async function buscarCupons() {
   const resposta = await fetch(`${LOJA_URL}/api/print/jobs`, {
-    headers: { authorization: `Bearer ${AGENT_TOKEN}` },
+    headers: {
+      authorization: `Bearer ${AGENT_TOKEN}`,
+      // a loja mostra esta versao no painel, para dar para conferir se a
+      // pasta foi copiada sem precisar imprimir
+      "x-agent-version": String(VERSAO_AGENTE),
+    },
   });
 
   if (resposta.status === 401) {

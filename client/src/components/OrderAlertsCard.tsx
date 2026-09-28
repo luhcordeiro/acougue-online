@@ -65,6 +65,12 @@ const CUPOM_TESTE = buildReceipt(
 export default function OrderAlertsCard() {
   const utils = trpc.useUtils();
   const { data, isLoading } = trpc.settings.getOrderAlerts.useQuery();
+
+  // Versao do agente do balcao. Recarrega de tempo em tempo para a lojista ver
+  // o aviso sumir depois de copiar a pasta, sem ter de recarregar a pagina.
+  const { data: agente } = trpc.settings.getPrintAgentStatus.useQuery(undefined, {
+    refetchInterval: 15_000,
+  });
   const [alerts, setAlerts] = useState<Alerts | null>(null);
 
   useEffect(() => {
@@ -242,6 +248,41 @@ export default function OrderAlertsCard() {
                 A letra grande dobra a altura dos caracteres, sem mexer no
                 alinhamento das colunas. O cupom sai mais comprido.
               </p>
+
+              {/* O agente e copiado a mao para o computador do balcao, e a
+                  versao antiga nao da erro: ela ignora o tamanho e imprime
+                  pequeno. Sem este aviso, "o cupom saiu pequeno" nao aponta
+                  para "faltou copiar a pasta". */}
+              {agente && !agente.agente && (
+                <p className="rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">
+                  O agente de impressão ainda não falou com a loja. O tamanho
+                  vale para a impressão pelo navegador.
+                </p>
+              )}
+
+              {agente?.agente && !agente.agente.upToDate && (
+                <p className="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                  <strong>O agente do balcão está desatualizado</strong> (versão{" "}
+                  {agente.agente.version}, a loja pede {agente.esperada}). Ele
+                  ignora o tamanho da letra e imprime pequeno, sem dar erro.
+                  Copie a pasta <code>agent</code> por cima da que está no
+                  computador do açougue — menos o <code>.env</code>.
+                </p>
+              )}
+
+              {agente?.agente?.upToDate && (
+                <p className="text-xs text-green-700">
+                  Agente do balcão atualizado (versão {agente.agente.version}),
+                  visto em{" "}
+                  {new Date(agente.agente.lastSeen).toLocaleString("pt-BR", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                  .
+                </p>
+              )}
             </div>
 
             <div className="flex flex-wrap gap-2">

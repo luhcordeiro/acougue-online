@@ -669,6 +669,57 @@ export async function getAllowedQuantities(productId: number): Promise<number[]>
   return [...DEFAULT_QUICK_QUANTITIES];
 }
 
+const PRINT_AGENT_KEY = "print_agent_status";
+
+/**
+ * Versao do agente que a loja precisa para entender tudo o que ela manda.
+ *
+ * Sobe junto com agent/versao.mjs. O agente antigo nao da erro: ele ignora em
+ * silencio o que nao conhece, e sem isto "o cupom saiu no tamanho errado" nao
+ * aponta para "faltou copiar a pasta".
+ */
+export const VERSAO_AGENTE_ESPERADA = 2;
+
+export type PrintAgentStatus = {
+  /** Versao avisada na ultima consulta a fila; 1 quando o agente nao avisa. */
+  version: number;
+  /** Quando o agente falou com a loja pela ultima vez. */
+  lastSeen: Date;
+  /** false quando a pasta do balcao esta atras da loja. */
+  upToDate: boolean;
+};
+
+/** Registra a passagem do agente. Chamado a cada consulta a fila. */
+export async function recordPrintAgentSeen(version: number): Promise<void> {
+  await setSystemSetting(
+    PRINT_AGENT_KEY,
+    JSON.stringify({ version, lastSeen: Date.now() }),
+    "Versao e ultimo contato do agente de impressao"
+  );
+}
+
+export async function getPrintAgentStatus(): Promise<PrintAgentStatus | null> {
+  const raw = await getSystemSetting(PRINT_AGENT_KEY);
+  if (!raw) return null;
+
+  try {
+    const { version, lastSeen } = JSON.parse(raw) as {
+      version?: number;
+      lastSeen?: number;
+    };
+    if (!lastSeen) return null;
+
+    const versao = Number(version) || 1;
+    return {
+      version: versao,
+      lastSeen: new Date(lastSeen),
+      upToDate: versao >= VERSAO_AGENTE_ESPERADA,
+    };
+  } catch {
+    return null;
+  }
+}
+
 const ORDER_ALERTS_KEY = "order_alerts";
 
 export type OrderAlerts = {

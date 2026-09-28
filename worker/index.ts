@@ -12,6 +12,7 @@ import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import { drizzle } from "drizzle-orm/d1";
 import {
   getOrderAlerts,
+  recordPrintAgentSeen,
   markPrintJobDone,
   markPrintJobFailed,
   nextPrintJobs,
@@ -105,6 +106,11 @@ async function handlePrintApi(
   }
 
   if (url.pathname === "/api/print/jobs" && request.method === "GET") {
+    // Versao do agente, para o painel mostrar se a pasta do balcao esta
+    // atualizada. Agente antigo nao manda o cabecalho, e isso ja e a resposta.
+    const versao = Number(request.headers.get("x-agent-version")) || 1;
+    await recordPrintAgentSeen(versao);
+
     const jobs = await nextPrintJobs(5);
 
     // O tamanho da letra viaja junto com o cupom, e não no .env do balcão:

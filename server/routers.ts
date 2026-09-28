@@ -666,6 +666,19 @@ export const appRouter = router({
     getOrderAlerts: adminProcedure.query(async () => {
       return await db.getOrderAlerts();
     }),
+    /**
+     * Versao do agente de impressao do balcao.
+     *
+     * Existe porque o agente e copiado a mao entre computadores, e a versao
+     * antiga nao da erro: ela ignora em silencio o que nao conhece. Sem isto,
+     * "o cupom saiu no tamanho errado" nao aponta para "faltou copiar a pasta".
+     */
+    getPrintAgentStatus: adminProcedure.query(async () => {
+      return {
+        agente: await db.getPrintAgentStatus(),
+        esperada: db.VERSAO_AGENTE_ESPERADA,
+      };
+    }),
     setOrderAlerts: adminProcedure
       .input(zin({
         notify: z.boolean(),
