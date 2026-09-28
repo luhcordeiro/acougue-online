@@ -11,6 +11,7 @@
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import { drizzle } from "drizzle-orm/d1";
 import {
+  getOrderAlerts,
   markPrintJobDone,
   markPrintJobFailed,
   nextPrintJobs,
@@ -105,7 +106,14 @@ async function handlePrintApi(
 
   if (url.pathname === "/api/print/jobs" && request.method === "GET") {
     const jobs = await nextPrintJobs(5);
+
+    // O tamanho da letra viaja junto com o cupom, e não no .env do balcão:
+    // assim a lojista troca em Configurações, sem ninguém ter de editar
+    // arquivo no computador do açougue.
+    const { receiptSize } = await getOrderAlerts();
+
     return json({
+      size: receiptSize,
       jobs: jobs.map(j => ({ id: j.id, orderId: j.orderId, content: j.content })),
     });
   }

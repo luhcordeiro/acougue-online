@@ -29,11 +29,23 @@ const MARCA_DESTAQUE_OFF = 0x02; // STX
  * ESC ! n - modo de impressao.
  * bit 3 = negrito, bit 4 = altura dupla.
  *
- * Sem largura dupla de proposito: ela reduz as colunas pela metade e quebraria
- * o alinhamento do cupom, que e montado para 48 (ou 32) caracteres.
+ * Sem largura dupla em nenhum caso: ela reduz as colunas pela metade e
+ * quebraria o alinhamento do cupom, que e montado para 48 (ou 32) caracteres.
  */
-const DESTAQUE_LIGA = [ESC, 0x21, 0x08 | 0x10];
-const DESTAQUE_DESLIGA = [ESC, 0x21, 0x00];
+const NEGRITO = 0x08;
+const ALTURA_DUPLA = 0x10;
+
+/**
+ * Altura dupla no corpo todo quando a loja pede letra grande.
+ *
+ * O destaque e composto com esta base em vez de ser um valor fixo: se os dois
+ * fossem "negrito + altura dupla", com a letra grande ligada o destaque viraria
+ * exatamente o modo do corpo e o tipo de corte deixaria de se distinguir - que
+ * e justo a linha que, passando batida, faz o pedido sair errado.
+ */
+function modoBase(grande) {
+  return grande ? ALTURA_DUPLA : 0x00;
+}
 
 /**
  * A impressora nao fala UTF-8: os acentos sairiam como lixo.
@@ -111,19 +123,20 @@ const CP850 = {
  * Converte para CP850 e troca os marcadores por comandos de destaque.
  * O que nao existir na tabela vira "?" em vez de lixo.
  */
-export function toCp850(text) {
+export function toCp850(text, { grande = false } = {}) {
   const bytes = [];
+  const base = modoBase(grande);
 
   for (const ch of text) {
     const code = ch.codePointAt(0);
 
     if (code === MARCA_DESTAQUE_ON) {
-      bytes.push(...DESTAQUE_LIGA);
+      bytes.push(ESC, 0x21, base | NEGRITO | ALTURA_DUPLA);
       continue;
     }
 
     if (code === MARCA_DESTAQUE_OFF) {
-      bytes.push(...DESTAQUE_DESLIGA);
+      bytes.push(ESC, 0x21, base);
       continue;
     }
 
@@ -145,7 +158,7 @@ export function toCp850(text) {
  * O corte e o que faz a diferenca no balcao - sem ele alguem precisa rasgar
  * cada cupom na serrilha, com o pedido seguinte ja saindo por cima.
  */
-export function buildEscPos(text, { cut = true, feedLines = 4 } = {}) {
+export function buildEscPos(text, { cut = true, feedLines = 4, grande = false } = {}) {
   const partes = [];
 
   // ESC @ - reinicia a impressora, limpando formatacao de um job anterior
@@ -154,7 +167,16 @@ export function buildEscPos(text, { cut = true, feedLines = 4 } = {}) {
   // ESC t 2 - seleciona a pagina de codigo CP850
   partes.push(Buffer.from([ESC, 0x74, 0x02]));
 
-  partes.push(toCp850(text));
+  // ESC M 0 - fonte A, a maior das embutidas.
+  // Explicito de proposito: sem isso vale o padrao gravado na impressora, e
+  // duas Elgin configuradas diferente imprimiriam o mesmo cupom em tamanhos
+  // diferentes.
+  partes.push(Buffer.from([ESC, 0x4d, 0x00]));
+
+  // modo base do corpo, antes do texto
+  partes.push(Buffer.from([ESC, 0x21, modoBase(grande)]));
+
+  partes.push(toCp850(text, { grande }));
 
   // avanco antes do corte, senao o corte cai no meio da ultima linha
   partes.push(Buffer.from([ESC, 0x64, feedLines]));

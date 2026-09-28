@@ -221,6 +221,22 @@ export const appRouter = router({
         await db.updateOrderStatus(input.id, 'confirmed');
         return { success: true, changed: true, status: 'confirmed' as const };
       }),
+    /**
+     * Marca que o cliente foi avisado pelo WhatsApp.
+     *
+     * Separado do status do pedido de proposito: "avisei o cliente" e
+     * "o pedido esta confirmado" sao coisas diferentes, e juntar as duas faria
+     * abrir uma conversa mexer no andamento do pedido.
+     */
+    markWhatsappSent: adminProcedure
+      .input(zin({ id: z.number().int().positive() }))
+      .mutation(async ({ input }) => {
+        const quando = await db.markWhatsappSent(input.id);
+        if (!quando) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Pedido nao encontrado' });
+        }
+        return { success: true, whatsappSentAt: quando };
+      }),
     getById: publicProcedure
       .input(zin({ id: z.number() }))
       .query(async ({ input }) => {
@@ -655,6 +671,7 @@ export const appRouter = router({
         notify: z.boolean(),
         autoPrint: z.boolean(),
         receiptWidth: z.enum(['58mm', '80mm']),
+        receiptSize: z.enum(['normal', 'grande']),
       }))
       .mutation(async ({ input }) => {
         await db.setOrderAlerts(input);

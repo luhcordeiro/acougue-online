@@ -114,6 +114,13 @@ export const orders = sqliteTable(
       .default("cash")
       .notNull(),
     changeFor: integer("changeFor"), // Troco em centavos (só para dinheiro)
+    /**
+     * Quando o operador abriu o WhatsApp do cliente para confirmar.
+     *
+     * Nulo = ainda não avisado. É o que pinta o botão de verde escuro no
+     * painel, para dar de relance quais pedidos já foram confirmados.
+     */
+    whatsappSentAt: integer("whatsappSentAt", { mode: "timestamp" }),
 
     createdAt: createdAt(),
     updatedAt: updatedAt(),

@@ -1,6 +1,7 @@
 import { eq, desc, and, inArray, getTableColumns } from "drizzle-orm";
 import type { BaseSQLiteDatabase } from "drizzle-orm/sqlite-core";
 import { DEFAULT_QUICK_QUANTITIES } from "@shared/quantity";
+import { RECEIPT_SIZES, type ReceiptSize } from "@shared/receipt";
 import {
   DEFAULT_BUSINESS_HOURS,
   normalizeBusinessHours,
@@ -215,6 +216,26 @@ export async function updateOrderStatus(id: number, status: "pending" | "confirm
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.update(orders).set({ status }).where(eq(orders.id, id));
+}
+
+/**
+ * Registra que o cliente foi avisado pelo WhatsApp.
+ *
+ * Nao sobrescreve a primeira marcacao: se o operador abrir a conversa de novo
+ * para tirar uma duvida, o horario continua sendo o do aviso original, que e a
+ * informacao util quando o cliente liga perguntando.
+ */
+export async function markWhatsappSent(id: number): Promise<Date | null> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const pedido = await getOrderById(id);
+  if (!pedido) return null;
+  if (pedido.whatsappSentAt) return pedido.whatsappSentAt;
+
+  const agora = new Date();
+  await db.update(orders).set({ whatsappSentAt: agora }).where(eq(orders.id, id));
+  return agora;
 }
 
 export async function countPendingOrders() {
@@ -657,12 +678,15 @@ export type OrderAlerts = {
   autoPrint: boolean;
   /** Largura da bobina da impressora térmica. */
   receiptWidth: "58mm" | "80mm";
+  /** Tamanho da letra no papel. "grande" dobra a altura dos caracteres. */
+  receiptSize: ReceiptSize;
 };
 
 export const DEFAULT_ORDER_ALERTS: OrderAlerts = {
   notify: true,
   autoPrint: false,
   receiptWidth: "80mm",
+  receiptSize: "grande",
 };
 
 export async function getOrderAlerts(): Promise<OrderAlerts> {
@@ -676,6 +700,9 @@ export async function getOrderAlerts(): Promise<OrderAlerts> {
       autoPrint: parsed.autoPrint ?? DEFAULT_ORDER_ALERTS.autoPrint,
       receiptWidth:
         parsed.receiptWidth === "58mm" ? "58mm" : DEFAULT_ORDER_ALERTS.receiptWidth,
+      receiptSize: RECEIPT_SIZES.includes(parsed.receiptSize as ReceiptSize)
+        ? (parsed.receiptSize as ReceiptSize)
+        : DEFAULT_ORDER_ALERTS.receiptSize,
     };
   } catch (error) {
     // valor corrompido não pode derrubar o painel

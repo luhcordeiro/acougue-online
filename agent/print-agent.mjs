@@ -54,8 +54,10 @@ async function buscarCupons() {
     throw new Error(`loja respondeu ${resposta.status}`);
   }
 
-  const { jobs } = await resposta.json();
-  return jobs ?? [];
+  // O tamanho da letra vem da loja, nao do .env daqui: assim a lojista troca
+  // em Configuracoes sem ninguem precisar mexer neste computador.
+  const { jobs, size } = await resposta.json();
+  return { cupons: jobs ?? [], grande: size === "grande" };
 }
 
 async function confirmar(id, ok, erro) {
@@ -73,9 +75,10 @@ let offline = false;
 
 async function ciclo() {
   let cupons;
+  let grande = false;
 
   try {
-    cupons = await buscarCupons();
+    ({ cupons, grande } = await buscarCupons());
 
     if (offline) {
       log("conexao com a loja restabelecida");
@@ -92,7 +95,10 @@ async function ciclo() {
 
   for (const cupom of cupons) {
     try {
-      const detalhe = await enviarParaImpressora(buildEscPos(cupom.content), PRINTER);
+      const detalhe = await enviarParaImpressora(
+        buildEscPos(cupom.content, { grande }),
+        PRINTER
+      );
       await confirmar(cupom.id, true);
       log(`cupom #${cupom.id} impresso (pedido #${cupom.orderId ?? "-"}) ${detalhe}`);
     } catch (error) {

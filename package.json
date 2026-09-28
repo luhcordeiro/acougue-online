@@ -11,6 +11,7 @@
     "check": "tsc --noEmit && tsc --noEmit -p tsconfig.worker.json && tsc --noEmit -p tsconfig.test.json",
     "format": "prettier --write .",
     "test": "vitest run",
+    "test:agent": "node --test agent/*.test.mjs",
     "db:generate": "drizzle-kit generate",
     "db:migrate:local": "wrangler d1 migrations apply acougue-online --local",
     "db:migrate:remote": "wrangler d1 migrations apply acougue-online --remote",

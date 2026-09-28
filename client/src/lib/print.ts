@@ -1,4 +1,4 @@
-import { MARK_EMPHASIS_OFF, MARK_EMPHASIS_ON } from "@shared/receipt";
+import { MARK_EMPHASIS_OFF, MARK_EMPHASIS_ON, type ReceiptSize } from "@shared/receipt";
 
 /**
  * Impressão do cupom em impressora térmica.
@@ -17,7 +17,19 @@ const LARGURA_MM = { "58mm": 58, "80mm": 80 } as const;
 
 export type PrintWidth = keyof typeof LARGURA_MM;
 
-function buildDocument(text: string, width: PrintWidth): string {
+/**
+ * Corpo do cupom em dois tamanhos, para acompanhar o que sai na térmica.
+ *
+ * Na térmica "grande" dobra a altura do caractere; aqui o equivalente e
+ * aumentar a fonte, sem mexer na largura da bobina - o texto continua
+ * monoespaçado e alinhado nas mesmas colunas.
+ */
+const FONTE_PX = {
+  "58mm": { normal: 10, grande: 14 },
+  "80mm": { normal: 12, grande: 17 },
+} as const;
+
+function buildDocument(text: string, width: PrintWidth, size: ReceiptSize): string {
   const mm = LARGURA_MM[width];
   const escapado = text
     .replace(/&/g, "&amp;")
@@ -43,7 +55,7 @@ function buildDocument(text: string, width: PrintWidth): string {
     margin: 0;
     padding: 2mm;
     font-family: "Courier New", Courier, monospace;
-    font-size: ${width === "58mm" ? "10px" : "12px"};
+    font-size: ${FONTE_PX[width][size]}px;
     line-height: 1.25;
     white-space: pre;
   }
@@ -59,7 +71,11 @@ function buildDocument(text: string, width: PrintWidth): string {
  * Usar iframe em vez de window.open evita que o bloqueador de pop-up impeça a
  * impressão automática, que acontece sem clique do usuário.
  */
-export function printReceipt(text: string, width: PrintWidth = "80mm"): void {
+export function printReceipt(
+  text: string,
+  width: PrintWidth = "80mm",
+  size: ReceiptSize = "normal"
+): void {
   const iframe = document.createElement("iframe");
   iframe.style.position = "fixed";
   iframe.style.right = "0";
@@ -79,7 +95,7 @@ export function printReceipt(text: string, width: PrintWidth = "80mm"): void {
   };
 
   document.body.appendChild(iframe);
-  iframe.srcdoc = buildDocument(text, width);
+  iframe.srcdoc = buildDocument(text, width, size);
 }
 
 /**

@@ -41,6 +41,18 @@ export const RECEIPT_WIDTHS = { "58mm": 32, "80mm": 48 } as const;
 
 export type ReceiptWidth = keyof typeof RECEIPT_WIDTHS;
 
+/**
+ * Tamanho da letra no papel.
+ *
+ * "grande" dobra só a ALTURA dos caracteres. Dobrar a largura também partiria
+ * o cupom ao meio: a largura da bobina é fixa em dots, então cada caractere
+ * dobrado cortaria as colunas de 48 para 24 e desalinharia tudo. A altura
+ * dobrada não mexe nas colunas — só gasta mais papel.
+ */
+export const RECEIPT_SIZES = ["normal", "grande"] as const;
+
+export type ReceiptSize = (typeof RECEIPT_SIZES)[number];
+
 export type ReceiptItem = {
   productName: string;
   cutTypeName?: string | null;
@@ -150,10 +162,33 @@ function center(text: string, width: number): string {
   return " ".repeat(antes) + text;
 }
 
-function formatDate(value: Date | string): string {
+/**
+ * Fuso da loja, fixo de propósito.
+ *
+ * O mesmo cupom é montado em dois lugares: no navegador do painel, quando
+ * alguém manda imprimir, e dentro do Worker, na impressão automática. O Worker
+ * roda em UTC, então usar a hora local de quem monta fazia o mesmo pedido
+ * imprimir 18:30 pelo painel e 21:30 pela fila — três horas de diferença, no
+ * papel que o açougueiro usa para saber a ordem dos pedidos.
+ */
+const FUSO_DA_LOJA = "America/Sao_Paulo";
+
+const formatadorDeData = new Intl.DateTimeFormat("pt-BR", {
+  timeZone: FUSO_DA_LOJA,
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+});
+
+export function formatDate(value: Date | string): string {
   const date = value instanceof Date ? value : new Date(value);
-  const d = (n: number) => String(n).padStart(2, "0");
-  return `${d(date.getDate())}/${d(date.getMonth() + 1)}/${date.getFullYear()} ${d(date.getHours())}:${d(date.getMinutes())}`;
+  if (Number.isNaN(date.getTime())) return "-";
+
+  // pt-BR devolve "02/09/2026, 18:30"; o cupom não quer a vírgula
+  return formatadorDeData.format(date).replace(",", "");
 }
 
 export function buildReceipt(

@@ -17,7 +17,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { playOrderAlert, printReceipt } from "@/lib/print";
 import { trpc } from "@/lib/trpc";
-import { buildReceipt } from "@shared/receipt";
+import { buildReceipt, type ReceiptSize } from "@shared/receipt";
 import { Bell, Printer, Save, Volume2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -26,6 +26,7 @@ type Alerts = {
   notify: boolean;
   autoPrint: boolean;
   receiptWidth: "58mm" | "80mm";
+  receiptSize: ReceiptSize;
 };
 
 /** Cupom de exemplo, para testar a impressora sem depender de um pedido real. */
@@ -221,6 +222,28 @@ export default function OrderAlertsCard() {
               </Select>
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="receiptSize">Tamanho da letra</Label>
+              <Select
+                value={alerts.receiptSize}
+                onValueChange={value =>
+                  update({ receiptSize: value as ReceiptSize })
+                }
+              >
+                <SelectTrigger id="receiptSize" className="w-full sm:w-64">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="grande">Grande (mais fácil de ler)</SelectItem>
+                  <SelectItem value="normal">Normal (gasta menos papel)</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                A letra grande dobra a altura dos caracteres, sem mexer no
+                alinhamento das colunas. O cupom sai mais comprido.
+              </p>
+            </div>
+
             <div className="flex flex-wrap gap-2">
               <Button
                 onClick={() => saveMutation.mutate(alerts)}
@@ -248,7 +271,7 @@ export default function OrderAlertsCard() {
 
               <Button
                 variant="ghost"
-                onClick={() => printReceipt(CUPOM_TESTE, alerts.receiptWidth)}
+                onClick={() => printReceipt(CUPOM_TESTE, alerts.receiptWidth, alerts.receiptSize)}
                 title="Imprime por este navegador, sem passar pelo agente"
               >
                 <Printer className="mr-2 h-4 w-4" />

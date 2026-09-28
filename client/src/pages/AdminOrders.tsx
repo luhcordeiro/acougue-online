@@ -131,6 +131,7 @@ export default function AdminOrders() {
 
 
   const larguraCupom = alerts?.receiptWidth ?? "80mm";
+  const tamanhoCupom = alerts?.receiptSize ?? "grande";
   const pendentes = resumo?.pendingCount ?? 0;
 
   /** Monta o cupom buscando os itens do pedido. */
@@ -145,6 +146,10 @@ export default function AdminOrders() {
     },
     [utils, larguraCupom, deliveryFee]
   );
+
+  const markWhatsappMutation = trpc.orders.markWhatsappSent.useMutation({
+    onSuccess: () => utils.orders.list.invalidate(),
+  });
 
   /**
    * Abre o WhatsApp com o texto pronto para o operador conferir e enviar.
@@ -167,6 +172,10 @@ export default function AdminOrders() {
 
       // nova aba: o painel precisa continuar aberto recebendo pedidos
       window.open(url, "_blank", "noopener,noreferrer");
+
+      // marca depois de abrir: se o WhatsApp nao abrir, o pedido nao fica
+      // parecendo confirmado
+      markWhatsappMutation.mutate({ id: orderId });
     } catch {
       toast.error("Nao foi possivel montar a mensagem");
     }
@@ -238,7 +247,7 @@ export default function AdminOrders() {
   const handleImprimirDoDialogo = () => {
     if (!receipt || pedidoDoCupom === null) return;
 
-    printReceipt(receipt, larguraCupom);
+    printReceipt(receipt, larguraCupom, tamanhoCupom);
     markPrintedMutation.mutate(
       { id: pedidoDoCupom },
       {
@@ -521,19 +530,27 @@ export default function AdminOrders() {
                         >
                           <Printer className="h-4 w-4" />
                         </Button>
-                        {/* Desabilitado quando o telefone nao serve: melhor o
-                            botao apagado do que abrir uma conversa vazia */}
+                        {/* Verde escuro e preenchido quando o cliente ja foi
+                            avisado: da de relance o que falta confirmar.
+                            Desabilitado quando o telefone nao serve - melhor o
+                            botao apagado do que abrir uma conversa vazia. */}
                         <Button
-                          variant="outline"
+                          variant={order.whatsappSentAt ? "default" : "outline"}
                           size="sm"
                           disabled={!toWhatsAppNumber(order.customerPhone)}
                           onClick={() => handleWhatsApp(order.id)}
                           title={
-                            toWhatsAppNumber(order.customerPhone)
-                              ? "Enviar confirmação pelo WhatsApp"
-                              : "Telefone do cliente não permite WhatsApp"
+                            !toWhatsAppNumber(order.customerPhone)
+                              ? "Telefone do cliente não permite WhatsApp"
+                              : order.whatsappSentAt
+                                ? `Cliente avisado em ${new Date(order.whatsappSentAt).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })} - clique para abrir de novo`
+                                : "Enviar confirmação pelo WhatsApp"
                           }
-                          className="text-green-600 hover:text-green-700"
+                          className={
+                            order.whatsappSentAt
+                              ? "bg-green-700 text-white hover:bg-green-800"
+                              : "text-green-600 hover:text-green-700"
+                          }
                         >
                           <MessageCircle className="h-4 w-4" />
                         </Button>

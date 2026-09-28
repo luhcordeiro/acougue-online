@@ -113,7 +113,7 @@ describe("enfileiramento automático", () => {
   }
 
   it("enfileira o cupom quando a impressão automática está ligada", async () => {
-    await setOrderAlerts({ notify: true, autoPrint: true, receiptWidth: "80mm" });
+    await setOrderAlerts({ notify: true, autoPrint: true, receiptWidth: "80mm", receiptSize: "grande" });
 
     const { orderId } = await fazerPedido();
     const fila = await nextPrintJobs(5);
@@ -127,7 +127,7 @@ describe("enfileiramento automático", () => {
   });
 
   it("não enfileira nada com a impressão automática desligada", async () => {
-    await setOrderAlerts({ notify: true, autoPrint: false, receiptWidth: "80mm" });
+    await setOrderAlerts({ notify: true, autoPrint: false, receiptWidth: "80mm", receiptSize: "grande" });
 
     await fazerPedido();
 
@@ -137,7 +137,7 @@ describe("enfileiramento automático", () => {
   it("o pedido é criado mesmo se o cupom não puder ser enfileirado", async () => {
     // a impressão é conveniência; derrubar o checkout do cliente por causa
     // dela seria trocar um problema pequeno por um grande
-    await setOrderAlerts({ notify: true, autoPrint: true, receiptWidth: "80mm" });
+    await setOrderAlerts({ notify: true, autoPrint: true, receiptWidth: "80mm", receiptSize: "grande" });
 
     const { success, orderId } = await fazerPedido();
 
