@@ -223,8 +223,16 @@ export function buildReceipt(
       }
     }
 
-    const medida = `  ${formatQuantity(item.quantity, item.unit)} x ${money(item.price)}/${item.unit}`;
-    linhas.push(...pair(medida, money(item.subtotal), w));
+    // A quantidade ganha linha própria e destacada, como o corte: é a outra
+    // informação que o açougueiro precisa ler de relance, e no meio da linha
+    // de preço ela se perdia. Marcar só um trecho da linha não serviria: o
+    // pair() alinha a coluna da direita contando caracteres, e os marcadores
+    // de destaque empurrariam o valor para dentro.
+    for (const linha of wrap(`>> QTD: ${formatQuantity(item.quantity, item.unit)}`, w - 2)) {
+      linhas.push(emphasize(`  ${linha}`));
+    }
+
+    linhas.push(...pair(`  ${money(item.price)}/${item.unit}`, money(item.subtotal), w));
     linhas.push("");
   }
 

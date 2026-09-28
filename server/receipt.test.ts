@@ -39,17 +39,54 @@ const itens: ReceiptItem[] = [
   },
 ];
 
+/** Largura real no papel: marcador de destaque é comando, não caractere. */
+function larguraImpressa(cupom: string): number {
+  return Math.max(
+    ...cupom.split(String.fromCharCode(10)).map(l => stripMarkers(l).length)
+  );
+}
+
 describe("cupom", () => {
   const cupom = buildReceipt(pedido, itens, { deliveryFee: 500 });
 
   it("respeita a largura da bobina", () => {
     for (const largura of ["58mm", "80mm"] as const) {
       const texto = buildReceipt(pedido, itens, { width: largura });
-      const maior = Math.max(...texto.split("\n").map(l => l.length));
+
+      // mede o que sai no PAPEL: os marcadores de destaque são comandos da
+      // impressora, não caracteres impressos. Contando com eles, toda linha
+      // destacada pareceria dois caracteres mais larga do que é.
+      const maior = larguraImpressa(texto);
 
       // passar da largura faz a térmica quebrar a linha no lugar errado
       expect(maior).toBeLessThanOrEqual(RECEIPT_WIDTHS[largura]);
     }
+  });
+
+  it("não estoura a bobina com nome de produto comprido", () => {
+    // o catálogo real tem nomes longos, e o nome sai destacado — é o caso em
+    // que a linha chega perto do limite
+    const comprido: ReceiptItem[] = [
+      {
+        ...itens[0],
+        productName: "Carvao Santana 3kg Pequeno Embalagem Economica Especial",
+        cutTypeName: "Peca Inteira Sem Osso Limpa",
+      },
+    ];
+
+    for (const largura of ["58mm", "80mm"] as const) {
+      const texto = buildReceipt(pedido, comprido, { width: largura });
+      expect(larguraImpressa(texto)).toBeLessThanOrEqual(RECEIPT_WIDTHS[largura]);
+    }
+  });
+
+  it("quantidade e valor grandes cabem na bobina estreita", () => {
+    const pesado: ReceiptItem[] = [
+      { ...itens[0], quantity: 50000, price: 12998, subtotal: 649900 },
+    ];
+
+    const texto = buildReceipt(pedido, pesado, { width: "58mm" });
+    expect(larguraImpressa(texto)).toBeLessThanOrEqual(RECEIPT_WIDTHS["58mm"]);
   });
 
   it("traz o corte destacado, que é o que guia o preparo", () => {
@@ -57,8 +94,12 @@ describe("cupom", () => {
   });
 
   it("mostra quantidade e preço na unidade certa de cada item", () => {
-    expect(cupom).toContain("1,5 kg x R$ 31,98/kg");
-    expect(cupom).toContain("2 un x R$ 11,00/un");
+    // quantidade e preço ficam em linhas separadas: a quantidade sai
+    // destacada, e no meio da linha de preço ela se perdia
+    expect(stripMarkers(cupom)).toContain(">> QTD: 1,5 kg");
+    expect(stripMarkers(cupom)).toContain("R$ 31,98/kg");
+    expect(stripMarkers(cupom)).toContain(">> QTD: 2 un");
+    expect(stripMarkers(cupom)).toContain("R$ 11,00/un");
   });
 
   it("fecha a conta com a taxa de entrega", () => {
@@ -111,22 +152,26 @@ describe("cupom", () => {
 describe("destaque do produto", () => {
   const cupom = buildReceipt(pedido, itens, { deliveryFee: 500 });
 
-  it("marca o nome do produto e o corte", () => {
+  it("marca o nome, o corte e a quantidade", () => {
     const linhas = cupom.split(String.fromCharCode(10));
 
     const nome = linhas.find(l => stripMarkers(l).trim() === "ACEM");
     const corte = linhas.find(l => stripMarkers(l).includes("CORTE: BIFES"));
+    const qtd = linhas.find(l => stripMarkers(l).includes("QTD: 1,5 kg"));
 
+    // as três coisas que o açougueiro precisa ler de relance para preparar
     expect(nome).toContain(MARK_EMPHASIS_ON);
     expect(corte).toContain(MARK_EMPHASIS_ON);
+    expect(qtd).toContain(MARK_EMPHASIS_ON);
   });
 
-  it("não marca a linha de quantidade e preço", () => {
+  it("não marca a linha de preço", () => {
     const linha = cupom
       .split(String.fromCharCode(10))
-      .find(l => stripMarkers(l).includes("1,5 kg x"));
+      .find(l => stripMarkers(l).includes("R$ 31,98/kg"));
 
-    // só nome e corte saem destacados; destacar tudo tira o destaque de tudo
+    // o preço é conferência, não preparo; destacar tudo tira o destaque de tudo
+    expect(linha).toBeDefined();
     expect(linha).not.toContain(MARK_EMPHASIS_ON);
   });
 
@@ -167,8 +212,7 @@ describe("quebra de linha", () => {
       { width: "58mm" }
     );
 
-    const maior = Math.max(...longo.split("\n").map(l => l.length));
-    expect(maior).toBeLessThanOrEqual(32);
+    expect(larguraImpressa(longo)).toBeLessThanOrEqual(32);
   });
 });
 
