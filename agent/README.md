@@ -125,6 +125,12 @@ Quando a loja receber uma atualização que mexe no cupom, copie a pasta `agent`
 inteira por cima da que está neste computador — menos o `.env`, que guarda o
 token e o nome da impressora desta máquina.
 
+O agente e a loja precisam estar na mesma versão quando a atualização muda o
+que trafega entre os dois. O tamanho da letra, por exemplo, vem da loja junto
+com o cupom: um agente antigo simplesmente ignora e imprime pequeno, sem dar
+erro nenhum — então se o cupom sair no tamanho errado depois de mexer em
+Configurações, o que faltou foi copiar a pasta.
+
 Copie os arquivos, **não abra e cole o conteúdo dentro de um editor**: colar
 pode trocar a codificação e transformar todos os acentos em "?" no cupom, sem
 dar nenhum erro. Depois de copiar, feche a janela do agente, rode
